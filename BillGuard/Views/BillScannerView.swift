@@ -54,6 +54,67 @@ struct ScanBoxRect: Codable, Equatable {
     }
 }
 
+// MARK: - Per-Provider Scan Layout
+
+/// The four section boxes for one provider's bill layout. `x`/`y` are box centers,
+/// `width`/`height` are box sizes — all normalized 0–1 (matching `SelectionBox`).
+struct SavedScanLayout: Codable, Equatable {
+    var displayName: String
+    var provider:  ScanBoxRect
+    var patient:   ScanBoxRect
+    var insurance: ScanBoxRect
+    var procedure: ScanBoxRect
+}
+
+/// Persists scan-box layouts per provider in UserDefaults, so positioning a bill
+/// once for a provider can be auto-applied on future scans of that provider.
+enum ScanLayoutStore {
+    private static let mapKey  = "ProviderScanLayouts_v1"
+    private static let lastKey = "ProviderScanLayouts_lastUsed_v1"
+
+    static func key(for provider: String) -> String {
+        provider.lowercased()
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func all() -> [String: SavedScanLayout] {
+        guard let data = UserDefaults.standard.data(forKey: mapKey),
+              let map  = try? JSONDecoder().decode([String: SavedScanLayout].self, from: data)
+        else { return [:] }
+        return map
+    }
+
+    /// Best layout for a provider name: exact key first, then fuzzy containment.
+    static func layout(for provider: String) -> SavedScanLayout? {
+        let k = key(for: provider)
+        guard !k.isEmpty else { return nil }
+        let map = all()
+        if let exact = map[k] { return exact }
+        return map.first(where: { k.contains($0.key) || $0.key.contains(k) })?.value
+    }
+
+    static func save(_ layout: SavedScanLayout, for provider: String) {
+        let k = key(for: provider)
+        guard !k.isEmpty else { return }
+        var map = all()
+        map[k] = layout
+        if let data = try? JSONEncoder().encode(map) {
+            UserDefaults.standard.set(data, forKey: mapKey)
+        }
+        UserDefaults.standard.set(provider, forKey: lastKey)
+    }
+
+    static func savedLayouts() -> [SavedScanLayout] {
+        all().values.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
+    }
+
+    static var lastUsedLayout: SavedScanLayout? {
+        guard let name = UserDefaults.standard.string(forKey: lastKey) else { return nil }
+        return layout(for: name)
+    }
+}
+
 struct ProviderBillTemplate: Codable, Identifiable, Equatable {
     var id:            UUID   = UUID()
     var displayName:   String
@@ -101,6 +162,9 @@ struct BillScannerView: View {
     @State private var isProcessing = false
     @State private var showingReview = false
     @State private var saveResult: BillSaveResult = .none
+
+    /// Box layout used for the current scan — saved against the detected provider.
+    @State private var usedLayout: SavedScanLayout?
     
     enum SourceType: String, CaseIterable {
         case camera = "Camera"
@@ -125,7 +189,8 @@ struct BillScannerView: View {
                         accumulatedInsuranceText: $accumulatedInsuranceText,
                         accumulatedProcedureText: $accumulatedProcedureText,
                         pageCount: $pageCount,
-                        showingReview: $showingReview
+                        showingReview: $showingReview,
+                        usedLayout: $usedLayout
                     )
                 } else {
                     // Source selection
@@ -175,7 +240,8 @@ struct BillScannerView: View {
                     procedureText: accumulatedProcedureText,
                     scannedImage: capturedImage,
                     pageCount: pageCount,
-                    saveResult: $saveResult
+                    saveResult: $saveResult,
+                    usedLayout: usedLayout
                 )
                 .environmentObject(patientDataService)
                 .environmentObject(appState)
@@ -344,7 +410,11 @@ struct BillRegionSelector: View {
     @Binding var accumulatedProcedureText: String
     @Binding var pageCount: Int
     @Binding var showingReview: Bool
-    
+
+    /// The box layout used for this scan — surfaced to the parent so it can be
+    /// saved against the detected provider once parsing identifies them.
+    @Binding var usedLayout: SavedScanLayout?
+
     // Selection box positions (normalized 0-1)
     // Layout: Provider full-width across top, Patient (left) + Insurance (right) below, Procedures at bottom
     @State private var providerBox = SelectionBox(
@@ -570,8 +640,15 @@ struct BillRegionSelector: View {
         } message: {
             Text("Page \(pageCount) extracted. Does this bill have additional pages to scan?")
         }
+        .onAppear {
+            // Auto-apply the most recently used provider layout as a starting point.
+            // The user can still adjust, switch via the Layouts menu, or Reset.
+            if let last = ScanLayoutStore.lastUsedLayout {
+                apply(last)
+            }
+        }
     }
-    
+
     private var instructionsBar: some View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
@@ -608,7 +685,27 @@ struct BillRegionSelector: View {
             }
             .padding(.top, 10)
             .padding(.horizontal, 4)
-            
+
+            // Saved per-provider layouts — apply a remembered box arrangement
+            let savedLayouts = ScanLayoutStore.savedLayouts()
+            if !savedLayouts.isEmpty {
+                Menu {
+                    ForEach(savedLayouts, id: \.displayName) { layout in
+                        Button(layout.displayName) {
+                            withAnimation(.easeInOut(duration: 0.2)) { apply(layout) }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "rectangle.dashed.badge.record")
+                        Text("Apply Saved Layout")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.accentColor)
+                }
+                .padding(.horizontal)
+            }
+
             // Extract button
             Button {
                 extractText()
@@ -698,9 +795,32 @@ struct BillRegionSelector: View {
         return CGRect(origin: origin, size: size)
     }
     
+    /// Snapshot the current four boxes as a reusable layout.
+    private func currentLayout(named name: String = "") -> SavedScanLayout {
+        SavedScanLayout(
+            displayName: name,
+            provider:  providerBox.asRect,
+            patient:   patientBox.asRect,
+            insurance: insuranceBox.asRect,
+            procedure: procedureBox.asRect
+        )
+    }
+
+    /// Apply a saved layout to the four boxes.
+    private func apply(_ layout: SavedScanLayout) {
+        providerBox  = SelectionBox(layout.provider)
+        patientBox   = SelectionBox(layout.patient)
+        insuranceBox = SelectionBox(layout.insurance)
+        procedureBox = SelectionBox(layout.procedure)
+    }
+
     private func extractText() {
         isProcessing = true
-        
+
+        // Remember the layout used so the parent can save it against the
+        // detected provider once parsing identifies them.
+        usedLayout = currentLayout()
+
         // Snapshot enabled state before entering the async task
         let extractPatient   = showPatientBox
         let extractProvider  = showProviderBox
@@ -946,6 +1066,17 @@ struct BillRegionSelector: View {
 struct SelectionBox {
     var position: CGPoint  // Center position (normalized 0-1)
     var size: CGSize       // Size (normalized 0-1)
+}
+
+extension SelectionBox {
+    var asRect: ScanBoxRect {
+        ScanBoxRect(x: Double(position.x), y: Double(position.y),
+                    width: Double(size.width), height: Double(size.height))
+    }
+    init(_ rect: ScanBoxRect) {
+        self.init(position: CGPoint(x: rect.x, y: rect.y),
+                  size: CGSize(width: rect.width, height: rect.height))
+    }
 }
 
 // MARK: - Draggable Box View
@@ -1257,7 +1388,10 @@ struct BillReviewView: View {
     
     /// Binding to parent — set to .scanMore or .done to trigger dismiss + action
     @Binding var saveResult: BillSaveResult
-    
+
+    /// Box layout used for this scan — saved against the detected provider.
+    var usedLayout: SavedScanLayout? = nil
+
     // Parsed patient fields
     @State private var patientName = ""
     @State private var accountNumber = ""
@@ -1696,6 +1830,16 @@ struct BillReviewView: View {
             print("── Template matched: \(t.displayName) (\(t.billFormat.rawValue))")
         }
         #endif
+
+        // Remember this provider's box layout for next time (auto-applied on
+        // future scans via ScanLayoutStore.lastUsedLayout / the Layouts menu).
+        if var layout = usedLayout, !providerName.isEmpty {
+            layout.displayName = providerName
+            ScanLayoutStore.save(layout, for: providerName)
+            #if DEBUG
+            print("── Saved scan layout for provider: \(providerName)")
+            #endif
+        }
 
         parseLineItems()
         lookupLineItemCodes()
