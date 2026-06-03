@@ -2717,12 +2717,25 @@ struct BillReviewView: View {
 
     /// Looks up a code in the database, trying OCR-confusion variants if the direct
     /// match fails. Returns the (possibly corrected) code and the matched record.
-    private func databaseMatch(forCode code: String, using cloudKit: CloudKitService) -> (code: String, match: MedicalCode)? {
+    private func databaseMatch(forCode code: String, ocrDescription: String,
+                               using cloudKit: CloudKitService) -> (code: String, match: MedicalCode)? {
         let upper = code.uppercased()
         if let direct = cloudKit.lookupCode(upper) { return (upper, direct) }
+
+        // The code as read wasn't in the database. Try OCR-confusion variants — but ONLY
+        // accept one whose canonical description CORROBORATES the OCR text. Otherwise a
+        // correctly-read code that is merely missing from the (incomplete) database gets
+        // morphed into a different, similar-looking code that happens to be present
+        // (e.g. 99233 "Subsequent Hospital Care" → 99283 "Emergency dept visit"). Only a
+        // genuine misread like 98223 → 99223 has a matching description, so gate on that.
+        let desc = ocrDescription.trimmingCharacters(in: .whitespaces)
+        guard !desc.isEmpty else { return nil }
         for variant in ocrCodeVariants(upper) {
-            guard variant.count == upper.count, classifyCodeType(variant) != nil else { continue }
-            if let m = cloudKit.lookupCode(variant) { return (variant, m) }
+            guard variant.count == upper.count, classifyCodeType(variant) != nil,
+                  let m = cloudKit.lookupCode(variant) else { continue }
+            if descriptionSimilarity(desc, m.shortDescription) >= 0.78 {
+                return (variant, m)
+            }
         }
         return nil
     }
@@ -2931,27 +2944,21 @@ struct BillReviewView: View {
     /// Returns the first dollar-formatted amount found on a line.
     /// Used to extract the "Charges & Debits" column (leftmost dollar value).
     private func extractFirstDollarAmount(from text: String) -> Double? {
-        let pattern = #"\$?([\d,]+\.?\d{0,2})"#
+        let pattern = #"\$?\s*([0-9][0-9.,]*)"#
         guard let match = text.range(of: pattern, options: .regularExpression) else { return nil }
-        let raw = String(text[match])
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: ",", with: "")
-        return Double(raw)
+        return normalizeAmountToken(String(text[match]))
     }
 
     /// Returns the LAST dollar-formatted amount found on a line.
     /// Used to extract the "Patient Amount" column (rightmost dollar value).
     private func extractLastDollarAmount(from text: String) -> Double? {
-        let pattern = #"\$?([\d,]+\.?\d{0,2})"#
+        let pattern = #"\$?\s*([0-9][0-9.,]*)"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
         let range = NSRange(text.startIndex..., in: text)
         let matches = regex.matches(in: text, range: range)
         guard let last = matches.last,
-              let r = Range(last.range, in: text) else { return nil }
-        let raw = String(text[r])
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: ",", with: "")
-        return Double(raw)
+              let r = Range(last.range(at: 1), in: text) else { return nil }
+        return normalizeAmountToken(String(text[r]))
     }
 
     /// Extracts the first 5-digit CPT code or HCPCS code from a statement line.
@@ -2999,7 +3006,7 @@ struct BillReviewView: View {
 
             // Look up in the database — tries OCR-confusion variants if the
             // direct match fails (e.g. "98223" → "99223").
-            if let result = databaseMatch(forCode: code, using: cloudKit) {
+            if let result = databaseMatch(forCode: code, ocrDescription: lineItems[i].description, using: cloudKit) {
                 if result.code != code.uppercased() {
                     lineItems[i].code = result.code   // adopt the OCR-corrected code
                     #if DEBUG
@@ -3402,20 +3409,49 @@ struct BillReviewView: View {
     }
     
     /// Extract dollar amount — REQUIRES "$" sign to avoid matching dates (11/15/24 → 24)
+    /// Parses a money token into a Double, tolerating OCR that misreads a thousands
+    /// comma as a period (so "$22,500.00" arrives as "22.500.00"). Rule: unify "," and
+    /// "." to a single separator; the LAST group is the decimal only if it has ≤2 digits,
+    /// otherwise every separator is a thousands separator (no decimal).
+    ///   "22,500.00" / "22.500.00" → 22500.00      "3.850.00" → 3850.00
+    ///   "245.00" → 245.00          "1.500" → 1500   "22.50" → 22.50
+    private func normalizeAmountToken(_ raw: String) -> Double? {
+        var s = raw.replacingOccurrences(of: "$", with: "")
+                   .replacingOccurrences(of: " ", with: "")
+                   .trimmingCharacters(in: .whitespaces)
+        guard !s.isEmpty else { return nil }
+        let negative = s.hasPrefix("-")
+        if negative { s.removeFirst() }
+        s = s.replacingOccurrences(of: ",", with: ".")
+        let parts = s.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+        guard parts.allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isNumber) }) else { return nil }
+
+        let intPart: String
+        let fracPart: String
+        if parts.count == 1 {
+            intPart = parts[0]; fracPart = ""
+        } else if let last = parts.last, last.count <= 2 {
+            fracPart = last; intPart = parts.dropLast().joined()
+        } else {
+            intPart = parts.joined(); fracPart = ""
+        }
+        let combined = fracPart.isEmpty ? intPart : "\(intPart).\(fracPart)"
+        guard let val = Double(combined) else { return nil }
+        return negative ? -val : val
+    }
+
     private func extractStrictDollarAmount(from text: String) -> Double? {
-        // Must have "$" followed by digits, optional comma groups, optional decimal
-        let pattern = #"-?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)"#
-        let regex = try? NSRegularExpression(pattern: pattern)
+        // "$" then a run of digits and grouping separators (commas, or OCR-misread
+        // periods). normalizeAmountToken sorts out thousands vs decimal.
+        let pattern = #"-?\$\s*([0-9][0-9.,]*)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
         let range = NSRange(text.startIndex..., in: text)
-        let matches = regex?.matches(in: text, range: range) ?? []
-        
+
         var amounts: [Double] = []
-        for match in matches {
-            if let range = Range(match.range(at: 1), in: text) {
-                let amountStr = String(text[range]).replacingOccurrences(of: ",", with: "")
-                if let amount = Double(amountStr), amount > 0 {
-                    amounts.append(amount)
-                }
+        for match in regex.matches(in: text, range: range) {
+            if let r = Range(match.range(at: 1), in: text),
+               let amount = normalizeAmountToken(String(text[r])), amount > 0 {
+                amounts.append(amount)
             }
         }
         // Return the largest amount (most likely the charge, not quantity)
