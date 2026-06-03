@@ -2168,7 +2168,12 @@ struct BillReviewView: View {
                 if !providerName.isEmpty { break }
             }
         }
-        
+
+        // ── Step 9: Correct a misread state code in the address (e.g. "FR" → "FL") ──
+        if !providerAddress.isEmpty {
+            providerAddress = correctStateCode(in: providerAddress)
+        }
+
         #if DEBUG
         print("── Provider parsed: name=\"\(providerName)\" phone=\"\(providerPhone)\" fax=\"\(providerFax)\" addr=\"\(providerAddress)\"")
         #endif
@@ -2498,7 +2503,121 @@ struct BillReviewView: View {
         
         return nil
     }
-    
+
+    // MARK: - OCR Correction Helpers
+
+    /// Common OCR character confusions for billing codes (digits + look-alike letters).
+    private static let ocrCodeConfusions: [Character: [Character]] = [
+        "0": ["O", "8", "6", "9", "D"], "1": ["7", "I", "L"], "2": ["7", "Z"],
+        "3": ["8", "9"], "4": ["9"], "5": ["6", "8", "S"], "6": ["5", "8", "0", "G"],
+        "7": ["1", "2"], "8": ["9", "0", "6", "3", "B", "5"], "9": ["8", "4", "0", "3"],
+        "O": ["0"], "I": ["1"], "L": ["1"], "S": ["5"], "B": ["8"], "Z": ["2"], "G": ["6"]
+    ]
+
+    /// Generates candidate code spellings by applying one OCR-confusion swap at each
+    /// position — used to recover a misread code (e.g. "98223" → "99223").
+    private func ocrCodeVariants(_ code: String) -> [String] {
+        let chars = Array(code.uppercased())
+        var out: [String] = []
+        for i in chars.indices {
+            guard let subs = Self.ocrCodeConfusions[chars[i]] else { continue }
+            for s in subs {
+                var v = chars; v[i] = s; out.append(String(v))
+            }
+        }
+        var seen = Set<String>([code.uppercased()])
+        return out.filter { seen.insert($0).inserted }
+    }
+
+    /// Looks up a code in the database, trying OCR-confusion variants if the direct
+    /// match fails. Returns the (possibly corrected) code and the matched record.
+    private func databaseMatch(forCode code: String, using cloudKit: CloudKitService) -> (code: String, match: MedicalCode)? {
+        let upper = code.uppercased()
+        if let direct = cloudKit.lookupCode(upper) { return (upper, direct) }
+        for variant in ocrCodeVariants(upper) {
+            guard variant.count == upper.count, classifyCodeType(variant) != nil else { continue }
+            if let m = cloudKit.lookupCode(variant) { return (variant, m) }
+        }
+        return nil
+    }
+
+    /// Lightweight normalized Levenshtein similarity in 0...1 (alphanumerics only).
+    private func descriptionSimilarity(_ a: String, _ b: String) -> Double {
+        func norm(_ s: String) -> [Character] {
+            Array(s.lowercased().unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }
+                .map(Character.init))
+        }
+        let x = norm(a), y = norm(b)
+        if x.isEmpty || y.isEmpty { return 0 }
+        if x == y { return 1 }
+        var prev = Array(0...y.count)
+        var cur = [Int](repeating: 0, count: y.count + 1)
+        for i in 1...x.count {
+            cur[0] = i
+            for j in 1...y.count {
+                let cost = x[i - 1] == y[j - 1] ? 0 : 1
+                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+            }
+            swap(&prev, &cur)
+        }
+        return 1.0 - Double(prev[y.count]) / Double(max(x.count, y.count))
+    }
+
+    /// Chooses the best description for a matched code: prefer the canonical DB
+    /// description when the OCR text is empty/generic or is clearly the same
+    /// description with OCR noise; otherwise keep the (often more specific) OCR text.
+    private func reconcileDescription(ocr: String, canonical: String) -> String {
+        let trimmed = ocr.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || trimmed.hasPrefix("Procedure ") || trimmed == "Unknown" { return canonical }
+        if descriptionSimilarity(trimmed, canonical) >= 0.70 { return canonical }
+        return trimmed
+    }
+
+    /// Valid US state / territory codes, for address state-abbreviation correction.
+    private static let usStateCodes: Set<String> = [
+        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+        "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+        "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+        "VA","WA","WV","WI","WY","DC","PR","VI","GU"
+    ]
+
+    private static let ocrLetterConfusions: [Character: [Character]] = [
+        "R": ["L","P","K","B"], "L": ["R","I","E"], "I": ["L","T"],
+        "O": ["Q","D","C"], "B": ["R","E"], "G": ["C"], "C": ["G","O"],
+        "D": ["O"], "U": ["V"], "V": ["U","Y"], "N": ["M","H"], "M": ["N"],
+        "E": ["F","B"], "F": ["E","P"], "P": ["F","R"], "T": ["I","Y"],
+        "Y": ["V","T"], "K": ["R","X"], "S": ["B"], "Q": ["O"]
+    ]
+
+    private func ocrLetterVariants(_ token: String) -> [String] {
+        let chars = Array(token.uppercased())
+        var out: [String] = []
+        for i in chars.indices {
+            guard let subs = Self.ocrLetterConfusions[chars[i]] else { continue }
+            for s in subs where s.isLetter {
+                var v = chars; v[i] = s; out.append(String(v))
+            }
+        }
+        var seen = Set<String>([token.uppercased()])
+        return out.filter { seen.insert($0).inserted }
+    }
+
+    /// Fixes a misread 2-letter state code that precedes a ZIP, e.g.
+    /// "Orlando, FR 32806" → "Orlando, FL 32806" (OCR L→R).
+    private func correctStateCode(in address: String) -> String {
+        let pattern = #"\b([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)\b"#
+        guard let re = try? NSRegularExpression(pattern: pattern) else { return address }
+        let ns = address as NSString
+        guard let m = re.firstMatch(in: address, range: NSRange(location: 0, length: ns.length)) else { return address }
+        let stateRange = m.range(at: 1)
+        let state = ns.substring(with: stateRange).uppercased()
+        if Self.usStateCodes.contains(state) { return address }
+        for variant in ocrLetterVariants(state) where Self.usStateCodes.contains(variant) {
+            return ns.replacingCharacters(in: stateRange, with: variant)
+        }
+        return address
+    }
+
     // MARK: - Account Statement Line Item Parser (multi-column format)
 
     /// Parses procedure line items from an account-statement bill (e.g. West Volusia).
@@ -2691,21 +2810,30 @@ struct BillReviewView: View {
             
             // Classify the code type
             lineItems[i].codeType = classifyCodeType(code)
-            
-            // Look up in the database
-            if let matched = cloudKit.lookupCode(code.uppercased()) {
-                lineItems[i].matchedMedicalCode = matched
-                lineItems[i].codeType = matched.codeType
-                
-                // If OCR description is empty/generic, use database description
-                if lineItems[i].description.isEmpty
-                    || lineItems[i].description.hasPrefix("Procedure ")
-                    || lineItems[i].description == "Unknown" {
-                    lineItems[i].description = matched.shortDescription
+
+            // Look up in the database — tries OCR-confusion variants if the
+            // direct match fails (e.g. "98223" → "99223").
+            if let result = databaseMatch(forCode: code, using: cloudKit) {
+                if result.code != code.uppercased() {
+                    lineItems[i].code = result.code   // adopt the OCR-corrected code
+                    #if DEBUG
+                    print("  ✏️ OCR-corrected code \(code) → \(result.code)")
+                    #endif
                 }
-                
+                lineItems[i].matchedMedicalCode = result.match
+                lineItems[i].codeType = result.match.codeType
+                lineItems[i].lookupFailed = false
+
+                // Prefer the canonical description when OCR is empty/generic or is
+                // the same description with OCR noise ("Inital" → "Initial"); keep
+                // a more-specific OCR description otherwise.
+                lineItems[i].description = reconcileDescription(
+                    ocr: lineItems[i].description,
+                    canonical: result.match.shortDescription
+                )
+
                 #if DEBUG
-                print("  🔍 \(code) → \(matched.shortDescription) [\(matched.codeType.rawValue)]")
+                print("  🔍 \(result.code) → \(result.match.shortDescription) [\(result.match.codeType.rawValue)]")
                 #endif
             } else {
                 lineItems[i].lookupFailed = true
