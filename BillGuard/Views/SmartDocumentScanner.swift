@@ -725,7 +725,31 @@ struct SmartDocumentScanner: View {
                 print("capture: Vision on photo ✅  ratio=\(String(format:"%.0f%%", ratio*100))  liveDetected=\(documentDetectedByLiveScanner)")
                 #endif
                 if ratio < 0.95 {
-                    corrected = visionCorrected
+                    // Tier 1 found a boundary — but on a screen capture this is often
+                    // the WINDOW/screen rectangle, leaving title-bar/toolbar chrome
+                    // above the document. Iteratively re-run document segmentation to
+                    // peel down to the page itself, cropping off everything outside the
+                    // document's margins. Segmentation finds the page silhouette (a dark
+                    // header stays included), so this trims chrome WITHOUT the edge-based
+                    // header-cut risk that finalizeDocumentCrop carries.
+                    var working = visionCorrected
+                    for pass in 0..<2 {
+                        guard let inner = DocumentImageEnhancer.perspectiveCorrectedImage(working, corners: nil) else { break }
+                        let workPx  = working.size.width * working.size.height
+                        let innerPx = inner.size.width * inner.size.height
+                        let innerRatio = workPx > 0 ? innerPx / workPx : 1.0
+                        // Accept only a meaningful shrink (trimmed chrome) that isn't an
+                        // over-crop to an inner element (e.g. a table border).
+                        if innerRatio < 0.92 && innerRatio > 0.45 {
+                            working = inner
+                            #if DEBUG
+                            print("capture: chrome-trim pass \(pass + 1) → \(String(format:"%.0f%%", innerRatio * 100)) of previous")
+                            #endif
+                        } else {
+                            break
+                        }
+                    }
+                    corrected = working
                 } else {
                     // Vision returned near-full image — no clear boundary detected
                     // Fall through to twoPass
