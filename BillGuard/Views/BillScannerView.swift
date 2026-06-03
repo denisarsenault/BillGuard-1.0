@@ -1893,6 +1893,7 @@ struct BillReviewView: View {
         if providerName.isEmpty {
             for line in filteredLines {
                 let upper = line.uppercased()
+                if looksLikeFilename(line) { continue }   // skip on-screen filename / window chrome
                 if facilityKeywords.contains(where: { upper.contains($0) }) {
                     var name = line
                     // Strip statement/department labels that may be on the same line
@@ -2016,6 +2017,7 @@ struct BillReviewView: View {
                 let candidateUpper = candidateLine.uppercased()
                 // Now apply the original skip guards on the cleaned candidate
                 if candidateUpper.contains("STATEMENT") && !facilityKeywords.contains(where: { candidateUpper.contains($0) }) { continue }
+                if looksLikeFilename(candidateLine) { continue }   // skip on-screen filename / window chrome
                 if !candidateLine.contains(":") && candidateLine.count > 3 && !looksLikePhone(candidateLine) && !looksLikeAddress(candidateLine) {
                     providerName = candidateLine; break
                 }
@@ -2033,7 +2035,7 @@ struct BillReviewView: View {
             let candidates = lines.filter { line in
                 let t = line.trimmingCharacters(in: .whitespaces)
                 guard t.count > 5, !t.contains(":"),
-                      !looksLikeAddress(t), !looksLikePhone(t) else { return false }
+                      !looksLikeAddress(t), !looksLikePhone(t), !looksLikeFilename(t) else { return false }
                 let upper = t.uppercased()
                 if statementWords.contains(where: { upper.contains($0) }) { return false }
                 // Must look like a name: mostly letters, spaces, &, ., -
@@ -2977,6 +2979,38 @@ struct BillReviewView: View {
     private func looksLikePhone(_ text: String) -> Bool {
         let digits = text.filter { $0.isNumber }
         return digits.count >= 10 && digits.count <= 11
+    }
+
+    /// True if a line looks like a file name or document-viewer window chrome
+    /// (e.g. "12_Routine_Phys… 1 page", "Invoice_2024.pdf", "Scan — Preview")
+    /// rather than a real provider/business name. Used to keep on-screen capture
+    /// artifacts from being mistaken for the facility name.
+    private func looksLikeFilename(_ raw: String) -> Bool {
+        let s = raw.trimmingCharacters(in: .whitespaces)
+        guard !s.isEmpty else { return false }
+        let lower = s.lowercased()
+
+        // 1. A document/image/file extension anywhere in the line.
+        let exts = [".pdf", ".png", ".jpg", ".jpeg", ".heic", ".heif", ".tiff", ".tif",
+                    ".gif", ".bmp", ".webp", ".doc", ".docx", ".pages", ".numbers",
+                    ".txt", ".rtf", ".key", ".ppt", ".pptx", ".xls", ".xlsx"]
+        if exts.contains(where: { lower.contains($0) }) { return true }
+
+        // 2. Viewer window chrome: "1 page", "2 of 5 pages", app names.
+        if lower.range(of: #"\b\d+\s+of\s+\d+\s+pages?\b"#, options: .regularExpression) != nil { return true }
+        if lower.range(of: #"\b\d+\s+pages?\b"#, options: .regularExpression) != nil { return true }
+        let viewerWords = ["preview", "adobe", "acrobat", "quick look", "quicklook", "— pdf", "- pdf"]
+        if viewerWords.contains(where: { lower.contains($0) }) { return true }
+
+        // 3. Ellipsis-truncated title-bar token (e.g. "12_Routine_Phys…").
+        if (s.contains("…") || s.hasSuffix("...")) && s.split(separator: " ").count <= 2 { return true }
+
+        // 4. Underscore-joined filename tokens with little or no spacing.
+        let spaceCount = s.filter { $0 == " " }.count
+        let underscoreCount = s.filter { $0 == "_" }.count
+        if underscoreCount >= 1 && spaceCount <= 1 { return true }
+
+        return false
     }
     
     private func extractProcedureCode(from text: String) -> String? {
