@@ -854,8 +854,22 @@ struct BillRegionSelector: View {
     private func recognizeText(in image: UIImage, region: CGRect) async -> String {
         guard let cgImage = image.cgImage else { return "" }
 
+        // `region` is in the image's POINT coordinate space (image.size) — the same
+        // space the on-screen selection boxes are drawn in. The CGImage is in PIXELS,
+        // so convert by the image's scale factor; otherwise a scale ≠ 1 (e.g. after
+        // the enhance pass) makes OCR crop only a top-left fraction of the box the
+        // user framed ("what I frame isn't what gets scanned").
+        let scaleX = CGFloat(cgImage.width)  / max(image.size.width,  1)
+        let scaleY = CGFloat(cgImage.height) / max(image.size.height, 1)
+        let pixelRegion = CGRect(
+            x:      region.origin.x   * scaleX,
+            y:      region.origin.y   * scaleY,
+            width:  region.size.width * scaleX,
+            height: region.size.height * scaleY
+        )
+
         let imageRect = CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height)
-        let validRegion = region.intersection(imageRect)
+        let validRegion = pixelRegion.intersection(imageRect)
         guard !validRegion.isEmpty, validRegion.width > 0, validRegion.height > 0 else { return "" }
         guard let cropped = cgImage.cropping(to: validRegion) else { return "" }
 
