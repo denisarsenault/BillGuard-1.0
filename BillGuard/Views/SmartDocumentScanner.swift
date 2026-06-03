@@ -2639,7 +2639,12 @@ class DocumentCameraUIView: UIView {
     
     /// Build and start an AVCaptureSession on a background thread.
     /// Returns nil if the camera is unavailable.
-    private static func buildCameraSession(
+    ///
+    /// `nonisolated` because this runs on a background queue (see `beginCameraSetup`)
+    /// and touches no main-actor state — it only constructs AVFoundation objects and
+    /// returns them bundled in a Sendable `CameraSetupResult`. Without this, the
+    /// enclosing `@MainActor` UIView would isolate it to the main actor.
+    private nonisolated static func buildCameraSession(
         cornerCallback: @escaping @Sendable ([CGPoint]) -> Void,
         lightCallback:  @escaping @Sendable (Bool) -> Void
     ) -> CameraSetupResult? {
