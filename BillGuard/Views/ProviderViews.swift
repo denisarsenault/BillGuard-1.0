@@ -263,9 +263,11 @@ struct ProviderMapView: View {
     let providers: [Provider]
     
     @Environment(\.dismiss) private var dismiss
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+    @State private var cameraPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        )
     )
     @State private var selectedProvider: Provider?
     
@@ -276,14 +278,16 @@ struct ProviderMapView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Map(coordinateRegion: $region, annotationItems: providersWithLocation) { provider in
-                    MapAnnotation(coordinate: provider.coordinate!) {
-                        ProviderMapPin(provider: provider, isSelected: selectedProvider?.id == provider.id)
-                            .onTapGesture {
-                                withAnimation {
-                                    selectedProvider = provider
+                Map(position: $cameraPosition) {
+                    ForEach(providersWithLocation) { provider in
+                        Annotation("", coordinate: provider.coordinate!) {
+                            ProviderMapPin(provider: provider, isSelected: selectedProvider?.id == provider.id)
+                                .onTapGesture {
+                                    withAnimation {
+                                        selectedProvider = provider
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -350,7 +354,7 @@ struct ProviderMapView: View {
         )
         
         withAnimation {
-            region = MKCoordinateRegion(center: center, span: span)
+            cameraPosition = .region(MKCoordinateRegion(center: center, span: span))
         }
     }
 }
@@ -776,7 +780,7 @@ struct AddProviderView: View {
             geofenceRadius: geofenceRadius
         )
         
-        var provider = Provider(
+        let provider = Provider(
             name: name,
             providerType: providerType,
             specialty: specialty,
@@ -1498,28 +1502,21 @@ struct ProviderDetailView: View {
 
 struct MiniMapView: View {
     let coordinate: CLLocationCoordinate2D
-    
-    @State private var region: MKCoordinateRegion
-    
-    init(coordinate: CLLocationCoordinate2D) {
-        self.coordinate = coordinate
-        _region = State(initialValue: MKCoordinateRegion(
+
+    private var initialPosition: MapCameraPosition {
+        .region(MKCoordinateRegion(
             center: coordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
         ))
     }
-    
+
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: [MapLocation(coordinate: coordinate)]) { location in
-            MapMarker(coordinate: location.coordinate, tint: .accentColor)
+        Map(initialPosition: initialPosition) {
+            Marker("", coordinate: coordinate)
+                .tint(Color.accentColor)
         }
         .disabled(true)
     }
-}
-
-struct MapLocation: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
 }
 
 // MARK: - Reminder Settings View

@@ -2703,8 +2703,11 @@ class DocumentCameraUIView: UIView {
         // output causes a double-rotation (photo arrives pre-rotated, then
         // normalizeOrientation rotates it again → 180° or sideways output).
         if let videoConn = video.connection(with: .video) {
-            if videoConn.isVideoOrientationSupported {
-                videoConn.videoOrientation = .portrait
+            // 90° = portrait for the back camera (replaces the deprecated
+            // .videoOrientation = .portrait API, removed-in-favor-of since iOS 17).
+            let portraitAngle: CGFloat = 90
+            if videoConn.isVideoRotationAngleSupported(portraitAngle) {
+                videoConn.videoRotationAngle = portraitAngle
             }
         }
         
