@@ -1,0 +1,4019 @@
+//
+//  BillScannerView.swift
+//  BillGuard
+//
+//  Scan medical bills with movable selection boxes for different sections
+//
+
+import SwiftUI
+import VisionKit
+import Vision
+import PhotosUI
+
+// MARK: - Provider Bill Template Types
+// Defined here so BillScannerView.swift compiles independently of separate model files.
+
+enum BillFormat: String, Codable, CaseIterable {
+    case standard              = "Standard"
+    case accountStatement      = "Account Statement"
+    case explanationOfBenefits = "Explanation of Benefits"
+    case custom                = "Custom"
+
+    var icon: String {
+        switch self {
+        case .standard:              return "doc.text"
+        case .accountStatement:      return "tablecells"
+        case .explanationOfBenefits: return "doc.badge.ellipsis"
+        case .custom:                return "wrench.and.screwdriver"
+        }
+    }
+}
+
+struct ProcedureColumnLayout: Codable, Equatable {
+    var chargesColumnKeywords:    [String] = ["charges", "debits", "billed", "amount"]
+    var insurancePendingKeywords: [String] = ["insurance pending", "ins pending", "pending"]
+    var paymentsColumnKeywords:   [String] = ["payments", "credits", "paid", "payment"]
+    var patientAmountKeywords:    [String] = ["patient amount", "patient", "you owe", "balance"]
+    var visitTotalLabels:         [String] = ["visit total", "---- visit total", "subtotal"]
+    var voucherLabels:            [String] = ["voucher:", "voucher #", "claim #", "visit #"]
+    var accountingRowKeywords:    [String] = [
+        "payment", "adjustment", "transfer", "credit card", "self pay",
+        "mastercard", "visa", "check", "write off", "write-off",
+        "courtesy", "refund", "collection", "contractual"
+    ]
+    var useColumnPositionForCharge: Bool = false
+    var chargesColumnPosition:  Int = 45
+    var paymentsColumnPosition: Int = 60
+    var patientAmountPosition:  Int = 75
+}
+
+struct ScanBoxRect: Codable, Equatable {
+    var x: Double; var y: Double; var width: Double; var height: Double
+    init(x: Double = 0, y: Double = 0, width: Double = 1, height: Double = 0.25) {
+        self.x = x; self.y = y; self.width = width; self.height = height
+    }
+}
+
+struct ProviderBillTemplate: Codable, Identifiable, Equatable {
+    var id:            UUID   = UUID()
+    var displayName:   String
+    var matchKeywords: [String]
+    var billFormat:    BillFormat = .standard
+    var procedureColumnLayout: ProcedureColumnLayout?
+    var providerBoxPosition:   ScanBoxRect? = nil
+    var patientBoxPosition:    ScanBoxRect? = nil
+    var insuranceBoxPosition:  ScanBoxRect? = nil
+    var procedureBoxPosition:  ScanBoxRect? = nil
+    var dateCreated: Date   = Date()
+    var lastUsed:    Date   = Date()
+    var scanCount:   Int    = 0
+    var notes:       String = ""
+    static func == (lhs: ProviderBillTemplate, rhs: ProviderBillTemplate) -> Bool { lhs.id == rhs.id }
+}
+
+// MARK: - Bill Scanner View
+
+struct BillScannerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var patientDataService: PatientDataService
+    @EnvironmentObject var appState: AppState
+    
+    @State private var sourceType: SourceType = .camera
+    @State private var capturedImage: UIImage?
+    @State private var showingImagePicker = false
+    @State private var showingDocumentPicker = false
+    @State private var showingCamera = false
+    
+    // Extracted text from current page regions
+    @State private var patientText = ""
+    @State private var providerText = ""
+    @State private var insuranceText = ""
+    @State private var procedureText = ""
+    
+    // Multi-page accumulated text (survives camera re-opens)
+    @State private var accumulatedPatientText = ""
+    @State private var accumulatedProviderText = ""
+    @State private var accumulatedInsuranceText = ""
+    @State private var accumulatedProcedureText = ""
+    @State private var pageCount = 1
+    
+    // Processing state
+    @State private var isProcessing = false
+    @State private var showingReview = false
+    @State private var saveResult: BillSaveResult = .none
+    
+    enum SourceType: String, CaseIterable {
+        case camera = "Camera"
+        case photoLibrary = "Photo Library"
+        case files = "Files"
+    }
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if let image = capturedImage {
+                    // Show image with selection boxes
+                    BillRegionSelector(
+                        image: image,
+                        patientText: $patientText,
+                        providerText: $providerText,
+                        insuranceText: $insuranceText,
+                        procedureText: $procedureText,
+                        isProcessing: $isProcessing,
+                        accumulatedPatientText: $accumulatedPatientText,
+                        accumulatedProviderText: $accumulatedProviderText,
+                        accumulatedInsuranceText: $accumulatedInsuranceText,
+                        accumulatedProcedureText: $accumulatedProcedureText,
+                        pageCount: $pageCount,
+                        showingReview: $showingReview
+                    )
+                } else {
+                    // Source selection
+                    sourceSelectionView
+                }
+            }
+            .navigationTitle("Scan Bill")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                if capturedImage != nil {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Reset") {
+                            capturedImage = nil
+                            patientText = ""
+                            providerText = ""
+                            insuranceText = ""
+                            procedureText = ""
+                            accumulatedPatientText = ""
+                            accumulatedProviderText = ""
+                            accumulatedInsuranceText = ""
+                            accumulatedProcedureText = ""
+                            pageCount = 1
+                        }
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showingCamera) {
+                SmartDocumentScanner(capturedImage: $capturedImage)
+            }
+            .sheet(isPresented: $showingImagePicker) {
+                ImagePicker(image: $capturedImage)
+            }
+            .sheet(isPresented: $showingDocumentPicker) {
+                DocumentPicker(image: $capturedImage)
+            }
+            .sheet(isPresented: $showingReview) {
+                BillReviewView(
+                    patientText: accumulatedPatientText,
+                    providerText: accumulatedProviderText,
+                    insuranceText: accumulatedInsuranceText,
+                    procedureText: accumulatedProcedureText,
+                    scannedImage: capturedImage,
+                    pageCount: pageCount,
+                    saveResult: $saveResult
+                )
+                .environmentObject(patientDataService)
+                .environmentObject(appState)
+            }
+            .onChange(of: saveResult) { _, result in
+                guard result != .none else { return }
+                
+                // Close the review sheet
+                showingReview = false
+                
+                // Act after sheet closes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    switch result {
+                    case .scanMore:
+                        // Reset for next bill scan
+                        capturedImage = nil
+                        patientText = ""
+                        providerText = ""
+                        insuranceText = ""
+                        procedureText = ""
+                        accumulatedPatientText = ""
+                        accumulatedProviderText = ""
+                        accumulatedInsuranceText = ""
+                        accumulatedProcedureText = ""
+                        pageCount = 1
+                        saveResult = .none
+                        
+                    case .done:
+                        // Navigate to Bills tab, then dismiss scanner
+                        saveResult = .none
+                        dismiss()
+                        // Navigate after dismiss completes so tab switch sticks
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            appState.selectedTab = 1  // Bills tab
+                        }
+                        
+                    case .none:
+                        break
+                    }
+                }
+            }
+            .loadingOverlay(isLoading: isProcessing, message: "Extracting text...", style: .ring)
+            .onReceive(NotificationCenter.default.publisher(for: .scanNextPage)) { _ in
+                capturedImage = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showingCamera = true
+                }
+            }
+        }
+    }
+    
+    private var sourceSelectionView: some View {
+        VStack(spacing: 30) {
+            Spacer()
+            
+            Image(systemName: "doc.text.viewfinder")
+                .font(.system(size: 80))
+                .foregroundColor(.accentColor)
+            
+            Text("Scan a Medical Bill")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Choose how to capture your bill")
+                .font(.body)
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 16) {
+                // Camera option
+                Button {
+                    showingCamera = true
+                } label: {
+                    HStack {
+                        Image(systemName: "camera.fill")
+                            .font(.title2)
+                            .frame(width: 40)
+                        VStack(alignment: .leading) {
+                            Text("Take Photo")
+                                .font(.headline)
+                            Text("Use camera to capture bill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color("BrandNavy"))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                // Photo Library option
+                Button {
+                    showingImagePicker = true
+                } label: {
+                    HStack {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.title2)
+                            .frame(width: 40)
+                        VStack(alignment: .leading) {
+                            Text("Photo Library")
+                                .font(.headline)
+                            Text("Choose from saved photos")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color("BrandNavy"))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                // Files option
+                Button {
+                    showingDocumentPicker = true
+                } label: {
+                    HStack {
+                        Image(systemName: "folder.fill")
+                            .font(.title2)
+                            .frame(width: 40)
+                        VStack(alignment: .leading) {
+                            Text("Files")
+                                .font(.headline)
+                            Text("Import from Files app")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color("BrandNavy"))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 30)
+            .padding(.top, 20)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Bill Region Selector
+
+struct BillRegionSelector: View {
+    let image: UIImage
+    @Binding var patientText: String
+    @Binding var providerText: String
+    @Binding var insuranceText: String
+    @Binding var procedureText: String
+    @Binding var isProcessing: Bool
+    
+    // Multi-page bindings (owned by parent BillScannerView)
+    @Binding var accumulatedPatientText: String
+    @Binding var accumulatedProviderText: String
+    @Binding var accumulatedInsuranceText: String
+    @Binding var accumulatedProcedureText: String
+    @Binding var pageCount: Int
+    @Binding var showingReview: Bool
+    
+    // Selection box positions (normalized 0-1)
+    // Layout: Provider full-width across top, Patient (left) + Insurance (right) below, Procedures at bottom
+    @State private var providerBox = SelectionBox(
+        position: CGPoint(x: 0.5, y: 0.08),
+        size: CGSize(width: 0.95, height: 0.12)
+    )
+    @State private var patientBox = SelectionBox(
+        position: CGPoint(x: 0.25, y: 0.24),
+        size: CGSize(width: 0.45, height: 0.15)
+    )
+    @State private var insuranceBox = SelectionBox(
+        position: CGPoint(x: 0.75, y: 0.24),
+        size: CGSize(width: 0.45, height: 0.15)
+    )
+    @State private var procedureBox = SelectionBox(
+        position: CGPoint(x: 0.5, y: 0.62),
+        size: CGSize(width: 1.0, height: 0.48)
+    )
+    
+    @State private var activeBox: BoxType?
+    @State private var showingMorePagesPrompt = false
+
+    // Section enable/disable toggles
+    @State private var showProviderBox   = true
+    @State private var showPatientBox    = true
+    @State private var showInsuranceBox  = true
+    @State private var showProcedureBox  = true
+    
+    // Zoom and pan state
+    @State private var zoomScale: CGFloat = 1.0
+    @State private var lastZoomScale: CGFloat = 1.0
+    @State private var panOffset: CGSize = .zero
+    @State private var lastPanOffset: CGSize = .zero
+    
+    enum BoxType: String {
+        case patient = "Patient Info"
+        case provider = "Provider Info"
+        case insurance = "Insurance"
+        case procedure = "Procedures"
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Instructions
+                instructionsBar
+                
+                // Image with selection boxes - zoomable
+                ZStack {
+                    // The bill image with zoom and pan
+                    GeometryReader { imageGeometry in
+                        let imageFrame = calculateImageFrame(in: imageGeometry.size)
+                        
+                        ZStack {
+                            // Zoomable/pannable image
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: imageFrame.size.width, height: imageFrame.size.height)
+                                .position(x: imageGeometry.size.width / 2, y: imageGeometry.size.height / 2)
+                            
+                            // Selection boxes overlay
+                            ZStack {
+                                // Patient box (Blue)
+                                if showPatientBox {
+                                    DraggableBox(
+                                        box: $patientBox,
+                                        containerSize: imageFrame.size,
+                                        offset: imageFrame.origin,
+                                        color: .blue,
+                                        label: "Patient",
+                                        isActive: activeBox == .patient,
+                                        zoomScale: zoomScale
+                                    )
+                                    .onTapGesture { activeBox = .patient }
+                                    .transition(.opacity.combined(with: .scale))
+                                }
+
+                                // Provider box (Green)
+                                if showProviderBox {
+                                    DraggableBox(
+                                        box: $providerBox,
+                                        containerSize: imageFrame.size,
+                                        offset: imageFrame.origin,
+                                        color: .green,
+                                        label: "Provider",
+                                        isActive: activeBox == .provider,
+                                        zoomScale: zoomScale
+                                    )
+                                    .onTapGesture { activeBox = .provider }
+                                    .transition(.opacity.combined(with: .scale))
+                                }
+
+                                // Insurance box (Purple)
+                                if showInsuranceBox {
+                                    DraggableBox(
+                                        box: $insuranceBox,
+                                        containerSize: imageFrame.size,
+                                        offset: imageFrame.origin,
+                                        color: .purple,
+                                        label: "Insurance",
+                                        isActive: activeBox == .insurance,
+                                        zoomScale: zoomScale
+                                    )
+                                    .onTapGesture { activeBox = .insurance }
+                                    .transition(.opacity.combined(with: .scale))
+                                }
+
+                                // Procedure box (Orange)
+                                if showProcedureBox {
+                                    DraggableBox(
+                                        box: $procedureBox,
+                                        containerSize: imageFrame.size,
+                                        offset: imageFrame.origin,
+                                        color: .orange,
+                                        label: "Procedures",
+                                        isActive: activeBox == .procedure,
+                                        zoomScale: zoomScale
+                                    )
+                                    .onTapGesture { activeBox = .procedure }
+                                    .transition(.opacity.combined(with: .scale))
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.2), value: showProviderBox)
+                            .animation(.easeInOut(duration: 0.2), value: showPatientBox)
+                            .animation(.easeInOut(duration: 0.2), value: showInsuranceBox)
+                            .animation(.easeInOut(duration: 0.2), value: showProcedureBox)
+                        }
+                        .coordinateSpace(name: "billImageArea")
+                        .scaleEffect(zoomScale)
+                        .offset(panOffset)
+                        .gesture(
+                            SimultaneousGesture(
+                                // Pinch to zoom
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        let newScale = lastZoomScale * value
+                                        zoomScale = min(max(newScale, 1.0), 5.0) // Limit zoom 1x to 5x
+                                    }
+                                    .onEnded { _ in
+                                        lastZoomScale = zoomScale
+                                        // Reset pan if zoomed out
+                                        if zoomScale <= 1.0 {
+                                            withAnimation(.easeOut(duration: 0.2)) {
+                                                panOffset = .zero
+                                                lastPanOffset = .zero
+                                            }
+                                        }
+                                    },
+                                // Pan when zoomed
+                                DragGesture()
+                                    .onChanged { value in
+                                        if zoomScale > 1.0 {
+                                            panOffset = CGSize(
+                                                width: lastPanOffset.width + value.translation.width,
+                                                height: lastPanOffset.height + value.translation.height
+                                            )
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        lastPanOffset = panOffset
+                                    }
+                            )
+                        )
+                        .gesture(
+                            // Double tap to reset zoom
+                            TapGesture(count: 2)
+                                .onEnded {
+                                    withAnimation(.easeOut(duration: 0.3)) {
+                                        if zoomScale > 1.0 {
+                                            zoomScale = 1.0
+                                            lastZoomScale = 1.0
+                                            panOffset = .zero
+                                            lastPanOffset = .zero
+                                        } else {
+                                            zoomScale = 2.5
+                                            lastZoomScale = 2.5
+                                        }
+                                    }
+                                }
+                        )
+                    }
+                }
+                .background(Color.black)
+                .clipped()
+                
+                // Zoom indicator
+                if zoomScale > 1.0 {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                        Text("\(Int(zoomScale * 100))%")
+                        Spacer()
+                        Button("Reset") {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                zoomScale = 1.0
+                                lastZoomScale = 1.0
+                                panOffset = .zero
+                                lastPanOffset = .zero
+                            }
+                        }
+                        .font(.caption)
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(Color("BrandDeepNavy"))
+                }
+                
+                // Bottom controls
+                bottomControls
+            }
+        }
+        .alert("More Pages?", isPresented: $showingMorePagesPrompt) {
+            Button("Scan Next Page") {
+                pageCount += 1
+                // Signal parent to reopen camera for another page
+                NotificationCenter.default.post(name: .scanNextPage, object: nil)
+            }
+            Button("Done — Review Bill") {
+                showingReview = true
+            }
+        } message: {
+            Text("Page \(pageCount) extracted. Does this bill have additional pages to scan?")
+        }
+    }
+    
+    private var instructionsBar: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Text("Position boxes over each section")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                if pageCount > 1 {
+                    Text("Page \(pageCount)")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.accentColor))
+                }
+            }
+            Text("Pinch to zoom \u{2022} Drag boxes \u{2022} Pinch corners to resize")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .background(Color("BrandDeepNavy"))
+    }
+    
+    private var bottomControls: some View {
+        VStack(spacing: 12) {
+            // Section toggle buttons — tap to enable / disable each box and its parsing
+            HStack(spacing: 10) {
+                sectionToggle(label: "Provider",   color: .green,  isOn: $showProviderBox)
+                sectionToggle(label: "Patient",    color: .blue,   isOn: $showPatientBox)
+                sectionToggle(label: "Insurance",  color: .purple, isOn: $showInsuranceBox)
+                sectionToggle(label: "Procedures", color: .orange, isOn: $showProcedureBox)
+            }
+            .padding(.top, 10)
+            .padding(.horizontal, 4)
+            
+            // Extract button
+            Button {
+                extractText()
+            } label: {
+                HStack {
+                    if isProcessing {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "text.viewfinder")
+                    }
+                    Text(isProcessing ? "Processing..." : "Extract Text")
+                }
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isProcessing ? Color.gray : Color.accentColor)
+                .cornerRadius(12)
+            }
+            .disabled(isProcessing)
+            .padding(.horizontal)
+            .padding(.bottom, 10)
+        }
+        .background(Color("BrandDeepNavy"))
+    }
+    
+    private func sectionToggle(label: String, color: Color, isOn: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isOn.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 5) {
+                // Colour swatch / checkmark
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(isOn.wrappedValue ? color.opacity(0.25) : Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .stroke(isOn.wrappedValue ? color : color.opacity(0.35), lineWidth: 2)
+                        )
+                        .frame(width: 16, height: 16)
+                    if isOn.wrappedValue {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(color)
+                    }
+                }
+                Text(label)
+                    .font(.caption)
+                    .fontWeight(isOn.wrappedValue ? .semibold : .regular)
+                    .foregroundColor(isOn.wrappedValue ? .primary : .secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isOn.wrappedValue ? color.opacity(0.08) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isOn.wrappedValue ? color.opacity(0.4) : Color.secondary.opacity(0.3),
+                                    lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func calculateImageFrame(in containerSize: CGSize) -> CGRect {
+        let imageAspect = image.size.width / image.size.height
+        let containerAspect = containerSize.width / containerSize.height
+        
+        var size: CGSize
+        var origin: CGPoint
+        
+        if imageAspect > containerAspect {
+            // Image is wider - fit to width
+            size = CGSize(width: containerSize.width, height: containerSize.width / imageAspect)
+            origin = CGPoint(x: 0, y: (containerSize.height - size.height) / 2)
+        } else {
+            // Image is taller - fit to height
+            size = CGSize(width: containerSize.height * imageAspect, height: containerSize.height)
+            origin = CGPoint(x: (containerSize.width - size.width) / 2, y: 0)
+        }
+        
+        return CGRect(origin: origin, size: size)
+    }
+    
+    private func extractText() {
+        isProcessing = true
+        
+        // Snapshot enabled state before entering the async task
+        let extractPatient   = showPatientBox
+        let extractProvider  = showProviderBox
+        let extractInsurance = showInsuranceBox
+        let extractProcedure = showProcedureBox
+
+        Task {
+            let normalizedImage = normalizeImageOrientation(image)
+
+            // Only run OCR for sections whose box is currently enabled
+            async let patient   = extractPatient
+                ? recognizeText(in: normalizedImage, region: normalizedToImageRect(patientBox,   imageSize: normalizedImage.size))
+                : ""
+            async let provider  = extractProvider
+                ? recognizeText(in: normalizedImage, region: normalizedToImageRect(providerBox,  imageSize: normalizedImage.size))
+                : ""
+            async let insurance = extractInsurance
+                ? recognizeText(in: normalizedImage, region: normalizedToImageRect(insuranceBox, imageSize: normalizedImage.size))
+                : ""
+            async let procedure = extractProcedure
+                ? recognizeText(in: normalizedImage, region: normalizedToImageRect(procedureBox, imageSize: normalizedImage.size))
+                : ""
+
+            let results = await (patient, provider, insurance, procedure)
+
+            await MainActor.run {
+                // Update current-page bindings (for parent view compatibility)
+                patientText   = results.0
+                providerText  = results.1
+                insuranceText = results.2
+                procedureText = results.3
+
+                // Accumulate across pages — only update enabled sections
+                if extractPatient && !results.0.isEmpty {
+                    accumulatedPatientText += (accumulatedPatientText.isEmpty ? "" : "\n") + results.0
+                }
+                if extractProvider && !results.1.isEmpty {
+                    accumulatedProviderText += (accumulatedProviderText.isEmpty ? "" : "\n") + results.1
+                }
+                if extractInsurance && !results.2.isEmpty {
+                    accumulatedInsuranceText += (accumulatedInsuranceText.isEmpty ? "" : "\n") + results.2
+                }
+                if extractProcedure && !results.3.isEmpty {
+                    accumulatedProcedureText += (accumulatedProcedureText.isEmpty ? "" : "\n") + results.3
+                }
+                
+                isProcessing = false
+                
+                // Ask if there are more pages
+                showingMorePagesPrompt = true
+            }
+        }
+    }
+    
+    /// Normalize image orientation so CGImage coordinates match what's displayed
+    private func normalizeImageOrientation(_ image: UIImage) -> UIImage {
+        // If orientation is already up, no need to redraw
+        if image.imageOrientation == .up {
+            return image
+        }
+        
+        // Redraw the image with correct orientation
+        UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return normalizedImage ?? image
+    }
+    
+    private func normalizedToImageRect(_ box: SelectionBox, imageSize: CGSize) -> CGRect {
+        // Convert normalized box coordinates (0-1) to image pixel coordinates
+        // box.position is the CENTER of the box
+        // box.size is the SIZE of the box (as fraction of image)
+        
+        let left = (box.position.x - box.size.width / 2) * imageSize.width
+        let top = (box.position.y - box.size.height / 2) * imageSize.height
+        let width = box.size.width * imageSize.width
+        let height = box.size.height * imageSize.height
+        
+        // Clamp to image bounds
+        let clampedX = max(0, left)
+        let clampedY = max(0, top)
+        let clampedRight = min(left + width, imageSize.width)
+        let clampedBottom = min(top + height, imageSize.height)
+        
+        return CGRect(
+            x: clampedX,
+            y: clampedY,
+            width: max(1, clampedRight - clampedX),
+            height: max(1, clampedBottom - clampedY)
+        )
+    }
+    
+    /// Recognize text with spatial row grouping — blocks at the same Y form one line.
+    /// This is critical for multi-column layouts where Vision returns separate observations
+    /// for "Account #:" and "ACCT-2024-78452" even though they're on the same visual line.
+    /// Estimates the mean luminance of a CGImage in 0–1.
+    /// Samples every 8th pixel of the green channel (fast and perceptually representative).
+    private func meanLuminance(of cgImage: CGImage) -> CGFloat {
+        guard let data = cgImage.dataProvider?.data,
+              let ptr  = CFDataGetBytePtr(data) else { return 0.5 }
+        let width    = cgImage.width
+        let height   = cgImage.height
+        let bpp      = cgImage.bitsPerPixel / 8   // bytes per pixel
+        let rowBytes = cgImage.bytesPerRow
+        let step     = 8
+        var total: UInt64 = 0
+        var count: UInt64 = 0
+        var y = 0
+        while y < height {
+            var x = 0
+            while x < width {
+                let offset = y * rowBytes + x * bpp
+                // Use green channel (index 1) as luminance proxy; works for RGB/RGBA
+                total &+= UInt64(ptr[offset + min(1, bpp - 1)])
+                count &+= 1
+                x += step
+            }
+            y += step
+        }
+        return count > 0 ? CGFloat(total) / CGFloat(count) / 255.0 : 0.5
+    }
+
+    /// Prepares a cropped image region for OCR.
+    /// If the region has a dark background (mean luma < 0.45) the image is:
+    ///   1. Inverted  — turns white-on-dark into dark-on-white
+    ///   2. Contrast-boosted — improves OCR accuracy on low-contrast inverted text
+    private func prepareForOCR(_ cgImage: CGImage) -> CGImage {
+        let luma = meanLuminance(of: cgImage)
+        guard luma < 0.45 else { return cgImage }   // already light-bg — no change needed
+
+        let ci  = CIImage(cgImage: cgImage)
+        let ctx = CIContext()
+
+        // Step 1: invert colours
+        guard let invertFilter = CIFilter(name: "CIColorInvert") else { return cgImage }
+        invertFilter.setValue(ci, forKey: kCIInputImageKey)
+        guard let inverted = invertFilter.outputImage else { return cgImage }
+
+        // Step 2: boost contrast so the now-dark text is crisp
+        guard let contrastFilter = CIFilter(name: "CIColorControls") else { return cgImage }
+        contrastFilter.setValue(inverted, forKey: kCIInputImageKey)
+        contrastFilter.setValue(1.6,       forKey: kCIInputContrastKey)
+        contrastFilter.setValue(0.0,        forKey: kCIInputSaturationKey)  // greyscale
+        guard let boosted = contrastFilter.outputImage else { return cgImage }
+
+        return ctx.createCGImage(boosted, from: boosted.extent) ?? cgImage
+    }
+
+    private func recognizeText(in image: UIImage, region: CGRect) async -> String {
+        guard let cgImage = image.cgImage else { return "" }
+
+        let imageRect = CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height)
+        let validRegion = region.intersection(imageRect)
+        guard !validRegion.isEmpty, validRegion.width > 0, validRegion.height > 0 else { return "" }
+        guard let cropped = cgImage.cropping(to: validRegion) else { return "" }
+
+        // Pre-process: invert dark-background regions so Vision sees dark text on white
+        let croppedImage = prepareForOCR(cropped)
+
+        return await withCheckedContinuation { continuation in
+            let request = VNRecognizeTextRequest { request, error in
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    continuation.resume(returning: "")
+                    return
+                }
+                
+                struct TextBlock {
+                    let text: String
+                    let midX: CGFloat
+                    let midY: CGFloat
+                    let height: CGFloat
+                }
+                
+                let blocks: [TextBlock] = observations.compactMap { o in
+                    guard let text = o.topCandidates(1).first?.string else { return nil }
+                    return TextBlock(text: text, midX: o.boundingBox.midX,
+                                     midY: o.boundingBox.midY, height: o.boundingBox.height)
+                }
+                
+                // Group into rows by Y proximity (same logic as ScannerView.extractBillInfo)
+                var rows: [[TextBlock]] = []
+                let sorted = blocks.sorted { $0.midY > $1.midY } // top-to-bottom (Vision Y is bottom-up)
+                
+                for block in sorted {
+                    let yTol = max(block.height * 1.0, 0.012)
+                    if let rowIdx = rows.firstIndex(where: { row in
+                        let avgY = row.map { $0.midY }.reduce(0, +) / CGFloat(row.count)
+                        return abs(avgY - block.midY) < yTol
+                    }) {
+                        rows[rowIdx].append(block)
+                    } else {
+                        rows.append([block])
+                    }
+                }
+                
+                // Sort rows top-to-bottom, blocks within each row left-to-right
+                rows.sort {
+                    let avgY0 = $0.map { $0.midY }.reduce(0, +) / CGFloat($0.count)
+                    let avgY1 = $1.map { $0.midY }.reduce(0, +) / CGFloat($1.count)
+                    return avgY0 > avgY1
+                }
+                
+                let lines = rows.map { row in
+                    row.sorted { $0.midX < $1.midX }
+                       .map { $0.text }
+                       .joined(separator: "  ")
+                }
+                
+                continuation.resume(returning: lines.joined(separator: "\n"))
+            }
+            
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            
+            let handler = VNImageRequestHandler(cgImage: croppedImage, options: [:])
+            do {
+                try handler.perform([request])
+            } catch {
+                continuation.resume(returning: "")
+            }
+        }
+    }
+}
+
+// MARK: - Selection Box Model
+
+struct SelectionBox {
+    var position: CGPoint  // Center position (normalized 0-1)
+    var size: CGSize       // Size (normalized 0-1)
+}
+
+// MARK: - Draggable Box View
+
+struct DraggableBox: View {
+    @Binding var box: SelectionBox
+    let containerSize: CGSize
+    let offset: CGPoint
+    let color: Color
+    let label: String
+    let isActive: Bool
+    var zoomScale: CGFloat = 1.0
+    
+    @State private var isDragging = false
+    
+    var body: some View {
+        let boxW = box.size.width * containerSize.width
+        let boxH = box.size.height * containerSize.height
+        let boxMidX = offset.x + box.position.x * containerSize.width
+        let boxMidY = offset.y + box.position.y * containerSize.height
+        
+        ZStack {
+            // Box background
+            Rectangle()
+                .fill(color.opacity(0.15))
+                .overlay(
+                    Rectangle()
+                        .stroke(color, lineWidth: isActive ? 3 : 2)
+                )
+            
+            // Label - hide if box is too small
+            if boxH > 30 {
+                VStack {
+                    Text(label)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(color)
+                        .cornerRadius(3)
+                    Spacer()
+                }
+                .padding(.top, 2)
+            }
+            
+            // Resize handles at corners and edges
+            if isActive {
+                ResizeHandles(box: $box, containerSize: containerSize, color: color, zoomScale: zoomScale)
+            }
+        }
+        .frame(width: max(20, boxW), height: max(10, boxH))
+        .position(x: boxMidX, y: boxMidY)
+        .gesture(
+            DragGesture(coordinateSpace: .named("billImageArea"))
+                .onChanged { value in
+                    isDragging = true
+                    // value.location is in the "billImageArea" coordinate space
+                    let adjustedX = (value.location.x - offset.x) / containerSize.width
+                    let adjustedY = (value.location.y - offset.y) / containerSize.height
+                    
+                    // Clamp to bounds
+                    box.position.x = max(box.size.width / 2, min(1 - box.size.width / 2, adjustedX))
+                    box.position.y = max(box.size.height / 2, min(1 - box.size.height / 2, adjustedY))
+                }
+                .onEnded { _ in
+                    isDragging = false
+                }
+        )
+    }
+}
+
+// MARK: - Resize Handles
+
+struct ResizeHandles: View {
+    @Binding var box: SelectionBox
+    let containerSize: CGSize
+    let color: Color
+    var zoomScale: CGFloat = 1.0
+    
+    var body: some View {
+        GeometryReader { geometry in
+            // Adjust handle size based on zoom - smaller when zoomed in
+            let handleSize: CGFloat = max(16, 24 / zoomScale)
+            
+            // Corner handles
+            ForEach(Corner.allCases, id: \.self) { corner in
+                Circle()
+                    .fill(color)
+                    .frame(width: handleSize, height: handleSize)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 2)
+                    )
+                    .position(cornerPosition(corner, in: geometry.size))
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                resizeBox(corner: corner, to: value.location, in: geometry.size)
+                            }
+                    )
+            }
+            
+            // Edge handles for more precise control (top and bottom edges for height adjustment)
+            ForEach(Edge.allCases, id: \.self) { edge in
+                Capsule()
+                    .fill(color.opacity(0.8))
+                    .frame(
+                        width: edge.isHorizontal ? min(40, geometry.size.width * 0.3) : handleSize * 0.6,
+                        height: edge.isHorizontal ? handleSize * 0.6 : min(40, geometry.size.height * 0.3)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white, lineWidth: 1)
+                    )
+                    .position(edgePosition(edge, in: geometry.size))
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                resizeBoxEdge(edge: edge, to: value.location, in: geometry.size)
+                            }
+                    )
+            }
+        }
+    }
+    
+    enum Corner: CaseIterable {
+        case topLeft, topRight, bottomLeft, bottomRight
+    }
+    
+    enum Edge: CaseIterable {
+        case top, bottom, left, right
+        
+        var isHorizontal: Bool {
+            self == .top || self == .bottom
+        }
+    }
+    
+    private func cornerPosition(_ corner: Corner, in size: CGSize) -> CGPoint {
+        switch corner {
+        case .topLeft: return CGPoint(x: 0, y: 0)
+        case .topRight: return CGPoint(x: size.width, y: 0)
+        case .bottomLeft: return CGPoint(x: 0, y: size.height)
+        case .bottomRight: return CGPoint(x: size.width, y: size.height)
+        }
+    }
+    
+    private func edgePosition(_ edge: Edge, in size: CGSize) -> CGPoint {
+        switch edge {
+        case .top: return CGPoint(x: size.width / 2, y: 0)
+        case .bottom: return CGPoint(x: size.width / 2, y: size.height)
+        case .left: return CGPoint(x: 0, y: size.height / 2)
+        case .right: return CGPoint(x: size.width, y: size.height / 2)
+        }
+    }
+    
+    private func resizeBox(corner: Corner, to location: CGPoint, in size: CGSize) {
+        // Allow very small minimum - just 2% for single line text capture
+        let minWidth: CGFloat = 0.02
+        let minHeight: CGFloat = 0.01  // Can be very thin for single line
+        
+        // Calculate new normalized coordinates
+        let localX = location.x / size.width
+        let localY = location.y / size.height
+        
+        var newPosition = box.position
+        var newSize = box.size
+        
+        switch corner {
+        case .topLeft:
+            let right = box.position.x + box.size.width / 2
+            let bottom = box.position.y + box.size.height / 2
+            let newLeft = box.position.x - box.size.width / 2 + localX * box.size.width
+            let newTop = box.position.y - box.size.height / 2 + localY * box.size.height
+            newSize.width = max(minWidth, right - newLeft)
+            newSize.height = max(minHeight, bottom - newTop)
+            newPosition.x = right - newSize.width / 2
+            newPosition.y = bottom - newSize.height / 2
+            
+        case .topRight:
+            let left = box.position.x - box.size.width / 2
+            let bottom = box.position.y + box.size.height / 2
+            let newRight = box.position.x - box.size.width / 2 + localX * box.size.width
+            let newTop = box.position.y - box.size.height / 2 + localY * box.size.height
+            newSize.width = max(minWidth, newRight - left)
+            newSize.height = max(minHeight, bottom - newTop)
+            newPosition.x = left + newSize.width / 2
+            newPosition.y = bottom - newSize.height / 2
+            
+        case .bottomLeft:
+            let right = box.position.x + box.size.width / 2
+            let top = box.position.y - box.size.height / 2
+            let newLeft = box.position.x - box.size.width / 2 + localX * box.size.width
+            let newBottom = box.position.y - box.size.height / 2 + localY * box.size.height
+            newSize.width = max(minWidth, right - newLeft)
+            newSize.height = max(minHeight, newBottom - top)
+            newPosition.x = right - newSize.width / 2
+            newPosition.y = top + newSize.height / 2
+            
+        case .bottomRight:
+            let left = box.position.x - box.size.width / 2
+            let top = box.position.y - box.size.height / 2
+            let newRight = box.position.x - box.size.width / 2 + localX * box.size.width
+            let newBottom = box.position.y - box.size.height / 2 + localY * box.size.height
+            newSize.width = max(minWidth, newRight - left)
+            newSize.height = max(minHeight, newBottom - top)
+            newPosition.x = left + newSize.width / 2
+            newPosition.y = top + newSize.height / 2
+        }
+        
+        // Clamp to bounds
+        newPosition.x = max(newSize.width / 2, min(1 - newSize.width / 2, newPosition.x))
+        newPosition.y = max(newSize.height / 2, min(1 - newSize.height / 2, newPosition.y))
+        
+        box.position = newPosition
+        box.size = newSize
+    }
+    
+    private func resizeBoxEdge(edge: Edge, to location: CGPoint, in size: CGSize) {
+        let minWidth: CGFloat = 0.02
+        let minHeight: CGFloat = 0.01
+        
+        var newPosition = box.position
+        var newSize = box.size
+        
+        switch edge {
+        case .top:
+            let bottom = box.position.y + box.size.height / 2
+            let newTop = box.position.y - box.size.height / 2 + (location.y / size.height) * box.size.height
+            newSize.height = max(minHeight, bottom - newTop)
+            newPosition.y = bottom - newSize.height / 2
+            
+        case .bottom:
+            let top = box.position.y - box.size.height / 2
+            let newBottom = box.position.y - box.size.height / 2 + (location.y / size.height) * box.size.height
+            newSize.height = max(minHeight, newBottom - top)
+            newPosition.y = top + newSize.height / 2
+            
+        case .left:
+            let right = box.position.x + box.size.width / 2
+            let newLeft = box.position.x - box.size.width / 2 + (location.x / size.width) * box.size.width
+            newSize.width = max(minWidth, right - newLeft)
+            newPosition.x = right - newSize.width / 2
+            
+        case .right:
+            let left = box.position.x - box.size.width / 2
+            let newRight = box.position.x - box.size.width / 2 + (location.x / size.width) * box.size.width
+            newSize.width = max(minWidth, newRight - left)
+            newPosition.x = left + newSize.width / 2
+        }
+        
+        // Clamp to bounds
+        newPosition.x = max(newSize.width / 2, min(1 - newSize.width / 2, newPosition.x))
+        newPosition.y = max(newSize.height / 2, min(1 - newSize.height / 2, newPosition.y))
+        
+        box.position = newPosition
+        box.size = newSize
+    }
+}
+
+// MARK: - Parsed Line Item (editable in review)
+
+struct ParsedLineItem: Identifiable {
+    let id = UUID()
+    var code: String
+    var description: String
+    var amount: Double
+    var isSelected: Bool = true
+    var codeType: MedicalCodeType?
+    var matchedMedicalCode: MedicalCode?
+    var lookupFailed: Bool = false
+    
+    /// Best description — prefer database match over OCR text
+    var bestDescription: String {
+        if let mc = matchedMedicalCode {
+            return mc.shortDescription
+        }
+        return description
+    }
+    
+    /// Database price range if available
+    var databasePriceRange: String? {
+        guard let mc = matchedMedicalCode, mc.hasValidPricing else { return nil }
+        return mc.formattedPriceRange
+    }
+}
+
+// MARK: - Bill Save Result
+
+enum BillSaveResult: Equatable {
+    case none       // No save happened yet
+    case scanMore   // Save succeeded, user wants to scan another bill
+    case done       // Save succeeded, user is done
+}
+
+// MARK: - Bill Review View
+
+struct BillReviewView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var patientDataService: PatientDataService
+    @EnvironmentObject var appState: AppState
+    
+    let patientText: String
+    let providerText: String
+    let insuranceText: String
+    let procedureText: String
+    let scannedImage: UIImage?
+    let pageCount: Int
+    
+    /// Binding to parent — set to .scanMore or .done to trigger dismiss + action
+    @Binding var saveResult: BillSaveResult
+    
+    // Parsed patient fields
+    @State private var patientName = ""
+    @State private var accountNumber = ""
+    @State private var dateOfBirth = ""
+    @State private var patientAddress = ""
+    @State private var mrn = ""
+    @State private var dischargeDate = ""
+    @State private var admitDate = ""
+    
+    // Provider template — detected after parseProviderFields()
+    @State private var detectedTemplate: ProviderBillTemplate? = nil
+
+    // Parsed provider fields
+    @State private var providerName = ""
+    @State private var providerAddress = ""
+    @State private var providerPhone = ""
+    @State private var providerFax = ""
+    @State private var providerEmail = ""
+    @State private var providerWebsite = ""
+    @State private var providerNPI = ""
+    @State private var providerTaxId = ""
+    @State private var providerLicense = ""
+    
+    // Parsed insurance fields
+    @State private var insuranceCarrier = ""
+    @State private var policyNumber = ""
+    @State private var memberId = ""
+    @State private var groupNumber = ""
+    @State private var insurancePlanType = ""
+    
+    // Bill details
+    @State private var serviceDate = Date()
+    @State private var billedAmount: String = ""
+    
+    // Financial summary (parsed from OCR)
+    @State private var totalCharges: String = ""
+    @State private var insuranceAdjustment: String = ""
+    @State private var insurancePaid: String = ""
+    @State private var amountDue: String = ""
+    
+    // Line items
+    @State private var lineItems: [ParsedLineItem] = []
+    @State private var showingAddLineItem = false
+    
+    // Save state
+    @State private var isSaving = false
+    
+    @State private var savedClaimId: String?
+    
+    // Duplicate detection
+    @State private var showingDuplicateAlert = false
+    @State private var duplicateClaim: Claim?
+    @State private var pendingClaim: Claim?
+    
+    // Code scanner integration
+    @State private var showingCodeScanner = false
+    @State private var pendingProviderId: String?
+    
+    // Patient resolution
+    @State private var showingPatientPrompt = false
+    @State private var resolvedPatientId: String?
+    @State private var matchedExistingPatient: Patient?
+    @State private var showingNoPatientAlert = false
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                // Insurance Information — FIRST
+                Section {
+                    fieldRow("Insurance Carrier", $insuranceCarrier, icon: "shield")
+                    fieldRow("Policy #", $policyNumber, icon: "number")
+                    fieldRow("Member ID", $memberId, icon: "person.badge.key")
+                    fieldRow("Group #", $groupNumber, icon: "person.3")
+                    fieldRow("Plan Type", $insurancePlanType, icon: "doc.text")
+                    fieldRow("MRN", $mrn, icon: "cross.case")
+                    fieldRow("Discharge Date", $dischargeDate, icon: "calendar.badge.minus")
+                } header: {
+                    Label("Insurance", systemImage: "shield.fill").foregroundColor(.purple)
+                }
+                
+                // Provider Information
+                Section {
+                    fieldRow("Facility/Provider", $providerName, icon: "building.2")
+                    fieldRow("Address", $providerAddress, icon: "mappin.circle")
+                    fieldRow("Phone", $providerPhone, icon: "phone")
+                    fieldRow("Fax", $providerFax, icon: "fax")
+                    fieldRow("Email", $providerEmail, icon: "envelope")
+                    fieldRow("Website", $providerWebsite, icon: "globe")
+                    fieldRow("NPI", $providerNPI, icon: "number")
+                    fieldRow("Tax ID / EIN", $providerTaxId, icon: "doc.text")
+                    fieldRow("License #", $providerLicense, icon: "creditcard")
+                } header: {
+                    Label("Provider", systemImage: "building.2.fill").foregroundColor(.green)
+                }
+                
+                // Patient Information
+                Section {
+                    fieldRow("Patient Name",    $patientName,    icon: "person")
+                    fieldRow("Account #",       $accountNumber,  icon: "number.circle")
+                    fieldRow("MRN",             $mrn,            icon: "cross.case")
+                    fieldRow("Date of Birth",   $dateOfBirth,    icon: "gift")
+                    fieldRow("Patient Address", $patientAddress, icon: "house")
+                    fieldRow("Admit Date",      $admitDate,      icon: "calendar")
+                    fieldRow("Discharge Date",  $dischargeDate,  icon: "calendar.badge.checkmark")
+                } header: {
+                    Label("Patient", systemImage: "person.fill").foregroundColor(.blue)
+                }
+
+                // Bill Details
+                Section {
+                    DatePicker("Service Date", selection: $serviceDate, displayedComponents: .date)
+                    HStack {
+                        Text("Total Amount")
+                        Spacer()
+                        Text("$")
+                        TextField("0.00", text: $billedAmount)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 100)
+                    }
+                } header: {
+                    Label("Bill Details", systemImage: "calendar")
+                }
+                
+                // Line Items Breakdown
+                Section {
+                    if lineItems.isEmpty {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.secondary)
+                            Text("No line items detected. Tap + to add manually.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        ForEach($lineItems) { $item in
+                            LineItemRow(item: $item)
+                        }
+                        .onDelete { offsets in
+                            lineItems.remove(atOffsets: offsets)
+                        }
+                        
+                        // Totals
+                        let selectedTotal = lineItems.filter(\.isSelected).reduce(0) { $0 + $1.amount }
+                        HStack {
+                            Text("Line Items Total")
+                                .fontWeight(.medium)
+                            Spacer()
+                            Text(selectedTotal, format: .currency(code: "USD"))
+                                .fontWeight(.semibold)
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                } header: {
+                    let matchedCount = lineItems.filter { $0.matchedMedicalCode != nil }.count
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label("Line Items (\(lineItems.count))", systemImage: "list.bullet.rectangle")
+                                .foregroundColor(.orange)
+                            if matchedCount > 0 {
+                                Text("\(matchedCount) matched in code database")
+                                    .font(.caption2)
+                                    .foregroundColor(Color("BrandCyan"))
+                            }
+                        }
+                        Spacer()
+                        Button {
+                            showingCodeScanner = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "qrcode.viewfinder")
+                                Text("Scan Codes")
+                            }
+                            .font(.caption)
+                            .foregroundColor(Color("BrandCyan"))
+                        }
+                        Button {
+                            lineItems.append(ParsedLineItem(code: "", description: "", amount: 0))
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+                
+                // Financial Summary
+                if !totalCharges.isEmpty || !insuranceAdjustment.isEmpty || !insurancePaid.isEmpty || !amountDue.isEmpty {
+                    Section {
+                        if !totalCharges.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "dollarsign.circle.fill").foregroundColor(Color("BrandCyan")).frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Total Charges").font(.caption).foregroundColor(.secondary)
+                                    Text("$\(totalCharges)").font(.subheadline).fontWeight(.semibold)
+                                }
+                            }
+                        }
+                        if !insuranceAdjustment.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "arrow.down.circle.fill").foregroundColor(.orange).frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Insurance Adj.").font(.caption).foregroundColor(.secondary)
+                                    Text("-$\(insuranceAdjustment)").font(.subheadline).fontWeight(.semibold)
+                                }
+                            }
+                        }
+                        if !insurancePaid.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "checkmark.circle.fill").foregroundColor(.green).frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Insurance Paid").font(.caption).foregroundColor(.secondary)
+                                    Text("-$\(insurancePaid)").font(.subheadline).fontWeight(.semibold)
+                                }
+                            }
+                        }
+                        if !amountDue.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "exclamationmark.circle.fill").foregroundColor(.red).frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Amount Due").font(.caption).foregroundColor(.secondary)
+                                    Text("$\(amountDue)").font(.subheadline).fontWeight(.semibold).foregroundColor(.red)
+                                }
+                            }
+                        }
+                    } header: {
+                        Label("Financial Summary", systemImage: "dollarsign.circle.fill")
+                            .foregroundColor(Color("BrandCyan"))
+                    }
+                }
+                
+                // Scanned Totals
+                if !lineItems.isEmpty {
+                    Section("Scanned Totals") {
+                        let allTotal = lineItems.reduce(0) { $0 + $1.amount }
+                        let selectedTotal = lineItems.filter(\.isSelected).reduce(0) { $0 + $1.amount }
+                        HStack {
+                            Text("All Codes Total")
+                            Spacer()
+                            Text(allTotal, format: .currency(code: "USD"))
+                                .foregroundColor(.secondary)
+                        }
+                        if lineItems.contains(where: { !$0.isSelected }) {
+                            HStack {
+                                Text("Selected Total").fontWeight(.medium)
+                                Spacer()
+                                Text(selectedTotal, format: .currency(code: "USD"))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.accentColor)
+                            }
+                        }
+                    }
+                }
+                
+                // Database Price Comparison
+                if lineItems.contains(where: { $0.matchedMedicalCode?.hasValidPricing == true }) {
+                    Section("Database Price Comparison") {
+                        ForEach(lineItems.filter { $0.matchedMedicalCode?.hasValidPricing == true }) { item in
+                            if let mc = item.matchedMedicalCode {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.code)
+                                            .font(.system(.caption, design: .monospaced))
+                                            .fontWeight(.semibold)
+                                        Text(mc.formattedPriceRange)
+                                            .font(.caption2)
+                                            .foregroundColor(.green)
+                                    }
+                                    Spacer()
+                                    if item.amount > 0 {
+                                        let avg = mc.priceAverage ?? 0
+                                        let diff = item.amount - avg
+                                        VStack(alignment: .trailing, spacing: 2) {
+                                            Text("Billed: \(item.amount, format: .currency(code: "USD"))")
+                                                .font(.caption)
+                                            if avg > 0 {
+                                                Text(diff > 0 ? "+\(diff, format: .currency(code: "USD"))" : "\(diff, format: .currency(code: "USD"))")
+                                                    .font(.caption2)
+                                                    .foregroundColor(diff > 50 ? .red : diff < -50 ? .green : .secondary)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Raw text (collapsible for debugging)
+                Section {
+                    DisclosureGroup("Raw OCR Text") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if !patientText.isEmpty {
+                                Text("Patient:").font(.caption).fontWeight(.bold)
+                                Text(patientText).font(.caption2).foregroundColor(.secondary)
+                            }
+                            if !providerText.isEmpty {
+                                Text("Provider:").font(.caption).fontWeight(.bold)
+                                Text(providerText).font(.caption2).foregroundColor(.secondary)
+                            }
+                            if !insuranceText.isEmpty {
+                                Text("Insurance:").font(.caption).fontWeight(.bold)
+                                Text(insuranceText).font(.caption2).foregroundColor(.secondary)
+                            }
+                            if !procedureText.isEmpty {
+                                Text("Procedures:").font(.caption).fontWeight(.bold)
+                                Text(procedureText).font(.caption2).foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Review Bill")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        saveBill()
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(isSaving)
+                }
+            }
+            .onAppear { parseAllRegions() }
+            .alert("Existing Bill Found", isPresented: $showingDuplicateAlert) {
+                Button("Replace Existing", role: .destructive) {
+                    replaceExistingClaim()
+                }
+                Button("Keep Both") {
+                    saveAsNewClaim()
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingClaim = nil
+                    pendingProviderId = nil
+                    isSaving = false
+                }
+            } message: {
+                if let dup = duplicateClaim {
+                    let dateStr = dup.serviceDate.formatted(date: .abbreviated, time: .omitted)
+                    let amtStr = String(format: "$%.2f", dup.billedAmount)
+                    Text("A bill from \(dup.providerName ?? "this provider") dated \(dateStr) for \(amtStr) already exists.\n\nReplace it with this scan, or keep both?")
+                } else {
+                    Text("A similar bill already exists.")
+                }
+            }
+            .alert("Different Patient", isPresented: $showingPatientPrompt) {
+                Button("Create \"\(scannedFirstName) \(scannedLastName)\"") {
+                    createPatientFromScanAndSave()
+                }
+                if let matched = matchedExistingPatient {
+                    Button("Use \"\(matched.displayName)\"") {
+                        resolvedPatientId = matched.id
+                        appState.selectPatient(matched.id)
+                        continueSaveBill()
+                    }
+                }
+                if let currentId = appState.selectedPatientId,
+                   let current = patientDataService.patients.first(where: { $0.id == currentId }) {
+                    Button("Use Current (\(current.displayName))") {
+                        resolvedPatientId = currentId
+                        continueSaveBill()
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    isSaving = false
+                }
+            } message: {
+                let currentName = patientDataService.patients.first(where: { $0.id == appState.selectedPatientId })?.displayName ?? "selected patient"
+                Text("This bill is for \"\(patientName)\" but the current patient is \"\(currentName)\".\n\nWho should this bill be saved for?")
+            }
+            .alert("No Patient", isPresented: $showingNoPatientAlert) {
+                if !patientName.isEmpty {
+                    Button("Create \"\(scannedFirstName) \(scannedLastName)\"") {
+                        createPatientFromScanAndSave()
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    isSaving = false
+                }
+            } message: {
+                if !patientName.isEmpty {
+                    Text("No patient is selected. Create a patient from the scanned name \"\(patientName)\"?")
+                } else {
+                    Text("No patient is selected. Please go to the Patients tab and add a patient first.")
+                }
+            }
+            .sheet(isPresented: $showingCodeScanner) {
+                ScannerView(onImportCodes: { scannedCodes in
+                    importScannedCodes(scannedCodes)
+                })
+                .environmentObject(appState)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func fieldRow(_ label: String, _ value: Binding<String>, icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .foregroundColor(.accentColor)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label).font(.caption).foregroundColor(.secondary)
+                TextField(label, text: value).font(.subheadline)
+            }
+        }
+    }
+    
+    // MARK: - Parse All Regions
+    
+    private func parseAllRegions() {
+        #if DEBUG
+        print("── BillReview: Patient OCR ──\n\(patientText)")
+        print("── BillReview: Provider OCR ──\n\(providerText)")
+        print("── BillReview: Insurance OCR ──\n\(insuranceText)")
+        print("── BillReview: Procedure OCR ──\n\(procedureText)")
+        #endif
+        
+        parsePatientFields()
+        parseProviderFields()
+        parseInsuranceFields()
+
+        // Detect provider template after provider name is known.
+        // Inline lookup so BillScannerView doesn't require ProviderTemplateManager
+        // to be in the same compilation unit.
+        detectedTemplate = BillReviewView.findTemplate(for: providerName)
+        #if DEBUG
+        if let t = detectedTemplate {
+            print("── Template matched: \(t.displayName) (\(t.billFormat.rawValue))")
+        }
+        #endif
+
+        parseLineItems()
+        lookupLineItemCodes()
+        
+        #if DEBUG
+        print("── BillReview: Parsed \(lineItems.count) line items ──")
+        for item in lineItems {
+            print("  [\(item.code)] \(item.description) → $\(String(format: "%.2f", item.amount))")
+        }
+        print("  Patient: \(patientName), Account: \(accountNumber), MRN: \(mrn), Admit: \(admitDate), Discharge: \(dischargeDate)")
+        print("  Provider: \(providerName), Phone: \(providerPhone), Fax: \(providerFax), Email: \(providerEmail), NPI: \(providerNPI)")
+        print("  Insurance: \(insuranceCarrier), Policy: \(policyNumber), Member: \(memberId), Discharge: \(dischargeDate)")
+        #endif
+        
+        // Compute total from line items if not already set
+        if billedAmount.isEmpty && !lineItems.isEmpty {
+            let total = lineItems.reduce(0) { $0 + $1.amount }
+            billedAmount = String(format: "%.2f", total)
+        }
+    }
+    
+    // MARK: - Patient Parsing
+    
+    private func parsePatientFields() {
+        let rawLines = patientText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        
+        // ── Filter postal/barcode artifacts ──
+        let lines = rawLines.filter { line in
+            let upper = line.uppercased()
+            // Postal barcodes: start with > or contain long digit sequences like "TU25 1003 59569"
+            if line.hasPrefix(">") { return false }
+            if upper.contains("ADDRESS SERVICE") || upper.contains("ADDRESSEE") { return false }
+            if upper.contains("RETURN SERVICE") || upper.contains("PRESORT") { return false }
+            // Lines that are mostly digits with spaces (postal routing codes)
+            let digitRatio = Double(line.filter { $0.isNumber }.count) / Double(max(line.count, 1))
+            if digitRatio > 0.6 && line.count > 10 { return false }
+            // Lines starting with barcode chars
+            if line.hasPrefix("|") || line.hasPrefix("!") { return false }
+            return true
+        }
+        
+        let pairs = extractAllLabelValuePairs(from: lines)
+        
+        for (label, value) in pairs {
+            let key = label.lowercased()
+            if (key.contains("patient") || key.contains("name") || key.contains("insured") || key.contains("subscriber"))
+                && !key.contains("address") && !key.contains("balance") && !key.contains("amount") {
+                if patientName.isEmpty && looksLikeName(value) { patientName = value }
+            } else if key.contains("account") || key.contains("acct") || key.contains("voucher") {
+                if accountNumber.isEmpty { accountNumber = value }
+            } else if key.contains("birth") || key == "dob" {
+                if dateOfBirth.isEmpty { dateOfBirth = value }
+            } else if key.contains("date of service") || key.contains("service date") || key == "dos" {
+                if let date = parseDate(value) { serviceDate = date }
+            } else if key.contains("address") {
+                if patientAddress.isEmpty { patientAddress = value }
+            } else if key == "mrn" || key.contains("medical record") {
+                if mrn.isEmpty { mrn = value }
+            } else if key.contains("discharge") {
+                if dischargeDate.isEmpty { dischargeDate = value }
+            }
+        }
+        
+        // Fallback: two-line OCR pattern — label on one line, value on the next
+        // e.g. "Date of Service:" / "11/10/2024"  or  "Patient:" / "John Smith"
+        let datePattern = #"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}"#
+        for (i, line) in lines.enumerated() {
+            guard i + 1 < lines.count else { break }
+            let lower = line.lowercased().trimmingCharacters(in: .whitespaces)
+            let next  = lines[i + 1].trimmingCharacters(in: .whitespaces)
+            if (lower.hasPrefix("patient") || lower.hasPrefix("name")) && lower.hasSuffix(":")
+                && patientName.isEmpty && looksLikeName(next) {
+                patientName = next
+            } else if (lower.contains("date of service") || lower.contains("service date") || lower == "dos:")
+                && serviceDate == Date()
+                && next.range(of: datePattern, options: .regularExpression) != nil {
+                if let d = parseDate(next) { serviceDate = d }
+            } else if lower.contains("account") && lower.hasSuffix(":")
+                && accountNumber.isEmpty && !next.contains(":") {
+                accountNumber = next
+            } else if (lower == "mrn:" || lower == "medical record:") && mrn.isEmpty {
+                mrn = next
+            } else if lower.contains("admit") && lower.hasSuffix(":") && admitDate.isEmpty
+                && next.range(of: datePattern, options: .regularExpression) != nil {
+                admitDate = next
+            } else if lower.contains("discharge") && lower.hasSuffix(":") && dischargeDate.isEmpty
+                && next.range(of: datePattern, options: .regularExpression) != nil {
+                dischargeDate = next
+            }
+        }
+
+        // Fallback: find first name-like line (skip provider-looking headers)
+        if patientName.isEmpty {
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.contains(":") { continue }
+                // Skip lines that look like provider/facility headers
+                let upper = trimmed.uppercased()
+                if upper.contains("MEDICAL") || upper.contains("HOSPITAL") || upper.contains("CLINIC")
+                    || upper.contains("HEALTH") || upper.contains("ASSOCIATES") || upper.contains("ASSOC") { continue }
+                // Skip address lines
+                if looksLikeAddress(trimmed) { continue }
+                if looksLikeName(trimmed) {
+                    patientName = trimmed; break
+                }
+            }
+        }
+        
+        // Fallback: find address after patient name
+        if patientAddress.isEmpty {
+            var foundName = false
+            for line in lines {
+                if !patientName.isEmpty && line.uppercased().contains(patientName.uppercased()) {
+                    foundName = true; continue
+                }
+                if foundName && looksLikeAddress(line) {
+                    patientAddress = line
+                    // Check if next line is city/state/ZIP continuation
+                    if let idx = lines.firstIndex(of: line), idx + 1 < lines.count {
+                        let next = lines[idx + 1]
+                        if next.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil {
+                            patientAddress += ", " + next
+                        }
+                    }
+                    break
+                }
+            }
+            // Broader fallback: any address-looking line
+            if patientAddress.isEmpty {
+                for line in lines {
+                    if looksLikeAddress(line) {
+                        patientAddress = line
+                        if let idx = lines.firstIndex(of: line), idx + 1 < lines.count {
+                            let next = lines[idx + 1]
+                            if next.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil {
+                                patientAddress += ", " + next
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Provider Parsing
+    
+    private func parseProviderFields() {
+        let lines = providerText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let pairs = extractAllLabelValuePairs(from: lines)
+        
+        // Medical facility keywords — if a line contains any of these, it's likely a provider name
+        let facilityKeywords = ["MEDICAL CENTER", "HOSPITAL", "HEALTH SYSTEM", "HEALTH CENTER",
+                                "REGIONAL MEDICAL", "CLINIC", "SURGICAL CENTER", "URGENT CARE",
+                                "MEMORIAL", "COMMUNITY HEALTH", "MEDICAL GROUP", "PHYSICIANS",
+                                "HEALTHCARE", "AMBULATORY", "IMAGING CENTER", "RADIOLOGY",
+                                "LABORATORY", "PATHOLOGY", "ORTHOPAEDIC", "ORTHOPEDIC",
+                                // Extended — family/general practices & wellness centers
+                                "FAMILY MEDICINE", "INTERNAL MEDICINE", "MEDICINE & WELLNESS",
+                                "FAMILY PRACTICE", "FAMILY HEALTH", "MEDICAL ASSOCIATES",
+                                "WELLNESS CENTER", "WELLNESS CLINIC", "HEALTH & WELLNESS",
+                                "MEDICAL PRACTICE", "MEDICAL SERVICES", "HEALTH SERVICES",
+                                "CARE CENTER", "CARE CLINIC", "WOMEN'S HEALTH", "WOMEN'S CARE",
+                                "PEDIATRICS", "DERMATOLOGY", "CARDIOLOGY", "NEUROLOGY",
+                                "ONCOLOGY", "UROLOGY", "GASTROENTEROLOGY", "PULMONOLOGY",
+                                "ENDOCRINOLOGY", "RHEUMATOLOGY", "NEPHROLOGY", "HEMATOLOGY"]
+        
+        let creditCardTerms: Set<String> = [
+            "cardholder", "card holder", "card number", "cardnumber",
+            "exp date", "exp. date", "expiration", "expiry",
+            "verification", "cvv", "cvc", "security code",
+            "signature", "mastercard", "visa", "amex",
+            "american express", "discover", "credit card"
+        ]
+        func isCreditCardLine(_ line: String) -> Bool {
+            let lower = line.lowercased()
+            return creditCardTerms.contains(where: { lower.contains($0) })
+        }
+        let filteredLines = lines.filter { !isCreditCardLine($0) }
+        let filteredPairs = pairs.filter { (label, _) in !isCreditCardLine(label) }
+
+        // ── Step 1: Extract labeled fields (credit-card fields excluded) ──
+        for (label, value) in filteredPairs {
+            let key = label.lowercased()
+            if key.contains("provider") || key.contains("facility") || key.contains("hospital") || key.contains("clinic") {
+                if providerName.isEmpty { providerName = value }
+            } else if key.contains("remit") || key.contains("pay to") || key.contains("send to") || key.contains("return to") || key.contains("bill to") {
+                if providerName.isEmpty && looksLikeName(value) { providerName = value }
+            } else if key.contains("fax") {
+                if providerFax.isEmpty { providerFax = value }
+            } else if key.contains("phone") || key.contains("tel") || key.contains("office phone") {
+                if providerPhone.isEmpty { providerPhone = value }
+            } else if key.contains("email") || key.contains("e-mail") {
+                if providerEmail.isEmpty { providerEmail = value }
+            } else if key.contains("web") || key.contains("url") || key.contains("site") {
+                if providerWebsite.isEmpty { providerWebsite = value }
+            } else if key.contains("npi") {
+                if providerNPI.isEmpty { providerNPI = value }
+            } else if key.contains("tax") || key.contains("ein") || (key.contains("fed") && key.contains("id")) {
+                if providerTaxId.isEmpty { providerTaxId = value }
+            } else if key.contains("license") || key.contains("lic") {
+                if providerLicense.isEmpty { providerLicense = value }
+            } else if key.contains("address") && !key.contains("account") {
+                if providerAddress.isEmpty { providerAddress = value }
+            }
+        }
+        
+        // ── Step 2: Detect facility name by medical keywords (using filtered lines) ──
+        if providerName.isEmpty {
+            for line in filteredLines {
+                let upper = line.uppercased()
+                if facilityKeywords.contains(where: { upper.contains($0) }) {
+                    var name = line
+                    // Strip statement/department labels that may be on the same line
+                    let stripPatterns = ["EMERGENCY DEPT STATEMENT", "INPATIENT STATEMENT",
+                                         "OUTPATIENT STATEMENT", "PATIENT STATEMENT",
+                                         "BILLING STATEMENT", "EMERGENCY DEPARTMENT"]
+                    for pattern in stripPatterns {
+                        if let range = name.uppercased().range(of: pattern) {
+                            let startIdx = name.index(name.startIndex, offsetBy: name.distance(from: name.startIndex, to: range.lowerBound))
+                            name = String(name[name.startIndex..<startIdx]).trimmingCharacters(in: .whitespaces)
+                        }
+                    }
+                    // Strip address portion if OCR merged name + address on one line
+                    // Look for a street number pattern (e.g., "1234 Main St") and truncate
+                    if let addrRange = name.range(of: #"\s+\d{2,5}\s+[A-Za-z]"#, options: .regularExpression) {
+                        // Check if what follows looks like an address
+                        let afterAddr = String(name[addrRange.lowerBound...])
+                        if looksLikeAddress(afterAddr) {
+                            name = String(name[name.startIndex..<addrRange.lowerBound]).trimmingCharacters(in: .whitespaces)
+                        }
+                    }
+                    if !name.isEmpty && !looksLikeAddress(name) {
+                        providerName = name
+                    }
+                    break
+                }
+            }
+        }
+        
+        // ── Step 3: Parse combined Phone/Fax lines ──
+        let phonePattern = #"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"#
+        for line in lines {
+            // Split "Phone: (407) 555-0100 | Fax: (407) 555-0101"
+            let parts = line.components(separatedBy: "|")
+            for part in parts {
+                let partLower = part.lowercased().trimmingCharacters(in: .whitespaces)
+                if partLower.contains("fax") && providerFax.isEmpty {
+                    if let range = part.range(of: phonePattern, options: .regularExpression) {
+                        providerFax = String(part[range])
+                    }
+                } else if (partLower.contains("phone") || partLower.contains("tel")) && providerPhone.isEmpty {
+                    if let range = part.range(of: phonePattern, options: .regularExpression) {
+                        providerPhone = String(part[range])
+                    }
+                }
+            }
+        }
+        
+        // ── Step 4: REMIT TO address collection ──
+        // Collect address lines after a REMIT TO / PAY TO marker.
+        // IMPORTANT: address lines (e.g. "1070 N STONE ST") must NOT be used
+        // to overwrite providerName. Only set providerName from lines that
+        // explicitly look like a facility name AND come BEFORE any address line.
+        if providerAddress.isEmpty {
+            var foundRemit = false
+            var addressParts: [String] = []
+            var nameBeforeAddress: String? = nil
+            for line in filteredLines {
+                if isCreditCardLine(line) { continue }
+                let lower = line.lowercased()
+                if lower.contains("remit to") || lower.contains("pay to") || lower.contains("send to")
+                    || lower.contains("return to") || lower.contains("bill to") {
+                    foundRemit = true
+                    // Inline value after the marker label
+                    if let colonIdx = line.firstIndex(of: ":") {
+                        let after = String(line[line.index(after: colonIdx)...]).trimmingCharacters(in: .whitespaces)
+                        if !after.isEmpty && providerName.isEmpty && looksLikeName(after) {
+                            nameBeforeAddress = after
+                        }
+                    }
+                    continue
+                }
+                if foundRemit {
+                    let isAddr = looksLikeAddress(line)
+                        || line.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil
+                    if isAddr {
+                        // Commit the name candidate now that we know the next line IS an address
+                        if let n = nameBeforeAddress, providerName.isEmpty { providerName = n }
+                        nameBeforeAddress = nil
+                        addressParts.append(line)
+                    } else if addressParts.isEmpty && !looksLikePhone(line) && !line.contains(":") && line.count > 3 {
+                        // Candidate name line before any address has been seen
+                        if looksLikeName(line) { nameBeforeAddress = line }
+                    } else if !addressParts.isEmpty {
+                        // Continuation address line or end-of-block
+                        if looksLikeAddress(line) || line.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil {
+                            addressParts.append(line)
+                        } else {
+                            break
+                        }
+                    }
+                }
+            }
+            if !addressParts.isEmpty {
+                providerAddress = addressParts.joined(separator: ", ")
+            }
+        }
+        // ── Step 5: Fallback — first non-label, non-phone, non-address line ──
+        if providerName.isEmpty {
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                let upper = trimmed.uppercased()
+                if upper.contains("PAYING BY") || upper.contains("MASTERCARD") || upper.contains("VISA")
+                    || upper.contains("FILL OUT") || upper.contains("SIGNATURE") || upper.contains("EXP DATE")
+                    || upper.contains("AMOUNT") || upper.contains("RETURN THIS") { continue }
+                // Strip any trailing document-type label (e.g. "PATIENT STATEMENT")
+                // before deciding whether to skip this line, so that a provider name
+                // like "ORLANDO FAMILY MEDICINE & WELLNESS    PATIENT STATEMENT" is
+                // not discarded just because the label happens to land on the same line.
+                var candidateLine = trimmed
+                let statementLabels = ["PATIENT STATEMENT", "BILLING STATEMENT",
+                                       "INPATIENT STATEMENT", "OUTPATIENT STATEMENT",
+                                       "EMERGENCY DEPT STATEMENT", "ACCOUNT STATEMENT"]
+                for label in statementLabels {
+                    if let range = candidateLine.uppercased().range(of: label) {
+                        let stripped = String(candidateLine[candidateLine.startIndex..<range.lowerBound])
+                            .trimmingCharacters(in: .whitespaces)
+                        if !stripped.isEmpty { candidateLine = stripped }
+                    }
+                }
+                let candidateUpper = candidateLine.uppercased()
+                // Now apply the original skip guards on the cleaned candidate
+                if candidateUpper.contains("STATEMENT") && !facilityKeywords.contains(where: { candidateUpper.contains($0) }) { continue }
+                if !candidateLine.contains(":") && candidateLine.count > 3 && !looksLikePhone(candidateLine) && !looksLikeAddress(candidateLine) {
+                    providerName = candidateLine; break
+                }
+            }
+        }
+        
+        // ── Step 5b: Longest-line fallback ──
+        // If Steps 1–5 all failed (common with severely garbled dark-bg OCR),
+        // pick the longest line that:
+        //   • is all-caps or title-case (typical for a facility header)
+        //   • is NOT an address or phone number
+        //   • is NOT a known statement label
+        if providerName.isEmpty {
+            let statementWords = ["STATEMENT", "INVOICE", "RECEIPT", "NOTICE", "ACCOUNT"]
+            let candidates = lines.filter { line in
+                let t = line.trimmingCharacters(in: .whitespaces)
+                guard t.count > 5, !t.contains(":"),
+                      !looksLikeAddress(t), !looksLikePhone(t) else { return false }
+                let upper = t.uppercased()
+                if statementWords.contains(where: { upper.contains($0) }) { return false }
+                // Must look like a name: mostly letters, spaces, &, ., -
+                let nonNameChars = t.filter { !$0.isLetter && !$0.isWhitespace && !"&.-,'".contains($0) }
+                return Double(nonNameChars.count) / Double(max(t.count, 1)) < 0.15
+            }
+            if let best = candidates.max(by: { $0.count < $1.count }) {
+                // Apply statement-label strip one more time
+                var name = best
+                let statementLabels = ["PATIENT STATEMENT", "BILLING STATEMENT",
+                                       "INPATIENT STATEMENT", "OUTPATIENT STATEMENT",
+                                       "EMERGENCY DEPT STATEMENT", "ACCOUNT STATEMENT"]
+                for label in statementLabels {
+                    if let r = name.uppercased().range(of: label) {
+                        let stripped = String(name[name.startIndex..<r.lowerBound])
+                            .trimmingCharacters(in: .whitespaces)
+                        if !stripped.isEmpty { name = stripped }
+                    }
+                }
+                if !name.isEmpty { providerName = name }
+            }
+        }
+
+        // ── Step 6: Collect address by scanning for address-pattern lines ──
+        if providerAddress.isEmpty {
+            var addressParts: [String] = []
+            var collecting = false
+            for line in lines {
+                if looksLikeAddress(line) {
+                    addressParts.append(line)
+                    collecting = true
+                } else if collecting {
+                    if line.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil {
+                        addressParts.append(line)
+                    }
+                    break
+                }
+            }
+            if !addressParts.isEmpty {
+                providerAddress = addressParts.joined(separator: ", ")
+            }
+        }
+        
+        // ── Step 7: Remaining standalone fields ──
+        if providerPhone.isEmpty {
+            for line in lines {
+                if looksLikePhone(line) {
+                    if let range = line.range(of: phonePattern, options: .regularExpression) {
+                        providerPhone = String(line[range])
+                    } else {
+                        providerPhone = line
+                    }
+                    break
+                }
+            }
+        }
+        if providerEmail.isEmpty {
+            let emailPattern = #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#
+            for line in lines {
+                if let range = line.range(of: emailPattern, options: .regularExpression) {
+                    providerEmail = String(line[range]); break
+                }
+            }
+        }
+        if providerWebsite.isEmpty {
+            let webPattern = #"(?:https?://|www\.)[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=-]+"#
+            for line in lines {
+                if let range = line.range(of: webPattern, options: .regularExpression) {
+                    providerWebsite = String(line[range]); break
+                }
+            }
+        }
+        if providerFax.isEmpty {
+            for line in lines {
+                if line.lowercased().contains("fax") {
+                    if let range = line.range(of: phonePattern, options: .regularExpression) {
+                        providerFax = String(line[range]); break
+                    }
+                }
+            }
+        }
+        if providerNPI.isEmpty {
+            for line in lines {
+                if line.lowercased().contains("npi") {
+                    if let range = line.range(of: #"\b\d{10}\b"#, options: .regularExpression) {
+                        providerNPI = String(line[range]); break
+                    }
+                }
+            }
+        }
+        if providerTaxId.isEmpty {
+            for line in lines {
+                let lower = line.lowercased()
+                if lower.contains("tax") || lower.contains("ein") || lower.contains("fed") {
+                    if let range = line.range(of: #"\b\d{2}-?\d{7}\b"#, options: .regularExpression) {
+                        providerTaxId = String(line[range]); break
+                    }
+                }
+            }
+        }
+        
+        // ── Step 8: Cross-scan other regions for provider if still empty ──
+        if providerName.isEmpty {
+            let allTexts = [patientText, insuranceText, procedureText]
+            for regionText in allTexts {
+                let regionLines = regionText.components(separatedBy: .newlines)
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                for line in regionLines {
+                    let upper = line.uppercased()
+                    if facilityKeywords.contains(where: { upper.contains($0) }) {
+                        var name = line
+                        let stripPatterns = ["EMERGENCY DEPT STATEMENT", "INPATIENT STATEMENT",
+                                             "OUTPATIENT STATEMENT", "PATIENT STATEMENT",
+                                             "BILLING STATEMENT", "EMERGENCY DEPARTMENT"]
+                        for pattern in stripPatterns {
+                            if let range = name.uppercased().range(of: pattern) {
+                                let startIdx = name.index(name.startIndex, offsetBy: name.distance(from: name.startIndex, to: range.lowerBound))
+                                name = String(name[name.startIndex..<startIdx]).trimmingCharacters(in: .whitespaces)
+                            }
+                        }
+                        if !name.isEmpty { providerName = name }
+                        break
+                    }
+                }
+                if !providerName.isEmpty { break }
+            }
+        }
+        
+        #if DEBUG
+        print("── Provider parsed: name=\"\(providerName)\" phone=\"\(providerPhone)\" fax=\"\(providerFax)\" addr=\"\(providerAddress)\"")
+        #endif
+    }
+    
+    // MARK: - Insurance Parsing
+    
+    private func parseInsuranceFields() {
+        let lines = insuranceText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let pairs = extractAllLabelValuePairs(from: lines)
+        
+        for (label, value) in pairs {
+            let key = label.lowercased()
+            if key.contains("insurance") || key.contains("carrier") || key.contains("payer") || key.contains("plan name") {
+                if insuranceCarrier.isEmpty { insuranceCarrier = value }
+            } else if key.contains("policy") {
+                if policyNumber.isEmpty { policyNumber = value }
+            } else if key.contains("member") || key.contains("subscriber id") || (key == "id" && memberId.isEmpty) {
+                if memberId.isEmpty { memberId = value }
+            } else if key.contains("group") {
+                if groupNumber.isEmpty { groupNumber = value }
+            } else if key.contains("plan type") || key.contains("type") {
+                if insurancePlanType.isEmpty { insurancePlanType = value }
+            } else if key == "mrn" || key.contains("medical record") {
+                if mrn.isEmpty { mrn = value }
+            } else if key.contains("discharge") {
+                if dischargeDate.isEmpty { dischargeDate = value }
+            } else if key.contains("admit") {
+                if admitDate.isEmpty { admitDate = value }
+            }
+        }
+        
+        // Also scan patient text for MRN (it often appears there)
+        if mrn.isEmpty {
+            let patientPairs = extractAllLabelValuePairs(from:
+                patientText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            )
+            for (label, value) in patientPairs {
+                let key = label.lowercased()
+                if key == "mrn" || key.contains("medical record") {
+                    mrn = value; break
+                }
+            }
+        }
+        
+        // Scan all regions for discharge date if not found in insurance
+        if dischargeDate.isEmpty {
+            let allRegionTexts = [patientText, providerText, procedureText]
+            for regionText in allRegionTexts {
+                let regionPairs = extractAllLabelValuePairs(from:
+                    regionText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                )
+                for (label, value) in regionPairs {
+                    let key = label.lowercased()
+                    if key.contains("discharge") {
+                        dischargeDate = value; break
+                    }
+                }
+                if !dischargeDate.isEmpty { break }
+            }
+        }
+        
+        // Detect plan type from any line (HMO, PPO, etc.)
+        if insurancePlanType.isEmpty {
+            let allText = insuranceText.uppercased()
+            let planPatterns = ["HMO", "PPO", "EPO", "POS", "HDHP", "MEDICARE", "MEDICAID", "TRICARE"]
+            for p in planPatterns {
+                if allText.contains(p) { insurancePlanType = p; break }
+            }
+        }
+        
+        // Fallback: first non-label, non-provider, non-credit-card line = carrier name
+        if insuranceCarrier.isEmpty {
+            let providerFacilityKeywords = [
+                "MEDICAL CENTER", "HOSPITAL", "HEALTH SYSTEM", "CLINIC", "SURGICAL",
+                "MEDICAL GROUP", "PHYSICIANS", "HEALTHCARE", "ASSOCIATES", "MEDICAL"
+            ]
+            let ccTerms = ["CARDHOLDER", "CARD NUMBER", "EXP DATE", "EXPIRATION",
+                          "MASTERCARD", "VISA", "SIGNATURE", "VERIFICATION"]
+            for line in lines {
+                let upper = line.uppercased()
+                guard !line.contains(":"), line.count > 3 else { continue }
+                guard !providerFacilityKeywords.contains(where: { upper.contains($0) }) else { continue }
+                guard !ccTerms.contains(where: { upper.contains($0) }) else { continue }
+                guard !looksLikeAddress(line), !looksLikePhone(line) else { continue }
+                insuranceCarrier = line; break
+            }
+        }
+    }
+    
+    // MARK: - Template Detection
+
+    /// Built-in templates. More can be added here as new provider formats are encountered.
+    private static let builtInTemplates: [ProviderBillTemplate] = [
+        {
+            var t = ProviderBillTemplate(
+                displayName: "West Volusia Medical Associates",
+                matchKeywords: ["west volusia", "volusia medical", "volusia medical assoc"]
+            )
+            t.billFormat = .accountStatement
+            var layout = ProcedureColumnLayout()
+            layout.chargesColumnKeywords    = ["charges", "debits", "charges & debits"]
+            layout.insurancePendingKeywords = ["insurance pending", "ins pending"]
+            layout.paymentsColumnKeywords   = ["payments", "credits", "payments & credits"]
+            layout.patientAmountKeywords    = ["patient amount", "patient", "pt amount"]
+            layout.visitTotalLabels         = ["visit total", "---- visit total", "---visit total"]
+            layout.voucherLabels            = ["voucher:", "voucher #"]
+            layout.accountingRowKeywords    = [
+                "payment", "adjustment", "transfer", "credit card", "self pay",
+                "mastercard", "visa", "check", "write off", "write-off",
+                "courtesy", "refund", "cigna", "aetna", "humana", "bcbs",
+                "blue cross", "united health", "anthem", "collection"
+            ]
+            t.procedureColumnLayout = layout
+            return t
+        }()
+    ]
+
+    /// Returns the matching provider template for a given provider name.
+    /// Checks UserDefaults-persisted templates first, then built-ins.
+    static func findTemplate(for providerName: String) -> ProviderBillTemplate? {
+        let lower = providerName.lowercased()
+
+        // Check UserDefaults for user-saved templates
+        if let data = UserDefaults.standard.data(forKey: "ProviderBillTemplates_v1"),
+           let saved = try? JSONDecoder().decode([ProviderBillTemplate].self, from: data) {
+            if let match = saved.first(where: { t in
+                t.matchKeywords.contains(where: { lower.contains($0.lowercased()) })
+            }) { return match }
+        }
+
+        // Fall back to built-ins
+        return builtInTemplates.first { t in
+            t.matchKeywords.contains(where: { lower.contains($0.lowercased()) })
+        }
+    }
+
+    // MARK: - Line Item Parsing
+
+    private func parseLineItems() {
+        // Route to template-specific parser when available
+        if let layout = detectedTemplate?.procedureColumnLayout,
+           detectedTemplate?.billFormat == .accountStatement {
+            parseAccountStatementLineItems(layout: layout)
+            return
+        }
+
+        let lines = procedureText.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        
+        var items: [ParsedLineItem] = []
+        
+        for line in lines {
+            let lower = line.lowercased()
+            
+            // ── Skip header/label lines ──
+            if lower.hasPrefix("date") && (lower.contains("code") || lower.contains("description") || lower.contains("cpt")
+                || lower.contains("icpt") || lower.contains("reason") || lower.contains("activity")) { continue }
+            if lower.hasPrefix("emergency department") || lower.hasPrefix("charges") { continue }
+            // Column sub-headers
+            if lower.contains("debits") && lower.contains("credits") { continue }
+            if lower.contains("pending") && lower.contains("amount") && lower.contains("insurance") { continue }
+            
+            // ── Skip insurance transaction lines ──
+            // These are payment/adjustment records, not procedures
+            let insurancePatterns = [
+                "payment", "adjustment", "transfer", "refund", "credit card",
+                "self pay", "master card", "mastercard", "visa pay", "check pay",
+                "write off", "write-off", "collection", "courtesy"
+            ]
+            if insurancePatterns.contains(where: { lower.contains($0) }) {
+                // But capture negative amounts as insurance payments for running totals
+                continue
+            }
+            
+            // ── Skip voucher/visit total lines ──
+            if lower.hasPrefix("voucher") || lower.contains("visit total") || lower.contains("---- ") { continue }
+            // Skip "Patient:" label lines inside procedure area
+            if lower.hasPrefix("patient:") { continue }
+            
+            // ── Extract financial summary from total/summary lines ──
+            // IMPORTANT: check for specific financial labels BEFORE a generic "total" check.
+            // A broad lower.contains("total") matches procedure descriptions like
+            // "Total Knee Arthroplasty" (code 27447) and routes them to the summary parser,
+            // silently dropping $22,500 from the line-items total.
+            // Only treat a line as a summary line when:
+            //  • it starts with the label (not mid-description), OR
+            //  • it contains a recognised financial summary keyword pair
+            let isFinancialSummaryLine =
+                lower.hasPrefix("total charge") || lower.hasPrefix("subtotal") ||
+                lower.hasPrefix("insurance adjust") || lower.hasPrefix("insurance paid") ||
+                lower.hasPrefix("ins paid") || lower.hasPrefix("amount due") ||
+                lower.hasPrefix("balance due") || lower.hasPrefix("you owe") ||
+                lower.hasPrefix("patient resp") ||
+                lower.contains("total charges") || lower.contains("total charge:") ||
+                lower.contains("insurance adjustment") || lower.contains("insurance paid") ||
+                lower.contains("amount due") || lower.contains("balance due") ||
+                lower.contains("you owe") || lower.contains("patient responsibility") ||
+                // Also catch "---- Total Charges" style labels
+                (lower.contains("total") && (lower.contains("charge") || lower.contains("balance") || lower.contains("amount")))
+
+            if isFinancialSummaryLine {
+                let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line)
+                if let amt = amt {
+                    if lower.contains("total charge") || lower.contains("subtotal") {
+                        totalCharges = String(format: "%.2f", amt)
+                        if billedAmount.isEmpty { billedAmount = totalCharges }
+                    } else if lower.contains("insurance adjust") || lower.contains("contractual") || lower.contains("write off") || lower.contains("write-off") {
+                        insuranceAdjustment = String(format: "%.2f", amt)
+                    } else if lower.contains("insurance paid") || lower.contains("ins paid") || lower.contains("ins payment") {
+                        insurancePaid = String(format: "%.2f", amt)
+                    } else if lower.contains("amount due") || lower.contains("balance due") || lower.contains("you owe") || lower.contains("patient resp") {
+                        amountDue = String(format: "%.2f", amt)
+                    }
+                }
+                continue
+            }
+            
+            // Extract dollar amount — try "$" first, then plain decimal fallback
+            var amount = extractStrictDollarAmount(from: line)
+            if amount == nil {
+                amount = extractPlainAmount(from: line)
+            }
+            
+            // Extract procedure code from the line
+            let code = extractProcedureCode(from: line)
+            
+            // Must have at least an amount or a code to be a valid line item
+            guard amount != nil || code != nil else { continue }
+            
+            // Build description by stripping code, amount, and date from line
+            var desc = line
+            
+            // Remove the code
+            if let code = code, let range = desc.range(of: code) {
+                desc = String(desc[range.upperBound...])
+            }
+            
+            // Remove dollar amounts (with $ sign)
+            let dollarPattern = #"-?\$[\d,]+\.?\d{0,2}"#
+            if let regex = try? NSRegularExpression(pattern: dollarPattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            
+            // Remove plain negative amounts like -51.55 (insurance payments in same row)
+            let negAmtPattern = #"-\d+\.\d{2}"#
+            if let regex = try? NSRegularExpression(pattern: negAmtPattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            
+            // Remove plain 0.00 amounts
+            let zeroPattern = #"\b0\.00\b"#
+            if let regex = try? NSRegularExpression(pattern: zeroPattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            
+            // Remove dates (MM/DD/YY or MM/DD/YYYY or MMDDYYYY)
+            let datePattern = #"\d{1,2}/\d{1,2}/\d{2,4}"#
+            if let regex = try? NSRegularExpression(pattern: datePattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            let datePattern2 = #"\b\d{8}\b"#  // 07132011 format dates
+            if let regex = try? NSRegularExpression(pattern: datePattern2) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            
+            // Remove standalone single digits (quantity column)
+            let qtyPattern = #"\b[1-9]\b"#
+            if let regex = try? NSRegularExpression(pattern: qtyPattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+            
+            desc = desc.trimmingCharacters(in: .whitespaces)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "- ,"))
+                .trimmingCharacters(in: .whitespaces)
+            
+            // Skip if we only got a code with no amount (likely a header fragment)
+            if amount == nil && desc.isEmpty { continue }
+            
+            items.append(ParsedLineItem(
+                code: code ?? "",
+                description: desc.isEmpty ? (code != nil ? "Procedure \(code!)" : "Unknown") : desc,
+                amount: amount ?? 0
+            ))
+        }
+        
+        lineItems = items
+    }
+    
+    // MARK: - Code Classification & Database Lookup
+    
+    /// Classify a code string into its medical code type using ScannerViewModel patterns
+    private func classifyCodeType(_ code: String) -> MedicalCodeType? {
+        let upper = code.uppercased()
+        guard !upper.isEmpty else { return nil }
+        
+        let first = upper.first!
+        
+        // HCPCS: letter A-V + 4 digits
+        if first.isLetter && first >= "A" && first <= "V" && upper.count == 5 {
+            let digits = upper.dropFirst()
+            if digits.allSatisfy(\.isNumber) { return .hcpcs }
+        }
+        
+        // ICD-10-CM: letter + 2 digits + optional dot + 1-4 alphanumeric
+        if first.isLetter && first != "U" && upper.count >= 3 {
+            let afterFirst = upper.dropFirst()
+            if afterFirst.prefix(2).allSatisfy(\.isNumber) {
+                if upper.contains(".") || upper.count <= 7 {
+                    return .icd10
+                }
+            }
+        }
+        
+        // ICD-10-PCS: 7 alphanumeric
+        if upper.count == 7 && upper.allSatisfy({ $0.isNumber || $0.isLetter }) {
+            return .icd10pcs
+        }
+        
+        // CPT: 5 digits in valid range
+        if upper.count == 5 && upper.allSatisfy(\.isNumber) {
+            if let num = Int(upper), num >= 10000 && num <= 99499 {
+                return .cpt
+            }
+        }
+        
+        return nil
+    }
+    
+    // MARK: - Account Statement Line Item Parser (multi-column format)
+
+    /// Parses procedure line items from an account-statement bill (e.g. West Volusia).
+    ///
+    /// Account statement format groups charges by visit/voucher.  Each voucher contains:
+    ///  - Procedure rows: date + code + description + charge amount
+    ///  - Accounting rows: insurance payments, adjustments, patient payments
+    ///  - A "Visit Total" row with the net patient responsibility
+    ///
+    /// This parser:
+    ///  1. Skips accounting/payment rows (using `layout.accountingRowKeywords`)
+    ///  2. Extracts CPT-coded procedure rows with their charge amounts
+    ///  3. Sums Visit Total lines to compute total patient responsibility
+    ///  4. Falls back to "Patient Balance:" at the bottom of the statement
+    private func parseAccountStatementLineItems(layout: ProcedureColumnLayout) {
+        let lines = procedureText.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        var items: [ParsedLineItem] = []
+        var visitTotalSum: Double = 0
+        var totalChargesSum: Double = 0
+
+        let datePattern = #"^\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}"#
+
+        for line in lines {
+            let lower = line.lowercased()
+
+            // ── Skip column headers ──
+            if lower.hasPrefix("date") && (lower.contains("code") || lower.contains("reason")
+                || lower.contains("activity") || lower.contains("description")) { continue }
+            if layout.chargesColumnKeywords.contains(where: { lower.contains($0) })
+                && layout.paymentsColumnKeywords.contains(where: { lower.contains($0) }) { continue }
+
+            // ── Skip voucher group headers ──
+            if layout.voucherLabels.contains(where: { lower.hasPrefix($0.lowercased()) }) { continue }
+            if lower.hasPrefix("patient:") { continue }
+
+            // ── Capture Visit Total for patient-responsibility sum ──
+            if layout.visitTotalLabels.contains(where: { lower.contains($0.lowercased()) }) {
+                // The patient-amount column is the LAST dollar value on the line
+                if let amt = extractLastDollarAmount(from: line) {
+                    visitTotalSum += amt
+                }
+                continue
+            }
+
+            // ── Global total/summary lines ──
+            if lower.contains("total charge") || lower.contains("charges total") {
+                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
+                    totalChargesSum = amt
+                    totalCharges = String(format: "%.2f", amt)
+                    if billedAmount.isEmpty { billedAmount = totalCharges }
+                }
+                continue
+            }
+            if lower.contains("insurance adjust") || lower.contains("contractual") {
+                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
+                    insuranceAdjustment = String(format: "%.2f", amt)
+                }
+                continue
+            }
+            if lower.contains("insurance paid") || lower.contains("ins paid") {
+                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
+                    insurancePaid = String(format: "%.2f", amt)
+                }
+                continue
+            }
+            if lower.contains("patient balance") || lower.contains("amount due") || lower.contains("balance due") {
+                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
+                    amountDue = String(format: "%.2f", amt)
+                }
+                continue
+            }
+
+            // ── Skip accounting/payment rows ──
+            if layout.accountingRowKeywords.contains(where: { lower.contains($0.lowercased()) }) {
+                // But capture negative patient payments for insurance-paid running total
+                continue
+            }
+
+            // ── Procedure rows: must start with a date ──
+            guard line.range(of: datePattern, options: .regularExpression) != nil else { continue }
+
+            // Extract the charge amount — first dollar value on the line is the
+            // "Charges & Debits" column in the multi-column statement format.
+            let charge = extractFirstDollarAmount(from: line) ?? 0.0
+            guard charge > 0 else { continue }
+
+            // Extract code — a 5-digit CPT code or alphanumeric HCPCS
+            let code = extractFirstMedicalCode(from: line)
+
+            // Description is everything between the code and the first dollar amount
+            let description = extractStatementDescription(from: line, code: code)
+
+            let item = ParsedLineItem(
+                code:        code,
+                description: description,
+                amount:      charge,
+                codeType:    code.isEmpty ? nil : classifyCodeType(code)
+            )
+            items.append(item)
+        }
+
+        lineItems = items
+
+        // Set amountDue from visit total sum if not already found on a labelled line
+        if amountDue.isEmpty && visitTotalSum != 0 {
+            amountDue = String(format: "%.2f", visitTotalSum)
+        }
+        if totalCharges.isEmpty && totalChargesSum > 0 {
+            totalCharges = String(format: "%.2f", totalChargesSum)
+        }
+        if billedAmount.isEmpty {
+            billedAmount = totalCharges.isEmpty
+                ? (amountDue.isEmpty ? "" : amountDue)
+                : totalCharges
+        }
+
+        #if DEBUG
+        print("── AccountStatement: \(items.count) procedures, visitTotalSum=\(visitTotalSum)")
+        #endif
+    }
+
+    /// Returns the first dollar-formatted amount found on a line.
+    /// Used to extract the "Charges & Debits" column (leftmost dollar value).
+    private func extractFirstDollarAmount(from text: String) -> Double? {
+        let pattern = #"\$?([\d,]+\.?\d{0,2})"#
+        guard let match = text.range(of: pattern, options: .regularExpression) else { return nil }
+        let raw = String(text[match])
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+        return Double(raw)
+    }
+
+    /// Returns the LAST dollar-formatted amount found on a line.
+    /// Used to extract the "Patient Amount" column (rightmost dollar value).
+    private func extractLastDollarAmount(from text: String) -> Double? {
+        let pattern = #"\$?([\d,]+\.?\d{0,2})"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: range)
+        guard let last = matches.last,
+              let r = Range(last.range, in: text) else { return nil }
+        let raw = String(text[r])
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+        return Double(raw)
+    }
+
+    /// Extracts the first 5-digit CPT code or HCPCS code from a statement line.
+    private func extractFirstMedicalCode(from line: String) -> String {
+        // 5-digit CPT: 10000–99499
+        if let range = line.range(of: #"\b[0-9]{5}\b"#, options: .regularExpression) {
+            let candidate = String(line[range])
+            if let n = Int(candidate), n >= 10000 && n <= 99499 { return candidate }
+        }
+        // HCPCS: letter + 4 digits (e.g. J2175)
+        if let range = line.range(of: #"\b[A-Z][0-9]{4}\b"#, options: .regularExpression) {
+            return String(line[range])
+        }
+        return ""
+    }
+
+    /// Extracts the description portion of a statement line (between the code and first dollar).
+    private func extractStatementDescription(from line: String, code: String) -> String {
+        var work = line
+        // Remove leading date
+        if let dateEnd = work.range(of: #"^\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\s*"#, options: .regularExpression) {
+            work = String(work[dateEnd.upperBound...])
+        }
+        // Remove the code if present
+        if !code.isEmpty, let codeRange = work.range(of: code) {
+            work = String(work[codeRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+        }
+        // Take everything up to the first dollar amount or digit sequence that looks like a column value
+        if let amtRange = work.range(of: #"\s+\$?[\d,]+\.?\d{0,2}"#, options: .regularExpression) {
+            work = String(work[work.startIndex..<amtRange.lowerBound])
+        }
+        return work.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Look up each line item's code in the medical code database
+    private func lookupLineItemCodes() {
+        let cloudKit = appState.cloudKitService
+        
+        for i in lineItems.indices {
+            let code = lineItems[i].code
+            guard !code.isEmpty else { continue }
+            
+            // Classify the code type
+            lineItems[i].codeType = classifyCodeType(code)
+            
+            // Look up in the database
+            if let matched = cloudKit.lookupCode(code.uppercased()) {
+                lineItems[i].matchedMedicalCode = matched
+                lineItems[i].codeType = matched.codeType
+                
+                // If OCR description is empty/generic, use database description
+                if lineItems[i].description.isEmpty
+                    || lineItems[i].description.hasPrefix("Procedure ")
+                    || lineItems[i].description == "Unknown" {
+                    lineItems[i].description = matched.shortDescription
+                }
+                
+                #if DEBUG
+                print("  🔍 \(code) → \(matched.shortDescription) [\(matched.codeType.rawValue)]")
+                #endif
+            } else {
+                lineItems[i].lookupFailed = true
+                #if DEBUG
+                print("  🔍 \(code) → not found in database")
+                #endif
+            }
+        }
+        
+        // Also scan the full procedure text for additional codes not captured as line items
+        scanForAdditionalCodes()
+    }
+    
+    /// Scan procedure + insurance text for medical codes that weren't captured as line items
+    private func scanForAdditionalCodes() {
+        let allText = (procedureText + "\n" + insuranceText).uppercased()
+        let existingCodes = Set(lineItems.map { $0.code.uppercased() })
+        let cloudKit = appState.cloudKitService
+        
+        // Regex patterns from ScannerViewModel
+        let patterns: [(String, MedicalCodeType)] = [
+            (#"\b([A-V]\d{4})\b"#, .hcpcs),
+            (#"\b(\d{5})\b"#, .cpt),
+            (#"\b([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b"#, .icd10)
+        ]
+        
+        var newItems: [ParsedLineItem] = []
+        
+        for (pattern, codeType) in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            let matches = regex.matches(in: allText, range: NSRange(allText.startIndex..., in: allText))
+            
+            for match in matches {
+                guard let range = Range(match.range(at: 1), in: allText) else { continue }
+                let code = String(allText[range])
+                
+                // Skip if already a line item or invalid
+                guard !existingCodes.contains(code) else { continue }
+                guard classifyCodeType(code) != nil else { continue }
+                
+                // For CPT, reject if < 10000
+                if codeType == .cpt, let num = Int(code), num < 10000 { continue }
+                
+                // Avoid duplicates in new items
+                guard !newItems.contains(where: { $0.code == code }) else { continue }
+                
+                // Look up in database
+                let matched = cloudKit.lookupCode(code)
+                let desc = matched?.shortDescription ?? "Detected \(codeType.rawValue) code"
+                
+                let item = ParsedLineItem(
+                    code: code,
+                    description: desc,
+                    amount: 0,
+                    isSelected: false,  // Not auto-selected — user decides
+                    codeType: codeType,
+                    matchedMedicalCode: matched,
+                    lookupFailed: matched == nil
+                )
+                
+                newItems.append(item)
+                
+                #if DEBUG
+                print("  🆕 Additional code: \(code) → \(desc)")
+                #endif
+            }
+        }
+        
+        if !newItems.isEmpty {
+            lineItems.append(contentsOf: newItems)
+        }
+    }
+    
+    // MARK: - Import from Code Scanner
+    
+    /// Convert ScannedCode objects from ScannerView into ParsedLineItems and add to bill
+    private func importScannedCodes(_ scannedCodes: [ScannedCode]) {
+        let existingCodes = Set(lineItems.map { $0.code.uppercased() })
+        var newItems: [ParsedLineItem] = []
+        
+        for sc in scannedCodes {
+            let code = sc.detectedCode.uppercased()
+            guard !existingCodes.contains(code) else { continue }
+            guard !newItems.contains(where: { $0.code.uppercased() == code }) else { continue }
+            
+            let codeType = sc.possibleType ?? classifyCodeType(code)
+            let description = sc.matchedMedicalCode?.shortDescription
+                ?? (sc.scannedDescription.isEmpty ? "Scanned code" : sc.scannedDescription)
+            
+            let item = ParsedLineItem(
+                code: code,
+                description: description,
+                amount: sc.scannedPrice ?? 0,
+                isSelected: true,
+                codeType: codeType,
+                matchedMedicalCode: sc.matchedMedicalCode,
+                lookupFailed: sc.lookupFailed
+            )
+            newItems.append(item)
+        }
+        
+        if !newItems.isEmpty {
+            lineItems.append(contentsOf: newItems)
+            #if DEBUG
+            print("📥 Imported \(newItems.count) codes from scanner: \(newItems.map(\.code))")
+            #endif
+        }
+    }
+    
+    // MARK: - Parsing Helpers
+    
+    /// Known labels for multi-label splitting — ordered longest first to avoid partial matches
+    private static let knownLabels: [(pattern: String, key: String)] = [
+        ("patient name", "patient name"), ("patient address", "patient address"),
+        ("patient", "patient"), ("name", "name"),
+        ("insured name", "insured name"), ("insured", "insured"),
+        ("subscriber", "subscriber"),
+        ("account number", "account number"), ("account #", "account #"),
+        ("account no", "account no"), ("acct #", "acct #"), ("account", "account"),
+        ("date of service", "date of service"), ("date(s) of service", "date of service"),
+        ("service date", "service date"), ("dos", "dos"),
+        ("date of birth", "date of birth"), ("dob", "dob"),
+        ("mrn", "mrn"), ("medical record number", "mrn"), ("medical record", "mrn"),
+        ("discharge date", "discharge date"), ("discharged", "discharge date"),
+        ("date of discharge", "discharge date"), ("disch date", "discharge date"),
+        ("admit date", "admit date"), ("admission date", "admit date"),
+        ("date of admission", "admit date"), ("admitted", "admit date"),
+        ("insurance company", "insurance company"), ("insurance", "insurance"),
+        ("carrier", "carrier"), ("payer", "payer"),
+        ("policy number", "policy number"), ("policy #", "policy #"),
+        ("policy no", "policy no"), ("policy", "policy"),
+        ("member id", "member id"), ("member #", "member #"), ("member", "member"),
+        ("subscriber id", "subscriber id"), ("id #", "id #"),
+        ("group number", "group number"), ("group #", "group #"),
+        ("group no", "group no"), ("group", "group"),
+        ("plan type", "plan type"), ("plan name", "plan name"),
+        ("provider", "provider"), ("facility", "facility"),
+        ("hospital", "hospital"), ("clinic", "clinic"),
+        ("remit to", "remit to"), ("pay to", "remit to"), ("send to", "remit to"),
+        ("return to", "remit to"), ("bill to", "remit to"),
+        ("office phone number", "office phone"), ("office phone", "office phone"),
+        ("phone number", "phone"), ("phone", "phone"), ("tel", "tel"), ("telephone", "telephone"),
+        ("fax", "fax"), ("npi", "npi"), ("address", "address"),
+        ("voucher", "voucher"),
+        ("statement date", "statement date"), ("due date", "due date"),
+        ("patient balance", "patient balance"),
+        ("email", "email"), ("e-mail", "email"),
+        ("website", "website"), ("web", "website"), ("url", "website"),
+        ("tax id", "tax id"), ("tax identification", "tax id"), ("ein", "ein"),
+        ("federal id", "tax id"), ("fed id", "tax id"),
+        ("license number", "license"), ("license #", "license"),
+        ("license no", "license"), ("lic #", "license"), ("lic", "license"),
+        ("total charges", "total charges"), ("amount due", "amount due"),
+        ("insurance paid", "insurance paid"), ("insurance adjustment", "insurance adjustment"),
+    ]
+    
+    /// Extract ALL label:value pairs from lines, splitting multi-label lines
+    /// e.g. "Patient: Michael R. Thompson  Account #: ACCT-2024-78452"
+    /// → [("patient", "Michael R. Thompson"), ("account #", "ACCT-2024-78452")]
+    private func extractAllLabelValuePairs(from lines: [String]) -> [(String, String)] {
+        var pairs: [(String, String)] = []
+        
+        for line in lines {
+            let lower = line.lowercased()
+            
+            // Find all recognized label positions in this line
+            var labelPositions: [(pos: Int, len: Int, key: String)] = []
+            
+            for (pattern, key) in Self.knownLabels {
+                var searchStart = lower.startIndex
+                while let range = lower.range(of: pattern, range: searchStart..<lower.endIndex) {
+                    // Check that a colon follows (possibly with whitespace)
+                    let afterLabel = lower[range.upperBound...].trimmingCharacters(in: .whitespaces)
+                    guard afterLabel.hasPrefix(":") || lower[range.upperBound...].hasPrefix(":") else {
+                        searchStart = range.upperBound; continue
+                    }
+                    
+                    let pos = lower.distance(from: lower.startIndex, to: range.lowerBound)
+                    // Find the colon position
+                    let colonSearchStart = range.upperBound
+                    guard let colonRange = lower.range(of: ":", range: colonSearchStart..<lower.endIndex) else {
+                        searchStart = range.upperBound; continue
+                    }
+                    let colonPos = lower.distance(from: lower.startIndex, to: colonRange.upperBound)
+                    let len = colonPos - pos
+                    
+                    // Don't add if overlaps with a longer label at same position
+                    if !labelPositions.contains(where: { $0.pos == pos && $0.len >= len }) {
+                        labelPositions.removeAll { $0.pos == pos && $0.len < len }
+                        labelPositions.append((pos, len, key))
+                    }
+                    searchStart = colonRange.upperBound
+                }
+            }
+            
+            if labelPositions.isEmpty {
+                // No recognized labels — try generic "Word: Value" pattern
+                if let colonRange = line.range(of: ":") {
+                    let label = String(line[line.startIndex..<colonRange.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    let value = String(line[colonRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+                    if !label.isEmpty && label.count <= 30 && !value.isEmpty {
+                        pairs.append((label, value))
+                    }
+                }
+                continue
+            }
+            
+            // Sort by position and extract values
+            labelPositions.sort { $0.pos < $1.pos }
+
+            let lineCount = line.count
+            for (idx, lp) in labelPositions.enumerated() {
+                // Guard: valueStart must not exceed the line length
+                let startOffset = min(lp.pos + lp.len, lineCount)
+                let valueStart  = line.index(line.startIndex, offsetBy: startOffset)
+
+                let valueEnd: String.Index
+                if idx + 1 < labelPositions.count {
+                    // Guard: valueEnd must not precede valueStart (overlapping labels)
+                    let endOffset = min(
+                        max(labelPositions[idx + 1].pos, startOffset),
+                        lineCount
+                    )
+                    valueEnd = line.index(line.startIndex, offsetBy: endOffset)
+                } else {
+                    valueEnd = line.endIndex
+                }
+
+                // Final safety net — skip silently if range is somehow still inverted
+                guard valueStart <= valueEnd else { continue }
+
+                let value = String(line[valueStart..<valueEnd]).trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty {
+                    pairs.append((lp.key, value))
+                }
+            }
+        }
+        
+        return pairs
+    }
+    
+    private func parseDate(_ text: String) -> Date? {
+        let formatters = [
+            "MM/dd/yyyy", "M/d/yyyy", "MM/dd/yy", "M/d/yy",
+            "yyyy-MM-dd", "MM-dd-yyyy", "M-d-yy"
+        ]
+        for fmt in formatters {
+            let df = DateFormatter()
+            df.dateFormat = fmt
+            df.locale = Locale(identifier: "en_US_POSIX")
+            if let date = df.date(from: text.trimmingCharacters(in: .whitespaces)) {
+                return date
+            }
+        }
+        return nil
+    }
+    
+    private func looksLikeName(_ text: String) -> Bool {
+        let words = text.split(separator: " ")
+        if words.count < 2 || words.count > 5 { return false }
+        return text.rangeOfCharacter(from: .decimalDigits) == nil && words.allSatisfy { $0.first?.isLetter == true }
+    }
+    
+    private func looksLikeAddress(_ text: String) -> Bool {
+        let upper = text.uppercased()
+        let indicators = ["STREET", "ST.", "ST ", "AVE", "AVENUE", "BLVD", "DRIVE", "DR.", "DR ",
+                          "ROAD", "RD.", "RD ", "LANE", "LN.", "LN ", "WAY", "SUITE", "STE",
+                          "P.O. BOX", "PO BOX", "P O BOX", "COURT", "CT.", "CT ",
+                          "CIRCLE", "CIR", "PLACE", "PL.", "PIKE", "HWY", "HIGHWAY",
+                          "NORTH ", "SOUTH ", "EAST ", "WEST ", " N ", " S ", " E ", " W "]
+        if indicators.contains(where: { upper.contains($0) }) { return true }
+        if text.first?.isNumber == true && text.count > 10 { return true }
+        return text.range(of: #"\b\d{5}(-\d{4})?\b"#, options: .regularExpression) != nil
+    }
+    
+    private func looksLikePhone(_ text: String) -> Bool {
+        let digits = text.filter { $0.isNumber }
+        return digits.count >= 10 && digits.count <= 11
+    }
+    
+    private func extractProcedureCode(from text: String) -> String? {
+        // CPT codes: 5 digits (99284, 71046, etc.)
+        // HCPCS codes: letter + 4 digits (J2175, etc.)
+        // Revenue codes: 4 digits (0121, 0112, etc.) — hospital UB-04 billing
+        // ICD-10: letter + 2-4 digits with optional dot (A01.1, M54.5)
+        let patterns = [
+            #"\b([A-Z]\d{4})\b"#,          // HCPCS: J2175
+            #"\b(\d{5})\b"#,                // CPT: 99284
+            #"\b(0\d{3})\b"#,               // Revenue code: 0121 (starts with 0, 4 digits)
+            #"\b([A-Z]\d{2,4}\.?\d{0,2})\b"# // ICD-10: M54.5
+        ]
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern),
+               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+               let range = Range(match.range(at: 1), in: text) {
+                let code = String(text[range])
+                
+                // Reject if the code is part of a longer digit sequence (account #, date, etc.)
+                if range.lowerBound > text.startIndex {
+                    let before = text[text.index(before: range.lowerBound)]
+                    if before.isNumber { continue }
+                }
+                if range.upperBound < text.endIndex {
+                    let after = text[range.upperBound]
+                    if after.isNumber { continue }
+                }
+                
+                // Reject ZIP codes (5 digits preceded by state abbreviation)
+                if code.allSatisfy(\.isNumber), code.count == 5 {
+                    let beforeCode = String(text[text.startIndex..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    if beforeCode.count >= 2 {
+                        let lastTwo = String(beforeCode.suffix(2)).uppercased()
+                        let states: Set<String> = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID",
+                                                   "IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS",
+                                                   "MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK",
+                                                   "OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
+                        if states.contains(lastTwo) { continue }
+                    }
+                    
+                    if let num = Int(code) {
+                        if num < 10000 { continue }
+                    }
+                }
+                
+                return code
+            }
+        }
+        return nil
+    }
+    
+    /// Extract dollar amount — REQUIRES "$" sign to avoid matching dates (11/15/24 → 24)
+    private func extractStrictDollarAmount(from text: String) -> Double? {
+        // Must have "$" followed by digits, optional comma groups, optional decimal
+        let pattern = #"-?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)"#
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(text.startIndex..., in: text)
+        let matches = regex?.matches(in: text, range: range) ?? []
+        
+        var amounts: [Double] = []
+        for match in matches {
+            if let range = Range(match.range(at: 1), in: text) {
+                let amountStr = String(text[range]).replacingOccurrences(of: ",", with: "")
+                if let amount = Double(amountStr), amount > 0 {
+                    amounts.append(amount)
+                }
+            }
+        }
+        // Return the largest amount (most likely the charge, not quantity)
+        return amounts.max()
+    }
+    
+    /// Extract a plain decimal amount (no "$" required) — used as fallback
+    /// Only matches numbers with exactly 2 decimal places to avoid matching dates, quantities, etc.
+    private func extractPlainAmount(from text: String) -> Double? {
+        // Match numbers like 15,000.00 or 245.00 — must have .XX decimal
+        let pattern = #"\b(\d{1,3}(?:,\d{3})*\.\d{2})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: range)
+        
+        var amounts: [Double] = []
+        for match in matches {
+            guard let r = Range(match.range(at: 1), in: text) else { continue }
+            let numStr = String(text[r]).replacingOccurrences(of: ",", with: "")
+            guard let val = Double(numStr), val > 0.99 else { continue }  // Skip tiny values (likely not charges)
+            
+            // Reject if it looks like a date (e.g., 10/15/2024 → "2024" won't match .XX pattern, but 10.15 could)
+            // Check that there's no "/" immediately before or after
+            if match.range.location > 0 {
+                let nsText = text as NSString
+                let charBefore = nsText.substring(with: NSRange(location: match.range.location - 1, length: 1))
+                if charBefore == "/" { continue }
+            }
+            let endLoc = match.range.location + match.range.length
+            if endLoc < (text as NSString).length {
+                let charAfter = (text as NSString).substring(with: NSRange(location: endLoc, length: 1))
+                if charAfter == "/" { continue }
+            }
+            
+            amounts.append(val)
+        }
+        
+        return amounts.max()
+    }
+    
+    // MARK: - Scanned Name Parsing
+    
+    /// Split scanned patientName into first/last for Patient creation
+    private var scannedFirstName: String {
+        let parts = patientName.trimmingCharacters(in: .whitespaces).split(separator: " ")
+        return parts.first.map(String.init) ?? ""
+    }
+    
+    private var scannedLastName: String {
+        let parts = patientName.trimmingCharacters(in: .whitespaces).split(separator: " ")
+        if parts.count >= 2 {
+            return parts.dropFirst().joined(separator: " ")
+        }
+        return ""
+    }
+    
+    /// Check if scanned name matches a patient (case-insensitive, flexible)
+    private func patientMatchesScannedName(_ patient: Patient) -> Bool {
+        let scanned = patientName.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !scanned.isEmpty else { return true } // No scanned name = use current
+        
+        let full = patient.fullName.lowercased()
+        let display = patient.displayName.lowercased()
+        
+        // Exact match
+        if scanned == full || scanned == display { return true }
+        
+        // Contains match (handles "MARY M ARSENAULT" matching "Mary Arsenault")
+        let scannedParts = Set(scanned.split(separator: " ").map(String.init))
+        let patientParts = Set((full).split(separator: " ").map(String.init))
+        
+        // At least first and last name overlap
+        let overlap = scannedParts.intersection(patientParts)
+        if overlap.count >= 2 { return true }
+        
+        // Last name + first initial
+        if patient.lastName.lowercased() == scannedLastName.lowercased()
+            && !scannedFirstName.isEmpty
+            && patient.firstName.lowercased().hasPrefix(scannedFirstName.lowercased().prefix(1)) {
+            return true
+        }
+        
+        return false
+    }
+    
+    /// Find an existing patient whose name matches the scanned name
+    private func findMatchingPatient() -> Patient? {
+        guard !patientName.isEmpty else { return nil }
+        return patientDataService.patients.first(where: { patientMatchesScannedName($0) })
+    }
+    
+    // MARK: - Save Bill
+    
+    private func saveBill() {
+        isSaving = true
+        
+        // ── Step 1: Resolve which patient this bill belongs to ──
+        
+        // No patients at all?
+        if patientDataService.patients.isEmpty {
+            isSaving = false
+            showingNoPatientAlert = true
+            return
+        }
+        
+        // No patient selected?
+        guard let currentPatientId = appState.selectedPatientId,
+              let currentPatient = patientDataService.patients.first(where: { $0.id == currentPatientId }) else {
+            // Try to find matching patient by name
+            if let matched = findMatchingPatient() {
+                resolvedPatientId = matched.id
+                appState.selectPatient(matched.id)
+                continueSaveBill()
+            } else {
+                isSaving = false
+                showingNoPatientAlert = true
+            }
+            return
+        }
+        
+        // Scanned name present but doesn't match current patient?
+        if !patientName.isEmpty && !patientMatchesScannedName(currentPatient) {
+            // Check if another existing patient matches
+            matchedExistingPatient = patientDataService.patients.first(where: {
+                $0.id != currentPatientId && patientMatchesScannedName($0)
+            })
+            isSaving = false
+            showingPatientPrompt = true
+            return
+        }
+        
+        // Name matches or no scanned name — use current patient
+        resolvedPatientId = currentPatientId
+        continueSaveBill()
+    }
+    
+    /// Create a new patient from scanned data and save the bill to them
+    private func createPatientFromScanAndSave() {
+        let first = scannedFirstName
+        let last = scannedLastName
+        
+        guard !first.isEmpty, !last.isEmpty else {
+            // Can't parse name — fall back to no-patient alert
+            showingNoPatientAlert = true
+            return
+        }
+        
+        // Parse DOB if available
+        var dob: Date?
+        if !dateOfBirth.isEmpty {
+            let formats = ["MM/dd/yyyy", "MM-dd-yyyy", "yyyy-MM-dd", "MM/dd/yy"]
+            let formatter = DateFormatter()
+            for fmt in formats {
+                formatter.dateFormat = fmt
+                if let d = formatter.date(from: dateOfBirth) { dob = d; break }
+            }
+        }
+        
+        // Parse address if available
+        var addresses: [PatientAddress] = []
+        if !patientAddress.isEmpty {
+            addresses.append(PatientAddress(
+                label: .home,
+                street1: patientAddress,
+                isPrimary: true
+            ))
+        }
+        
+        let patient = Patient(
+            guardianUserId: UserManager.shared.currentUser?.id ?? "",
+            firstName: first,
+            lastName: last,
+            dateOfBirth: dob,
+            relationship: .other,
+            addresses: addresses
+        )
+        
+        patientDataService.savePatient(patient)
+        appState.selectPatient(patient.id)
+        resolvedPatientId = patient.id
+        
+        #if DEBUG
+        print("👤 Created patient from scan: \(patient.displayName) (id: \(patient.id))")
+        #endif
+        
+        isSaving = true
+        continueSaveBill()
+    }
+    
+    /// Continue saving once patient is resolved
+    private func continueSaveBill() {
+        guard let patientId = resolvedPatientId else {
+            isSaving = false
+            return
+        }
+        isSaving = true
+        
+        let totalAmount = Double(billedAmount) ?? lineItems.reduce(0) { $0 + $1.amount }
+        
+        // Build BillLineItems from parsed items with enriched data
+        let billLineItems: [BillLineItem] = lineItems.filter(\.isSelected).map { item in
+            var notes: String? = nil
+            if let mc = item.matchedMedicalCode, mc.hasValidPricing {
+                notes = "Typical range: \(mc.formattedPriceRange)"
+            }
+            return BillLineItem(
+                procedureCode: item.code.isEmpty ? nil : item.code,
+                procedureDescription: item.bestDescription,
+                serviceDate: serviceDate,
+                quantity: 1,
+                unitCharge: item.amount,
+                totalCharge: item.amount,
+                notes: notes
+            )
+        }
+        
+        // Extract procedure codes using classified types
+        let cptCodes = lineItems.filter(\.isSelected).compactMap { item -> String? in
+            guard !item.code.isEmpty else { return nil }
+            if let t = item.codeType { return (t == .cpt || t == .hcpcs) ? item.code : nil }
+            return item.code.first?.isNumber == true ? item.code : nil
+        }
+        let diagCodes = lineItems.filter(\.isSelected).compactMap { item -> String? in
+            guard !item.code.isEmpty else { return nil }
+            if let t = item.codeType { return (t == .icd10 || t == .icd10pcs) ? item.code : nil }
+            return item.code.first?.isLetter == true ? item.code : nil
+        }
+        
+        // Build notes with supplementary fields
+        var notesParts: [String] = []
+        if !patientAddress.isEmpty { notesParts.append("Patient Address: \(patientAddress)") }
+        if !dateOfBirth.isEmpty { notesParts.append("DOB: \(dateOfBirth)") }
+        if !mrn.isEmpty { notesParts.append("MRN: \(mrn)") }
+        if !dischargeDate.isEmpty { notesParts.append("Discharge Date: \(dischargeDate)") }
+        if !insurancePlanType.isEmpty { notesParts.append("Plan Type: \(insurancePlanType)") }
+        
+        // ── Create or find Provider with full address ──
+        Task { @MainActor in
+            let providerId = await createOrUpdateProvider()
+            
+            // ── Create or find Insurance Policy from scanned data ──
+            let policyId = createOrFindInsurancePolicy(patientId: patientId)
+            
+            let claim = Claim(
+                patientId: patientId,
+                policyId: policyId ?? (policyNumber.isEmpty ? memberId : policyNumber),
+                providerId: providerId,
+                providerName: providerName.isEmpty ? nil : providerName,
+                claimNumber: accountNumber.isEmpty ? nil : accountNumber,
+                status: .notSubmitted,
+                serviceDate: serviceDate,
+                billedAmount: totalAmount,
+                patientResponsibility: totalAmount,
+                procedureCodes: cptCodes.isEmpty ? nil : cptCodes,
+                diagnosisCodes: diagCodes.isEmpty ? nil : diagCodes,
+                notes: notesParts.isEmpty ? nil : notesParts.joined(separator: "\n"),
+                lineItems: billLineItems,
+                insurancePayments: [],
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            
+            // ── Check for duplicate before saving ──
+            if let existing = patientDataService.findDuplicateClaim(
+                patientId: patientId,
+                providerName: providerName.isEmpty ? nil : providerName,
+                claimNumber: accountNumber.isEmpty ? nil : accountNumber,
+                serviceDate: serviceDate,
+                billedAmount: totalAmount
+            ) {
+                // Duplicate found — ask user what to do
+                duplicateClaim = existing
+                pendingClaim = claim
+                pendingProviderId = providerId
+                isSaving = false
+                showingDuplicateAlert = true
+            } else {
+                // No duplicate — save directly
+                patientDataService.saveClaim(claim)
+                savedClaimId = claim.id
+                isSaving = false
+                saveResult = .scanMore
+            }
+        }
+    }
+    
+    /// Replace the existing duplicate with the new scanned bill
+    private func replaceExistingClaim() {
+        guard var claim = pendingClaim, let existing = duplicateClaim else { return }
+        isSaving = true
+        
+        // Preserve any user-entered data from the old claim that's missing from the scan
+        // (e.g., if the old claim had insurance payments recorded, carry them forward)
+        if claim.insurancePayments.isEmpty && !existing.insurancePayments.isEmpty {
+            claim.insurancePayments = existing.insurancePayments
+        }
+        if claim.paidAmount == nil { claim.paidAmount = existing.paidAmount }
+        if claim.allowedAmount == nil { claim.allowedAmount = existing.allowedAmount }
+        if claim.adjustmentAmount == nil { claim.adjustmentAmount = existing.adjustmentAmount }
+        if claim.eobReceived == false && existing.eobReceived {
+            claim.eobReceived = existing.eobReceived
+            claim.eobDate = existing.eobDate
+            claim.eobDocumentId = existing.eobDocumentId
+        }
+        // Keep the old status if it's further along than "not submitted"
+        if existing.status != .notSubmitted && claim.status == .notSubmitted {
+            claim.status = existing.status
+            claim.statusHistory = existing.statusHistory
+        }
+        
+        // Use the existing claim's ID so it's an in-place update
+        claim.id = existing.id
+        claim.createdAt = existing.createdAt  // preserve original creation date
+        claim.updatedAt = Date()
+        
+        patientDataService.saveClaim(claim)
+        savedClaimId = claim.id
+        
+        duplicateClaim = nil
+        pendingClaim = nil
+        pendingProviderId = nil
+        isSaving = false
+        saveResult = .scanMore
+    }
+    
+    /// Keep both the existing and new claim
+    private func saveAsNewClaim() {
+        guard let claim = pendingClaim else { return }
+        isSaving = true
+        
+        patientDataService.saveClaim(claim)
+        savedClaimId = claim.id
+        
+        duplicateClaim = nil
+        pendingClaim = nil
+        pendingProviderId = nil
+        isSaving = false
+        saveResult = .scanMore
+    }
+    
+    // MARK: - Insurance Policy Creation
+    
+    /// Find an existing policy or create a new one from scanned insurance data.
+    /// Returns the policy ID, or nil if no insurance data was scanned.
+    private func createOrFindInsurancePolicy(patientId: String) -> String? {
+        // Need at least a carrier name or member ID to create a policy
+        guard !insuranceCarrier.isEmpty || !memberId.isEmpty else { return nil }
+        
+        // ── Find or create carrier ──
+        let carrierName = insuranceCarrier.trimmingCharacters(in: .whitespaces)
+        var carrierId: String
+        
+        if !carrierName.isEmpty {
+            // Try to match an existing carrier (case-insensitive, contains match)
+            let carrierLower = carrierName.lowercased()
+            if let existing = patientDataService.insuranceCarriers.first(where: {
+                $0.name.lowercased() == carrierLower
+                || $0.name.lowercased().contains(carrierLower)
+                || carrierLower.contains($0.name.lowercased())
+                || ($0.shortName?.lowercased() == carrierLower)
+            }) {
+                carrierId = existing.id
+            } else {
+                // Create new carrier
+                let newCarrier = InsuranceCarrier(
+                    name: carrierName,
+                    phones: []
+                )
+                patientDataService.saveCarrier(newCarrier)
+                carrierId = newCarrier.id
+                #if DEBUG
+                print("🏥 Created carrier from scan: \(carrierName) (id: \(carrierId))")
+                #endif
+            }
+        } else {
+            carrierId = "unknown"
+        }
+        
+        // ── Find existing policy for this patient + carrier ──
+        let existingPolicies = patientDataService.policies(for: patientId)
+        
+        // Match by member ID (strongest match)
+        if !memberId.isEmpty {
+            if let existing = existingPolicies.first(where: {
+                $0.memberId.lowercased() == memberId.lowercased()
+            }) {
+                // Update existing policy with any new scanned data
+                var updated = existing
+                var changed = false
+                if updated.groupNumber == nil && !groupNumber.isEmpty {
+                    updated.groupNumber = groupNumber; changed = true
+                }
+                if updated.policyNumber == nil && !policyNumber.isEmpty {
+                    updated.policyNumber = policyNumber; changed = true
+                }
+                if updated.planType == nil && !insurancePlanType.isEmpty {
+                    if let pt = matchPlanType(insurancePlanType) {
+                        updated.planType = pt; changed = true
+                    }
+                }
+                if changed {
+                    patientDataService.savePolicy(updated)
+                }
+                return existing.id
+            }
+        }
+        
+        // Match by policy number
+        if !policyNumber.isEmpty {
+            if let existing = existingPolicies.first(where: {
+                $0.policyNumber?.lowercased() == policyNumber.lowercased()
+            }) {
+                return existing.id
+            }
+        }
+        
+        // Match by carrier (same carrier, only policy for this patient)
+        if let existing = existingPolicies.first(where: { $0.carrierId == carrierId }) {
+            // Update with any new data
+            var updated = existing
+            var changed = false
+            if updated.memberId.isEmpty && !memberId.isEmpty {
+                updated.memberId = memberId; changed = true
+            }
+            if updated.groupNumber == nil && !groupNumber.isEmpty {
+                updated.groupNumber = groupNumber; changed = true
+            }
+            if updated.policyNumber == nil && !policyNumber.isEmpty {
+                updated.policyNumber = policyNumber; changed = true
+            }
+            if changed {
+                patientDataService.savePolicy(updated)
+            }
+            return existing.id
+        }
+        
+        // ── Create new policy ──
+        let policy = InsurancePolicy(
+            patientId: patientId,
+            carrierId: carrierId,
+            policyType: .medical,
+            planType: matchPlanType(insurancePlanType),
+            planName: insurancePlanType.isEmpty ? nil : insurancePlanType,
+            memberId: memberId,
+            groupNumber: groupNumber.isEmpty ? nil : groupNumber,
+            policyNumber: policyNumber.isEmpty ? nil : policyNumber,
+            isPrimary: existingPolicies.isEmpty // Primary if it's the first policy
+        )
+        
+        patientDataService.savePolicy(policy)
+        
+        // Link policy to patient
+        if var patient = patientDataService.patients.first(where: { $0.id == patientId }) {
+            if !patient.insurancePolicyIds.contains(policy.id) {
+                patient.insurancePolicyIds.append(policy.id)
+                patientDataService.savePatient(patient)
+            }
+        }
+        
+        #if DEBUG
+        print("📋 Created insurance policy from scan: \(carrierName) memberId=\(memberId) policy=\(policyNumber) (id: \(policy.id))")
+        #endif
+        
+        return policy.id
+    }
+    
+    /// Match scanned plan type text to PlanType enum
+    private func matchPlanType(_ text: String) -> PlanType? {
+        let upper = text.uppercased()
+        if upper.contains("HMO") { return .hmo }
+        if upper.contains("PPO") { return .ppo }
+        if upper.contains("EPO") { return .epo }
+        if upper.contains("POS") { return .pos }
+        if upper.contains("HDHP") || upper.contains("HIGH DEDUCTIBLE") { return .hdhp }
+        if upper.contains("MEDICARE ADV") { return .medicareAdvantage }
+        if upper.contains("MEDICARE SUP") || upper.contains("MEDIGAP") { return .medicareSupplement }
+        if upper.contains("MEDICARE PART D") || upper.contains("PART D") { return .medicarePartD }
+        if upper.contains("MEDICAID") { return .medicaid }
+        if upper.contains("TRICARE") { return .tricare }
+        return nil
+    }
+    
+    // MARK: - Provider Creation with Geocoding
+    
+    /// Find existing provider by name or create a new one with address, phone, NPI.
+    /// Geocodes the address and starts geofence monitoring.
+    @MainActor
+    private func createOrUpdateProvider() async -> String? {
+        guard !providerName.isEmpty else { return nil }
+        
+        // Check if provider already exists (case-insensitive name match)
+        if let existing = patientDataService.providers.first(where: {
+            $0.name.lowercased() == providerName.lowercased()
+        }) {
+            // Update existing provider if we have new info it's missing
+            var updated = existing
+            var needsSave = false
+            
+            if updated.address == nil, let addr = parseAddressFields() {
+                updated.address = addr
+                needsSave = true
+            }
+            if updated.phones.isEmpty, !providerPhone.isEmpty {
+                updated.phones = [PhoneNumber(label: .main, number: providerPhone, isPrimary: true)]
+                needsSave = true
+            }
+            if updated.fax == nil, !providerFax.isEmpty {
+                updated.fax = providerFax
+                needsSave = true
+            }
+            if updated.emails.isEmpty, !providerEmail.isEmpty {
+                updated.emails = [providerEmail]
+                needsSave = true
+            }
+            if updated.website == nil, !providerWebsite.isEmpty {
+                updated.website = providerWebsite
+                needsSave = true
+            }
+            if updated.npi == nil, !providerNPI.isEmpty {
+                updated.npi = providerNPI
+                needsSave = true
+            }
+            if updated.taxId == nil, !providerTaxId.isEmpty {
+                updated.taxId = providerTaxId
+                needsSave = true
+            }
+            if updated.licenseNumber == nil, !providerLicense.isEmpty {
+                updated.licenseNumber = providerLicense
+                needsSave = true
+            }
+            
+            // Geocode if address was added and no coordinates yet
+            if needsSave && updated.address != nil && !updated.hasLocation {
+                let _ = await LocationReminderService.shared.geocodeAndUpdateProvider(&updated)
+                if updated.hasLocation && updated.isGeofenceActive {
+                    LocationReminderService.shared.startMonitoringProvider(updated)
+                }
+            }
+            
+            if needsSave {
+                updated.updatedAt = Date()
+                patientDataService.saveProvider(updated)
+            }
+            
+            return existing.id
+        }
+        
+        // Create new provider
+        let address = parseAddressFields()
+        
+        var phones: [PhoneNumber] = []
+        if !providerPhone.isEmpty {
+            phones.append(PhoneNumber(label: .main, number: providerPhone, isPrimary: true))
+        }
+        
+        var emails: [String] = []
+        if !providerEmail.isEmpty { emails.append(providerEmail) }
+        
+        var provider = Provider(
+            name: providerName,
+            providerType: guessProviderType(from: providerName),
+            address: address,
+            phones: phones,
+            emails: emails,
+            fax: providerFax.isEmpty ? nil : providerFax,
+            website: providerWebsite.isEmpty ? nil : providerWebsite,
+            npi: providerNPI.isEmpty ? nil : providerNPI,
+            taxId: providerTaxId.isEmpty ? nil : providerTaxId,
+            licenseNumber: providerLicense.isEmpty ? nil : providerLicense,
+            isGeofenceActive: address != nil
+        )
+        
+        // Geocode if we have an address
+        if address != nil {
+            let success = await LocationReminderService.shared.geocodeAndUpdateProvider(&provider)
+            if success && provider.isGeofenceActive {
+                LocationReminderService.shared.startMonitoringProvider(provider)
+            }
+            #if DEBUG
+            print("── Provider geocode: \(success ? "✅" : "❌") \(provider.address?.latitude ?? 0), \(provider.address?.longitude ?? 0)")
+            #endif
+        }
+        
+        patientDataService.saveProvider(provider)
+        return provider.id
+    }
+    
+    // MARK: - Address Parsing
+    
+    /// Parse raw address text into structured Address fields.
+    /// Handles formats like:
+    ///   "4200 W. Colonial Drive, Orlando, FL 32811"
+    ///   "4200 W Colonial Drive  Orlando, FL 32811"
+    ///   Multi-line: "4200 W Colonial Drive\nOrlando, FL 32811"
+    private func parseAddressFields() -> Address? {
+        // Combine provider address into one line for parsing
+        let raw = providerAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        
+        // Normalize: replace newlines with commas
+        let normalized = raw.replacingOccurrences(of: "\n", with: ", ")
+            .replacingOccurrences(of: "  ", with: ", ")  // double-space from OCR column join
+        
+        // Try to find ZIP code (5 or 5+4 digits)
+        let zipPattern = #"\b(\d{5})(-\d{4})?\b"#
+        guard let zipRegex = try? NSRegularExpression(pattern: zipPattern),
+              let zipMatch = zipRegex.firstMatch(in: normalized, range: NSRange(normalized.startIndex..., in: normalized)),
+              let zipRange = Range(zipMatch.range, in: normalized) else {
+            // No ZIP found — can't parse reliably, store as street1 only
+            return Address(type: .work, street1: raw, city: "", state: "", zipCode: "", isPrimary: true)
+        }
+        
+        let zipCode = String(normalized[zipRange])
+        let beforeZip = String(normalized[normalized.startIndex..<zipRange.lowerBound])
+            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: CharacterSet(charactersIn: ","))
+            .trimmingCharacters(in: .whitespaces)
+        
+        // Try to find state abbreviation right before ZIP
+        var state = ""
+        var beforeState = beforeZip
+        let stateAbbreviations = Set(USState.all.map { $0.abbreviation })
+        
+        // Check last 2 chars or last word before ZIP
+        let words = beforeZip.components(separatedBy: CharacterSet(charactersIn: ", "))
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        
+        if let lastWord = words.last, stateAbbreviations.contains(lastWord.uppercased()) {
+            state = lastWord.uppercased()
+            // Remove state from beforeState
+            if let stateRange = beforeZip.range(of: lastWord, options: .backwards) {
+                beforeState = String(beforeZip[beforeZip.startIndex..<stateRange.lowerBound])
+                    .trimmingCharacters(in: .whitespaces)
+                    .trimmingCharacters(in: CharacterSet(charactersIn: ","))
+                    .trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        // Split remaining into street and city
+        // The last comma-separated segment is the city
+        let parts = beforeState.components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        
+        var street1 = ""
+        var city = ""
+        
+        if parts.count >= 2 {
+            city = parts.last ?? ""
+            street1 = parts.dropLast().joined(separator: ", ")
+        } else if parts.count == 1 {
+            // Only one chunk — could be "4200 W Colonial Drive Orlando"
+            // Try to split on the last word that looks like a city name (capitalized, no digits)
+            let chunk = parts[0]
+            // If it starts with a number, it likely has street + city together
+            // Use last capitalized word group as city
+            if chunk.first?.isNumber == true {
+                // Find where city starts: after the last digit-containing word
+                let chunkWords = chunk.split(separator: " ").map { String($0) }
+                var lastDigitIdx = 0
+                for (i, w) in chunkWords.enumerated() {
+                    if w.rangeOfCharacter(from: .decimalDigits) != nil { lastDigitIdx = i }
+                }
+                // Everything after the street-like portion is the city
+                if lastDigitIdx < chunkWords.count - 1 {
+                    street1 = chunkWords[0...lastDigitIdx].joined(separator: " ")
+                    city = chunkWords[(lastDigitIdx + 1)...].joined(separator: " ")
+                } else {
+                    street1 = chunk
+                }
+            } else {
+                city = chunk
+            }
+        }
+        
+        guard !street1.isEmpty || !city.isEmpty else { return nil }
+        
+        #if DEBUG
+        print("── Parsed address: street=\"\(street1)\" city=\"\(city)\" state=\"\(state)\" zip=\"\(zipCode)\"")
+        #endif
+        
+        return Address(
+            type: .work,
+            street1: street1,
+            city: city,
+            state: state,
+            zipCode: zipCode,
+            isPrimary: true
+        )
+    }
+    
+    /// Guess provider type from name keywords
+    private func guessProviderType(from name: String) -> ProviderType {
+        let lower = name.lowercased()
+        if lower.contains("hospital") { return .hospital }
+        if lower.contains("emergency") || lower.contains("er ") { return .emergencyRoom }
+        if lower.contains("urgent") { return .urgentCare }
+        if lower.contains("pharmacy") || lower.contains("rx") { return .pharmacy }
+        if lower.contains("lab") { return .laboratory }
+        if lower.contains("imaging") || lower.contains("radiology") { return .imagingCenter }
+        if lower.contains("dental") || lower.contains("dentist") { return .dentist }
+        if lower.contains("eye") || lower.contains("vision") || lower.contains("optom") { return .optometrist }
+        if lower.contains("clinic") || lower.contains("medical center") || lower.contains("health center") { return .clinic }
+        if lower.contains("dr.") || lower.contains("dr ") || lower.contains("md") { return .doctor }
+        return .clinic
+    }
+}
+
+// MARK: - Line Item Row
+
+struct LineItemRow: View {
+    @Binding var item: ParsedLineItem
+    @State private var amountText: String = ""
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                // Selection toggle
+                Button {
+                    item.isSelected.toggle()
+                } label: {
+                    Image(systemName: item.isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(item.isSelected ? .accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+                
+                // Code + type badge
+                if !item.code.isEmpty {
+                    HStack(spacing: 4) {
+                        if let codeType = item.codeType {
+                            Text(codeType.rawValue)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 4).padding(.vertical, 1)
+                                .background(codeTypeColor(codeType))
+                                .cornerRadius(3)
+                        }
+                        
+                        Text(item.code)
+                            .font(.system(.caption, design: .monospaced))
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(4)
+                }
+                
+                Spacer()
+                
+                // Amount
+                Text(item.amount, format: .currency(code: "USD"))
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(item.isSelected ? .primary : .secondary)
+            }
+            
+            // Description (editable)
+            TextField("Description", text: $item.description)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            // Database match info
+            if let mc = item.matchedMedicalCode {
+                // Show database description if different from displayed
+                if mc.shortDescription.lowercased() != item.description.lowercased() {
+                    Text(mc.shortDescription)
+                        .font(.caption2)
+                        .foregroundColor(Color("BrandCyan").opacity(0.7))
+                        .lineLimit(2)
+                }
+                
+                // Database price range
+                if mc.hasValidPricing {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 8))
+                        Text("Typical: \(mc.formattedPriceRange)")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.green)
+                }
+            } else if item.lookupFailed && !item.code.isEmpty {
+                Text("Not in code database")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding(.vertical, 2)
+        .opacity(item.isSelected ? 1.0 : 0.5)
+        .onAppear {
+            amountText = String(format: "%.2f", item.amount)
+        }
+    }
+    
+    private func codeTypeColor(_ type: MedicalCodeType) -> Color {
+        switch type {
+        case .cpt: return Color("BrandCyan")
+        case .icd10: return .green
+        case .icd10pcs: return .teal
+        case .hcpcs: return .orange
+        }
+    }
+}
+
+// MARK: - Camera View
+
+struct CameraView: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraView
+        
+        init(_ parent: CameraView) {
+            self.parent = parent
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.image = image
+            }
+            parent.dismiss()
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+
+// MARK: - Image Picker (Photo Library)
+
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: ImagePicker
+        
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            parent.dismiss()
+            
+            guard let result = results.first else { return }
+            
+            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                if let image = object as? UIImage {
+                    DispatchQueue.main.async {
+                        self?.parent.image = image
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Document Picker (Files)
+
+struct DocumentPicker: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.image, .pdf])
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let parent: DocumentPicker
+        
+        init(_ parent: DocumentPicker) {
+            self.parent = parent
+        }
+        
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            
+            // Start accessing security-scoped resource
+            guard url.startAccessingSecurityScopedResource() else { return }
+            defer { url.stopAccessingSecurityScopedResource() }
+            
+            if url.pathExtension.lowercased() == "pdf" {
+                // Convert PDF to image
+                if let image = pdfToImage(url: url) {
+                    DispatchQueue.main.async {
+                        self.parent.image = image
+                    }
+                }
+            } else {
+                // Load image directly
+                if let data = try? Data(contentsOf: url),
+                   let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        self.parent.image = image
+                    }
+                }
+            }
+        }
+        
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            parent.dismiss()
+        }
+        
+        private func pdfToImage(url: URL) -> UIImage? {
+            guard let document = CGPDFDocument(url as CFURL),
+                  let page = document.page(at: 1) else { return nil }
+            
+            let pageRect = page.getBoxRect(.mediaBox)
+            let scale: CGFloat = 2.0  // Higher resolution
+            
+            let renderer = UIGraphicsImageRenderer(size: CGSize(
+                width: pageRect.width * scale,
+                height: pageRect.height * scale
+            ))
+            
+            return renderer.image { context in
+                UIColor.white.setFill()
+                context.fill(CGRect(origin: .zero, size: renderer.format.bounds.size))
+                
+                context.cgContext.translateBy(x: 0, y: pageRect.height * scale)
+                context.cgContext.scaleBy(x: scale, y: -scale)
+                context.cgContext.drawPDFPage(page)
+            }
+        }
+    }
+}
+
+#Preview {
+    BillScannerView()
+        .environmentObject(PatientDataService.shared)
+        .environmentObject(AppState())
+}

@@ -1,0 +1,585 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1000001 /* BillGuardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* BillGuardApp.swift */; };
+		A1000003 /* MedicalCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* MedicalCode.swift */; };
+		A1000005 /* RecentSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006 /* RecentSearch.swift */; };
+		A1000007 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008 /* CloudKitService.swift */; };
+		A1000009 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A /* FavoritesManager.swift */; };
+		A100000B /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C /* SearchViewModel.swift */; };
+		A100000D /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000E /* MainTabView.swift */; };
+		A100000F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010 /* OnboardingView.swift */; };
+		A1000011 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012 /* HomeView.swift */; };
+		A1000013 /* CodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014 /* CodeDetailView.swift */; };
+		A1000015 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000016 /* FavoritesView.swift */; };
+		A1000017 /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000018 /* InfoView.swift */; };
+		A1000019 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001A /* Extensions.swift */; };
+		A100001B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100001C /* Assets.xcassets */; };
+		A1000033 /* ScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000034 /* ScannerViewModel.swift */; };
+		A1000035 /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000036 /* ScannerView.swift */; };
+		A1000037 /* DataScannerRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000038 /* DataScannerRepresentable.swift */; };
+		A100003A /* medical_codes.json in Resources */ = {isa = PBXBuildFile; fileRef = A100003B /* medical_codes.json */; };
+		A1000040 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000041 /* User.swift */; };
+		A1000042 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000043 /* UserManager.swift */; };
+		A1000044 /* PatientDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000045 /* PatientDataService.swift */; };
+		A1000046 /* Patient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000047 /* Patient.swift */; };
+		A100004A /* Visit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100004B /* Visit.swift */; };
+		A1000052 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000053 /* LoginView.swift */; };
+		A1000054 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000055 /* RegistrationView.swift */; };
+		A1000060 /* Address.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000061 /* Address.swift */; };
+		A1000062 /* Claim.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000063 /* Claim.swift */; };
+		A1000064 /* InsuranceCarrier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000065 /* InsuranceCarrier.swift */; };
+		A1000068 /* InsurancePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000069 /* InsurancePolicy.swift */; };
+		A100006A /* PaymentMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100006B /* PaymentMethod.swift */; };
+		A100006C /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100006D /* Provider.swift */; };
+		A100006E /* ScannedDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100006F /* ScannedDocument.swift */; };
+		A1000070 /* DocumentScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000071 /* DocumentScannerService.swift */; };
+		A1000090 /* BillScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000091 /* BillScannerView.swift */; };
+		A1000092 /* BillDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000093 /* BillDetailViews.swift */; };
+		A2000001 /* InsuranceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* InsuranceViews.swift */; };
+		A2000003 /* VisitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* VisitViews.swift */; };
+		A2000005 /* PaymentMethodViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* PaymentMethodViews.swift */; };
+		A1000094 /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000095 /* SplashScreen.swift */; };
+		A1000096 /* BillDocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000097 /* BillDocumentScanner.swift */; };
+		A1000098 /* SmartDocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000099 /* SmartDocumentScanner.swift */; };
+		A10000A0 /* LocationReminderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A1 /* LocationReminderService.swift */; };
+		A10000A2 /* ProviderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A3 /* ProviderViews.swift */; };
+		A10000A4 /* ContactInfoScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A5 /* ContactInfoScanner.swift */; };
+		A10000A6 /* DocumentClassifierScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A7 /* DocumentClassifierScanner.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1000002 /* BillGuardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillGuardApp.swift; sourceTree = "<group>"; };
+		A1000004 /* MedicalCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalCode.swift; sourceTree = "<group>"; };
+		A1000006 /* RecentSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearch.swift; sourceTree = "<group>"; };
+		A1000008 /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		A100000A /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
+		A100000C /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		A100000E /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A1000010 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1000012 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A1000014 /* CodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeDetailView.swift; sourceTree = "<group>"; };
+		A1000016 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
+		A1000018 /* InfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoView.swift; sourceTree = "<group>"; };
+		A100001A /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		A100001C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A100001D /* BillGuard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BillGuard.entitlements; sourceTree = "<group>"; };
+		A100001E /* BillGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000034 /* ScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerViewModel.swift; sourceTree = "<group>"; };
+		A1000036 /* ScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerView.swift; sourceTree = "<group>"; };
+		A1000038 /* DataScannerRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataScannerRepresentable.swift; sourceTree = "<group>"; };
+		A1000039 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A100003B /* medical_codes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = medical_codes.json; sourceTree = "<group>"; };
+		A1000041 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A1000043 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
+		A1000045 /* PatientDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientDataService.swift; sourceTree = "<group>"; };
+		A1000047 /* Patient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Patient.swift; sourceTree = "<group>"; };
+		A100004B /* Visit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Visit.swift; sourceTree = "<group>"; };
+		A1000053 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A1000055 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
+		A1000061 /* Address.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Address.swift; sourceTree = "<group>"; };
+		A1000063 /* Claim.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Claim.swift; sourceTree = "<group>"; };
+		A1000065 /* InsuranceCarrier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceCarrier.swift; sourceTree = "<group>"; };
+		A1000069 /* InsurancePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsurancePolicy.swift; sourceTree = "<group>"; };
+		A100006B /* PaymentMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethod.swift; sourceTree = "<group>"; };
+		A100006D /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
+		A100006F /* ScannedDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannedDocument.swift; sourceTree = "<group>"; };
+		A1000071 /* DocumentScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerService.swift; sourceTree = "<group>"; };
+		A1000091 /* BillScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillScannerView.swift; sourceTree = "<group>"; };
+		A1000093 /* BillDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillDetailViews.swift; sourceTree = "<group>"; };
+		A2000002 /* InsuranceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceViews.swift; sourceTree = "<group>"; };
+		A2000004 /* VisitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViews.swift; sourceTree = "<group>"; };
+		A2000006 /* PaymentMethodViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodViews.swift; sourceTree = "<group>"; };
+		A1000095 /* SplashScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreen.swift; sourceTree = "<group>"; };
+		A1000097 /* BillDocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillDocumentScanner.swift; sourceTree = "<group>"; };
+		A1000099 /* SmartDocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartDocumentScanner.swift; sourceTree = "<group>"; };
+		A10000A1 /* LocationReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationReminderService.swift; sourceTree = "<group>"; };
+		A10000A3 /* ProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderViews.swift; sourceTree = "<group>"; };
+		A10000A5 /* ContactInfoScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactInfoScanner.swift; sourceTree = "<group>"; };
+		A10000A7 /* DocumentClassifierScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentClassifierScanner.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A100001F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1000020 = {
+			isa = PBXGroup;
+			children = (
+				A1000021 /* BillGuard */,
+				A1000022 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1000021 /* BillGuard */ = {
+			isa = PBXGroup;
+			children = (
+				A1000002 /* BillGuardApp.swift */,
+				A100001D /* BillGuard.entitlements */,
+				A1000039 /* Info.plist */,
+				A1000023 /* Models */,
+				A1000024 /* Views */,
+				A1000025 /* ViewModels */,
+				A1000026 /* Services */,
+				A1000027 /* Extensions */,
+				A1000028 /* Resources */,
+			);
+			path = BillGuard;
+			sourceTree = "<group>";
+		};
+		A1000022 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A100001E /* BillGuard.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000023 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A1000004 /* MedicalCode.swift */,
+				A1000006 /* RecentSearch.swift */,
+				A1000041 /* User.swift */,
+				A1000058 /* Patient */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A1000024 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A100000E /* MainTabView.swift */,
+				A1000010 /* OnboardingView.swift */,
+				A1000012 /* HomeView.swift */,
+				A1000014 /* CodeDetailView.swift */,
+				A1000016 /* FavoritesView.swift */,
+				A1000018 /* InfoView.swift */,
+				A1000036 /* ScannerView.swift */,
+				A1000091 /* BillScannerView.swift */,
+				A1000093 /* BillDetailViews.swift */,
+				A2000002 /* InsuranceViews.swift */,
+				A2000004 /* VisitViews.swift */,
+				A2000006 /* PaymentMethodViews.swift */,
+				A1000095 /* SplashScreen.swift */,
+				A1000097 /* BillDocumentScanner.swift */,
+				A1000099 /* SmartDocumentScanner.swift */,
+				A1000038 /* DataScannerRepresentable.swift */,
+				A10000A3 /* ProviderViews.swift */,
+				A10000A5 /* ContactInfoScanner.swift */,
+				A10000A7 /* DocumentClassifierScanner.swift */,
+				A1000059 /* Auth */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A1000025 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A100000C /* SearchViewModel.swift */,
+				A1000034 /* ScannerViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A1000026 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A1000008 /* CloudKitService.swift */,
+				A100000A /* FavoritesManager.swift */,
+				A1000043 /* UserManager.swift */,
+				A1000045 /* PatientDataService.swift */,
+				A1000071 /* DocumentScannerService.swift */,
+				A10000A1 /* LocationReminderService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A1000027 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A100001A /* Extensions.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		A1000028 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A100001C /* Assets.xcassets */,
+				A100003B /* medical_codes.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A1000058 /* Patient */ = {
+			isa = PBXGroup;
+			children = (
+				A1000047 /* Patient.swift */,
+				A100004B /* Visit.swift */,
+				A1000061 /* Address.swift */,
+				A1000063 /* Claim.swift */,
+				A1000065 /* InsuranceCarrier.swift */,
+				A1000069 /* InsurancePolicy.swift */,
+				A100006B /* PaymentMethod.swift */,
+				A100006D /* Provider.swift */,
+				A100006F /* ScannedDocument.swift */,
+			);
+			path = Patient;
+			sourceTree = "<group>";
+		};
+		A1000059 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A1000053 /* LoginView.swift */,
+				A1000055 /* RegistrationView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1000029 /* BillGuard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100002A /* Build configuration list for PBXNativeTarget "BillGuard" */;
+			buildPhases = (
+				A100002B /* Sources */,
+				A100001F /* Frameworks */,
+				A100002C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BillGuard;
+			productName = BillGuard;
+			productReference = A100001E /* BillGuard.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A100002D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1000029 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A100002E /* Build configuration list for PBXProject "BillGuard" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1000020;
+			productRefGroup = A1000022 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1000029 /* BillGuard */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A100002C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100001B /* Assets.xcassets in Resources */,
+				A100003A /* medical_codes.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A100002B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001 /* BillGuardApp.swift in Sources */,
+				A1000003 /* MedicalCode.swift in Sources */,
+				A1000005 /* RecentSearch.swift in Sources */,
+				A1000007 /* CloudKitService.swift in Sources */,
+				A1000009 /* FavoritesManager.swift in Sources */,
+				A100000B /* SearchViewModel.swift in Sources */,
+				A100000D /* MainTabView.swift in Sources */,
+				A100000F /* OnboardingView.swift in Sources */,
+				A1000011 /* HomeView.swift in Sources */,
+				A1000013 /* CodeDetailView.swift in Sources */,
+				A1000015 /* FavoritesView.swift in Sources */,
+				A1000017 /* InfoView.swift in Sources */,
+				A1000019 /* Extensions.swift in Sources */,
+				A1000033 /* ScannerViewModel.swift in Sources */,
+				A1000035 /* ScannerView.swift in Sources */,
+				A1000090 /* BillScannerView.swift in Sources */,
+				A1000092 /* BillDetailViews.swift in Sources */,
+				A2000001 /* InsuranceViews.swift in Sources */,
+				A2000003 /* VisitViews.swift in Sources */,
+				A2000005 /* PaymentMethodViews.swift in Sources */,
+				A1000094 /* SplashScreen.swift in Sources */,
+				A1000096 /* BillDocumentScanner.swift in Sources */,
+				A1000098 /* SmartDocumentScanner.swift in Sources */,
+				A1000037 /* DataScannerRepresentable.swift in Sources */,
+				A1000040 /* User.swift in Sources */,
+				A1000042 /* UserManager.swift in Sources */,
+				A1000044 /* PatientDataService.swift in Sources */,
+				A1000046 /* Patient.swift in Sources */,
+				A100004A /* Visit.swift in Sources */,
+				A1000052 /* LoginView.swift in Sources */,
+				A1000054 /* RegistrationView.swift in Sources */,
+				A1000060 /* Address.swift in Sources */,
+				A1000062 /* Claim.swift in Sources */,
+				A1000064 /* InsuranceCarrier.swift in Sources */,
+				A1000068 /* InsurancePolicy.swift in Sources */,
+				A100006A /* PaymentMethod.swift in Sources */,
+				A100006C /* Provider.swift in Sources */,
+				A100006E /* ScannedDocument.swift in Sources */,
+				A1000070 /* DocumentScannerService.swift in Sources */,
+				A10000A0 /* LocationReminderService.swift in Sources */,
+				A10000A2 /* ProviderViews.swift in Sources */,
+				A10000A4 /* ContactInfoScanner.swift in Sources */,
+				A10000A6 /* DocumentClassifierScanner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A100002F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A1000030 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A1000031 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BillGuard/BillGuard.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuard/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "BillGuard needs camera access to scan medical bills and documents.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_UIColorName = LaunchScreenBackground;
+				INFOPLIST_KEY_UILaunchScreen_UIImageName = LaunchScreenIcon;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1000032 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BillGuard/BillGuard.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuard/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "BillGuard needs camera access to scan medical bills and documents.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_UIColorName = LaunchScreenBackground;
+				INFOPLIST_KEY_UILaunchScreen_UIImageName = LaunchScreenIcon;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A100002A /* Build configuration list for PBXNativeTarget "BillGuard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000031 /* Debug */,
+				A1000032 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100002E /* Build configuration list for PBXProject "BillGuard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100002F /* Debug */,
+				A1000030 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A100002D /* Project object */;
+}
