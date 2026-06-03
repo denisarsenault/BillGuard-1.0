@@ -1893,7 +1893,7 @@ struct BillReviewView: View {
         if providerName.isEmpty {
             for line in filteredLines {
                 let upper = line.uppercased()
-                if looksLikeFilename(line) { continue }   // skip on-screen filename / window chrome
+                if looksLikeFilename(line) || looksLikeProcedureRow(line) { continue }   // skip filename/window chrome & charges rows
                 if facilityKeywords.contains(where: { upper.contains($0) }) {
                     var name = line
                     // Strip statement/department labels that may be on the same line
@@ -2017,7 +2017,7 @@ struct BillReviewView: View {
                 let candidateUpper = candidateLine.uppercased()
                 // Now apply the original skip guards on the cleaned candidate
                 if candidateUpper.contains("STATEMENT") && !facilityKeywords.contains(where: { candidateUpper.contains($0) }) { continue }
-                if looksLikeFilename(candidateLine) { continue }   // skip on-screen filename / window chrome
+                if looksLikeFilename(candidateLine) || looksLikeProcedureRow(candidateLine) { continue }   // skip filename/window chrome & charges rows
                 if !candidateLine.contains(":") && candidateLine.count > 3 && !looksLikePhone(candidateLine) && !looksLikeAddress(candidateLine) {
                     providerName = candidateLine; break
                 }
@@ -2035,7 +2035,8 @@ struct BillReviewView: View {
             let candidates = lines.filter { line in
                 let t = line.trimmingCharacters(in: .whitespaces)
                 guard t.count > 5, !t.contains(":"),
-                      !looksLikeAddress(t), !looksLikePhone(t), !looksLikeFilename(t) else { return false }
+                      !looksLikeAddress(t), !looksLikePhone(t),
+                      !looksLikeFilename(t), !looksLikeProcedureRow(t) else { return false }
                 let upper = t.uppercased()
                 if statementWords.contains(where: { upper.contains($0) }) { return false }
                 // Must look like a name: mostly letters, spaces, &, ., -
@@ -2138,13 +2139,17 @@ struct BillReviewView: View {
         }
         
         // ── Step 8: Cross-scan other regions for provider if still empty ──
+        // NOTE: procedureText is deliberately excluded — the charges table contains
+        // CPT descriptions ("Initial Hospital Care", "Hospital Discharge Day") that
+        // match the "HOSPITAL" facility keyword and would be mistaken for the name.
         if providerName.isEmpty {
-            let allTexts = [patientText, insuranceText, procedureText]
+            let allTexts = [patientText, insuranceText]
             for regionText in allTexts {
                 let regionLines = regionText.components(separatedBy: .newlines)
                     .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
                 for line in regionLines {
                     let upper = line.uppercased()
+                    if looksLikeProcedureRow(line) || looksLikeFilename(line) { continue }
                     if facilityKeywords.contains(where: { upper.contains($0) }) {
                         var name = line
                         let stripPatterns = ["EMERGENCY DEPT STATEMENT", "INPATIENT STATEMENT",
@@ -3010,6 +3015,25 @@ struct BillReviewView: View {
         let underscoreCount = s.filter { $0 == "_" }.count
         if underscoreCount >= 1 && spaceCount <= 1 { return true }
 
+        return false
+    }
+
+    /// True if a line looks like a charges-table / procedure row rather than a
+    /// facility name — e.g. "10/10/24  99223  Initial Hospital Care   $1,450.00".
+    /// Critical because CPT descriptions like "Initial Hospital Care",
+    /// "Subsequent Hospital Care", and "Hospital Discharge Day" all contain the
+    /// facility keyword "HOSPITAL" and would otherwise be mistaken for the provider.
+    private func looksLikeProcedureRow(_ raw: String) -> Bool {
+        let s = raw.trimmingCharacters(in: .whitespaces)
+        guard !s.isEmpty else { return false }
+        // Starts with a service date or date range: 10/10/24, 10/10/2024, 10/11-16
+        if s.range(of: #"^\d{1,2}/\d{1,2}(/\d{2,4}|-\d{1,2})"#, options: .regularExpression) != nil { return true }
+        // Contains a standalone 5-digit CPT code
+        if s.range(of: #"\b\d{5}\b"#, options: .regularExpression) != nil { return true }
+        // Contains a HCPCS code (letter + 4 digits, e.g. J2175)
+        if s.range(of: #"\b[A-Z]\d{4}\b"#, options: .regularExpression) != nil { return true }
+        // Contains a dollar amount (charge column)
+        if s.range(of: #"\$\s?\d"#, options: .regularExpression) != nil { return true }
         return false
     }
     
