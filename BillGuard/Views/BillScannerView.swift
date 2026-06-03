@@ -1999,7 +1999,7 @@ struct BillReviewView: View {
                                 "LABORATORY", "PATHOLOGY", "ORTHOPAEDIC", "ORTHOPEDIC",
                                 // Extended — family/general practices & wellness centers
                                 "FAMILY MEDICINE", "INTERNAL MEDICINE", "MEDICINE & WELLNESS",
-                                "FAMILY PRACTICE", "FAMILY HEALTH", "MEDICAL ASSOCIATES",
+                                "FAMILY PRACTICE", "FAMILY HEALTH", "MEDICAL ASSOC",
                                 "WELLNESS CENTER", "WELLNESS CLINIC", "HEALTH & WELLNESS",
                                 "MEDICAL PRACTICE", "MEDICAL SERVICES", "HEALTH SERVICES",
                                 "CARE CENTER", "CARE CLINIC", "WOMEN'S HEALTH", "WOMEN'S CARE",
@@ -2018,7 +2018,35 @@ struct BillReviewView: View {
             let lower = line.lowercased()
             return creditCardTerms.contains(where: { lower.contains($0) })
         }
-        let filteredLines = lines.filter { !isCreditCardLine($0) }
+
+        // Markers that begin a credit-card / "pay by card" billing box. OCR row
+        // grouping can merge the provider header (left) with this box's header
+        // (right) into one line, e.g.
+        //   "WEST VOLUSIA MEDICAL ASSOCIAT   IF PAYING BY MASTERCARD, OR VISA..."
+        // Stripping from the earliest marker keeps the facility name and discards
+        // the billing box, instead of dropping the whole line (which loses the name).
+        let billingBoxMarkers = ["IF PAYING", "FILL OUT", "CHECK CARD", "USING FOR PAYMENT",
+                                 "MASTERCARD", "VISA", "AMEX", "DISCOVER", "CARD NUMBER",
+                                 "CARDHOLDER", "VERIFICATION", "EXP DATE", "EXPIRATION",
+                                 "SIGNATURE", "CVV", "CREDIT CARD", "RETURN THIS PORTION",
+                                 "SHOW AMOUNT", "PAID HERE"]
+        func strippedOfBillingBox(_ line: String) -> String {
+            let upper = line.uppercased()
+            var cut = upper.endIndex
+            for marker in billingBoxMarkers {
+                if let r = upper.range(of: marker), r.lowerBound < cut { cut = r.lowerBound }
+            }
+            guard cut < upper.endIndex else { return line }
+            let dist = upper.distance(from: upper.startIndex, to: cut)
+            let idx = line.index(line.startIndex, offsetBy: dist)
+            return String(line[line.startIndex..<idx]).trimmingCharacters(in: .whitespaces)
+        }
+
+        // Strip the billing box from every line, then drop any that are now empty
+        // or remain pure credit-card content.
+        let filteredLines = lines
+            .map { strippedOfBillingBox($0) }
+            .filter { !$0.isEmpty && !isCreditCardLine($0) }
         let filteredPairs = pairs.filter { (label, _) in !isCreditCardLine(label) }
 
         // ── Step 1: Extract labeled fields (credit-card fields excluded) ──
@@ -2153,15 +2181,15 @@ struct BillReviewView: View {
         if providerName.isEmpty {
             for line in lines {
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
-                let upper = trimmed.uppercased()
-                if upper.contains("PAYING BY") || upper.contains("MASTERCARD") || upper.contains("VISA")
-                    || upper.contains("FILL OUT") || upper.contains("SIGNATURE") || upper.contains("EXP DATE")
-                    || upper.contains("AMOUNT") || upper.contains("RETURN THIS") { continue }
+                // Strip the billing box first so a name merged onto the same OCR row
+                // ("WEST VOLUSIA MEDICAL ASSOCIAT   IF PAYING BY MASTERCARD…") keeps
+                // the name rather than being discarded for containing "MASTERCARD".
+                var candidateLine = strippedOfBillingBox(trimmed)
+                if candidateLine.isEmpty { continue }
                 // Strip any trailing document-type label (e.g. "PATIENT STATEMENT")
                 // before deciding whether to skip this line, so that a provider name
                 // like "ORLANDO FAMILY MEDICINE & WELLNESS    PATIENT STATEMENT" is
                 // not discarded just because the label happens to land on the same line.
-                var candidateLine = trimmed
                 let statementLabels = ["PATIENT STATEMENT", "BILLING STATEMENT",
                                        "INPATIENT STATEMENT", "OUTPATIENT STATEMENT",
                                        "EMERGENCY DEPT STATEMENT", "ACCOUNT STATEMENT"]
