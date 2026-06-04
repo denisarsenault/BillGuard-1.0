@@ -2690,7 +2690,12 @@ struct BillReviewView: View {
             }
             
             // ── Skip voucher/visit total lines ──
-            if lower.hasPrefix("voucher") || lower.contains("visit total") || lower.contains("---- ") { continue }
+            // BUT keep a row where OCR merged the "Voucher:" header onto an actual
+            // procedure line (it still has a 5-digit CPT + charge), e.g.
+            // "Voucher:  07/11/11  99214  2607480  Office/outpatient Visit  131.00  0.00"
+            let hasCPTCode = line.range(of: #"\b\d{5}\b"#, options: .regularExpression) != nil
+            if (lower.hasPrefix("voucher") && !hasCPTCode)
+                || lower.contains("visit total") || lower.contains("---- ") { continue }
             // Skip "Patient:" label lines inside procedure area
             if lower.hasPrefix("patient:") { continue }
             
@@ -2790,7 +2795,13 @@ struct BillReviewView: View {
             if let regex = try? NSRegularExpression(pattern: datePattern2) {
                 desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
             }
-            
+
+            // Remove standalone 6+ digit voucher / account numbers (e.g. 2607480)
+            let longNumPattern = #"\b\d{6,}\b"#
+            if let regex = try? NSRegularExpression(pattern: longNumPattern) {
+                desc = regex.stringByReplacingMatches(in: desc, range: NSRange(desc.startIndex..., in: desc), withTemplate: "")
+            }
+
             // Remove standalone single digits (quantity column)
             let qtyPattern = #"\b[1-9]\b"#
             if let regex = try? NSRegularExpression(pattern: qtyPattern) {
@@ -3249,7 +3260,7 @@ struct BillReviewView: View {
                     let ns = allText as NSString
                     let loc = match.range(at: 1).location
                     let len = match.range(at: 1).length
-                    let preStart = max(0, loc - 16)
+                    let preStart = max(0, loc - 28)
                     let pre = ns.substring(with: NSRange(location: preStart, length: loc - preStart))
                     let postLen = min(6, ns.length - (loc + len))
                     let post = ns.substring(with: NSRange(location: loc + len, length: postLen))
@@ -3258,9 +3269,12 @@ struct BillReviewView: View {
                     // ZIP preceded by a 2-letter US state abbreviation (…DELAND FL 32720)
                     let preTrim = pre.trimmingCharacters(in: .whitespaces)
                     if preTrim.count >= 2, Self.usStateCodes.contains(String(preTrim.suffix(2))) { continue }
-                    // Account / voucher / balance / phone context
-                    if ["ACCOUNT", "ACCT", "VOUCHER", "BALANCE", "ZIP", "PHONE", "#"]
+                    // Account / voucher / balance / statement / phone context
+                    if ["ACCOUNT", "ACCT", "VOUCHER", "BALANCE", "ZIP", "PHONE",
+                        "STATEMENT", "PAGE", "PORTION", "#"]
                         .contains(where: { pre.contains($0) }) { continue }
+                    // Account number sitting right after a phone number (…943-7100  STATEMENT  38142)
+                    if pre.range(of: #"\d{3}[-.\s]\d{4}"#, options: .regularExpression) != nil { continue }
                 }
 
                 // Avoid duplicates in new items
