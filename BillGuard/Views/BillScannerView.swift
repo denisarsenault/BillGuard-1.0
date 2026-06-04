@@ -2392,6 +2392,13 @@ struct BillReviewView: View {
             var addressParts: [String] = []
             var collecting = false
             for line in lines {
+                // Never treat the facility name as address — looksLikeAddress can
+                // be fooled by a directional word ("WEST VOLUSIA…"). The name has a
+                // facility keyword; the street address does not.
+                if facilityKeywords.contains(where: { line.uppercased().contains($0) })
+                    || line.caseInsensitiveCompare(providerName) == .orderedSame {
+                    continue
+                }
                 if looksLikeAddress(line) {
                     addressParts.append(line)
                     collecting = true
