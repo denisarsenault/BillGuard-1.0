@@ -1988,9 +1988,56 @@ struct BillReviewView: View {
     // MARK: - Provider Parsing
     
     private func parseProviderFields() {
-        let lines = providerText.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        // ── Credit-card / "pay by card" billing-box stripping ────────────────
+        // A bill's provider region frequently sits next to a "IF PAYING BY
+        // MASTERCARD…" box. OCR row-grouping merges the two (provider header on the
+        // left, billing box on the right) into single lines. Strip the billing box
+        // UP FRONT so NO downstream field — name, address, phone — can pick up its
+        // text (CARDHOLDER NAME, EXP. DATE, etc.).
+        let creditCardTerms: Set<String> = [
+            "cardholder", "card holder", "card number", "cardnumber",
+            "exp date", "exp. date", "expiration", "expiry",
+            "verification", "cvv", "cvc", "security code",
+            "signature", "mastercard", "visa", "amex",
+            "american express", "discover", "credit card"
+        ]
+        func isCreditCardLine(_ line: String) -> Bool {
+            let lower = line.lowercased()
+            return creditCardTerms.contains(where: { lower.contains($0) })
+        }
+
+        // Markers that begin the billing box. Matched at word boundaries so e.g.
+        // "VISA" doesn't clip "VISALIA" and "AMEX" doesn't clip a real word.
+        let billingBoxMarkers = ["IF PAYING", "FILL OUT", "CHECK CARD", "USING FOR PAYMENT",
+                                 "MASTERCARD", "VISA", "AMEX", "DISCOVER", "CARD NUMBER",
+                                 "CARDHOLDER", "VERIFICATION", "EXP DATE", "EXP. DATE",
+                                 "EXPIRATION", "SIGNATURE", "CVV", "CREDIT CARD",
+                                 "RETURN THIS PORTION", "SHOW AMOUNT", "PAID HERE"]
+        func strippedOfBillingBox(_ line: String) -> String {
+            let upper = line.uppercased()
+            let chars = Array(upper)
+            var cut = chars.count
+            for marker in billingBoxMarkers {
+                guard let r = upper.range(of: marker) else { continue }
+                let start = upper.distance(from: upper.startIndex, to: r.lowerBound)
+                let end   = upper.distance(from: upper.startIndex, to: r.upperBound)
+                let beforeOK = start == 0 || !chars[start - 1].isLetter
+                let afterOK  = end >= chars.count || !chars[end].isLetter
+                if beforeOK && afterOK && start < cut { cut = start }
+            }
+            guard cut < chars.count else { return line }
+            let idx = line.index(line.startIndex, offsetBy: cut)
+            return String(line[line.startIndex..<idx]).trimmingCharacters(in: .whitespaces)
+        }
+
+        // Cleaned line set used by EVERY step below: billing box stripped per line,
+        // then empties and any remaining pure-billing lines dropped.
+        let lines = providerText.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map { strippedOfBillingBox($0) }
+            .filter { !$0.isEmpty && !isCreditCardLine($0) }
         let pairs = extractAllLabelValuePairs(from: lines)
-        
+
         // Medical facility keywords — if a line contains any of these, it's likely a provider name
         let facilityKeywords = ["MEDICAL CENTER", "HOSPITAL", "HEALTH SYSTEM", "HEALTH CENTER",
                                 "REGIONAL MEDICAL", "CLINIC", "SURGICAL CENTER", "URGENT CARE",
@@ -2006,48 +2053,10 @@ struct BillReviewView: View {
                                 "PEDIATRICS", "DERMATOLOGY", "CARDIOLOGY", "NEUROLOGY",
                                 "ONCOLOGY", "UROLOGY", "GASTROENTEROLOGY", "PULMONOLOGY",
                                 "ENDOCRINOLOGY", "RHEUMATOLOGY", "NEPHROLOGY", "HEMATOLOGY"]
-        
-        let creditCardTerms: Set<String> = [
-            "cardholder", "card holder", "card number", "cardnumber",
-            "exp date", "exp. date", "expiration", "expiry",
-            "verification", "cvv", "cvc", "security code",
-            "signature", "mastercard", "visa", "amex",
-            "american express", "discover", "credit card"
-        ]
-        func isCreditCardLine(_ line: String) -> Bool {
-            let lower = line.lowercased()
-            return creditCardTerms.contains(where: { lower.contains($0) })
-        }
 
-        // Markers that begin a credit-card / "pay by card" billing box. OCR row
-        // grouping can merge the provider header (left) with this box's header
-        // (right) into one line, e.g.
-        //   "WEST VOLUSIA MEDICAL ASSOCIAT   IF PAYING BY MASTERCARD, OR VISA..."
-        // Stripping from the earliest marker keeps the facility name and discards
-        // the billing box, instead of dropping the whole line (which loses the name).
-        let billingBoxMarkers = ["IF PAYING", "FILL OUT", "CHECK CARD", "USING FOR PAYMENT",
-                                 "MASTERCARD", "VISA", "AMEX", "DISCOVER", "CARD NUMBER",
-                                 "CARDHOLDER", "VERIFICATION", "EXP DATE", "EXPIRATION",
-                                 "SIGNATURE", "CVV", "CREDIT CARD", "RETURN THIS PORTION",
-                                 "SHOW AMOUNT", "PAID HERE"]
-        func strippedOfBillingBox(_ line: String) -> String {
-            let upper = line.uppercased()
-            var cut = upper.endIndex
-            for marker in billingBoxMarkers {
-                if let r = upper.range(of: marker), r.lowerBound < cut { cut = r.lowerBound }
-            }
-            guard cut < upper.endIndex else { return line }
-            let dist = upper.distance(from: upper.startIndex, to: cut)
-            let idx = line.index(line.startIndex, offsetBy: dist)
-            return String(line[line.startIndex..<idx]).trimmingCharacters(in: .whitespaces)
-        }
-
-        // Strip the billing box from every line, then drop any that are now empty
-        // or remain pure credit-card content.
+        // (billing box already stripped above — `lines`/`pairs` are clean)
         let filteredLines = lines
-            .map { strippedOfBillingBox($0) }
-            .filter { !$0.isEmpty && !isCreditCardLine($0) }
-        let filteredPairs = pairs.filter { (label, _) in !isCreditCardLine(label) }
+        let filteredPairs = pairs
 
         // ── Step 1: Extract labeled fields (credit-card fields excluded) ──
         for (label, value) in filteredPairs {
