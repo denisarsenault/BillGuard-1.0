@@ -2508,10 +2508,42 @@ struct BillReviewView: View {
 
     // MARK: - Line Item Parsing
 
+    /// Detects the multi-column "account statement" layout (e.g. West Volusia) from
+    /// its distinctive headers/rows, so the column-aware parser runs even when the
+    /// provider-name OCR is too poor to match a saved template. Requires ≥2 signals
+    /// so standard itemized bills (which have none of these) never false-positive.
+    private func looksLikeAccountStatement(_ text: String) -> Bool {
+        let l = text.lowercased()
+        var signals = 0
+        if l.contains("voucher")            { signals += 1 }
+        if l.contains("visit total")        { signals += 1 }
+        if l.contains("insurance pending")  { signals += 1 }
+        if l.contains("patient amount")     { signals += 1 }
+        if l.contains("icpt")               { signals += 1 }
+        if l.contains("charges") && (l.contains("credits") || l.contains("debits")) { signals += 1 }
+        return signals >= 2
+    }
+
     private func parseLineItems() {
         // Route to template-specific parser when available
         if let layout = detectedTemplate?.procedureColumnLayout,
            detectedTemplate?.billFormat == .accountStatement {
+            parseAccountStatementLineItems(layout: layout)
+            return
+        }
+
+        // Format-based fallback: recognize the account-statement layout from the
+        // procedure text itself even without a provider-template match. Use a layout
+        // with a rich accounting-row keyword set (common payers + transaction terms)
+        // so Cigna/Aetna/etc. payment, adjustment, and transfer rows are skipped and
+        // only true charge rows (code + charge) become line items.
+        if looksLikeAccountStatement(procedureText) {
+            var layout = ProcedureColumnLayout()
+            layout.accountingRowKeywords += [
+                "cigna", "aetna", "humana", "bcbs", "blue cross", "united health",
+                "unitedhealth", "anthem", "medicare", "medicaid", "tricare",
+                "self pay", "master card", "mastercard", "visa", "discover"
+            ]
             parseAccountStatementLineItems(layout: layout)
             return
         }
