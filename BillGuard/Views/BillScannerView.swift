@@ -2075,12 +2075,27 @@ struct BillReviewView: View {
             return String(line[line.startIndex..<idx]).trimmingCharacters(in: .whitespaces)
         }
 
+        // Fuzzy backstop for OCR-garbled billing labels the exact markers miss
+        // (e.g. "SIGNATURE" → "SIONATURE", "AMOUNT" surviving alone). Drop any line
+        // containing a word that's a near-match (edit-distance-tolerant) to a
+        // distinctive billing-box field label. These never appear in a real
+        // provider letterhead, so this can't discard a genuine name/address.
+        let strongBillingWords = ["CARDHOLDER", "SIGNATURE", "VERIFICATION",
+                                  "MASTERCARD", "EXPIRATION", "AMOUNT"]
+        func isBillingNoise(_ line: String) -> Bool {
+            let words = line.uppercased().split { !$0.isLetter }
+                .map(String.init).filter { $0.count >= 4 }
+            return words.contains { w in
+                strongBillingWords.contains { descriptionSimilarity(w, $0) >= 0.82 }
+            }
+        }
+
         // Cleaned line set used by EVERY step below: billing box stripped per line,
-        // then empties and any remaining pure-billing lines dropped.
+        // then empties / pure-billing / billing-noise lines dropped.
         let lines = providerText.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .map { strippedOfBillingBox($0) }
-            .filter { !$0.isEmpty && !isCreditCardLine($0) }
+            .filter { !$0.isEmpty && !isCreditCardLine($0) && !isBillingNoise($0) }
         let pairs = extractAllLabelValuePairs(from: lines)
 
         // Medical facility keywords — if a line contains any of these, it's likely a provider name
