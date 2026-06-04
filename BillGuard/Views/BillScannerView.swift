@@ -448,7 +448,11 @@ struct BillRegionSelector: View {
     @State private var lastZoomScale: CGFloat = 1.0
     @State private var panOffset: CGSize = .zero
     @State private var lastPanOffset: CGSize = .zero
-    
+
+    // Warns when the Provider box appears to include a "pay by card" billing box.
+    @State private var providerHasCardBox = false
+    @State private var cardBoxCheckTask: Task<Void, Never>? = nil
+
     enum BoxType: String {
         case patient = "Patient Info"
         case provider = "Provider Info"
@@ -461,7 +465,24 @@ struct BillRegionSelector: View {
             VStack(spacing: 0) {
                 // Instructions
                 instructionsBar
-                
+
+                // Warning: Provider box appears to include a "pay by card" box
+                if providerHasCardBox && showProviderBox {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.yellow)
+                        Text("The Provider box includes a \u{201C}pay by card\u{201D} box — drag its edge in to cover only the facility name/address.")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.yellow.opacity(0.18))
+                    .overlay(Rectangle().fill(Color.yellow).frame(width: 3), alignment: .leading)
+                    .transition(.opacity)
+                }
+
                 // Image with selection boxes - zoomable
                 ZStack {
                     // The bill image with zoom and pan
@@ -646,6 +667,66 @@ struct BillRegionSelector: View {
             if let last = ScanLayoutStore.lastUsedLayout {
                 apply(last)
             }
+            scheduleCardBoxCheck()
+        }
+        .onChange(of: providerBox.position) { _, _ in scheduleCardBoxCheck() }
+        .onChange(of: providerBox.size) { _, _ in scheduleCardBoxCheck() }
+        .onChange(of: showProviderBox) { _, on in
+            if on { scheduleCardBoxCheck() } else { providerHasCardBox = false }
+        }
+    }
+
+    /// Debounced check: fast-OCR the current Provider box region and flag it if it
+    /// contains "pay by card" billing-box text, so we can hint the user to exclude it.
+    private func scheduleCardBoxCheck() {
+        cardBoxCheckTask?.cancel()
+        guard showProviderBox else { providerHasCardBox = false; return }
+        let box = providerBox
+        let img = image
+        cardBoxCheckTask = Task {
+            try? await Task.sleep(nanoseconds: 450_000_000)   // debounce drags
+            if Task.isCancelled { return }
+            let detected = await Self.regionContainsCardBox(in: img, box: box)
+            if Task.isCancelled { return }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.2)) { providerHasCardBox = detected }
+            }
+        }
+    }
+
+    /// Fast OCR of the box region; true if ≥2 distinctive billing-box terms appear.
+    private static func regionContainsCardBox(in image: UIImage, box: SelectionBox) async -> Bool {
+        let oriented: UIImage
+        if image.imageOrientation != .up,
+           let cg = DocumentImageEnhancer.normalizeOrientation(image) {
+            oriented = UIImage(cgImage: cg)
+        } else {
+            oriented = image
+        }
+        guard let cg = oriented.cgImage else { return false }
+        let w = CGFloat(cg.width), h = CGFloat(cg.height)
+        let left = max(0, (box.position.x - box.size.width / 2) * w)
+        let top  = max(0, (box.position.y - box.size.height / 2) * h)
+        let rect = CGRect(x: left, y: top,
+                          width:  min(box.size.width * w, w - left),
+                          height: min(box.size.height * h, h - top))
+        guard rect.width > 1, rect.height > 1, let cropped = cg.cropping(to: rect) else { return false }
+
+        return await withCheckedContinuation { continuation in
+            let request = VNRecognizeTextRequest { req, _ in
+                let text = (req.results as? [VNRecognizedTextObservation] ?? [])
+                    .compactMap { $0.topCandidates(1).first?.string }
+                    .joined(separator: " ")
+                    .uppercased()
+                let markers = ["MASTERCARD", "VISA", "CARDHOLDER", "CARD NUMBER",
+                               "VERIFICATION", "EXP", "IF PAYING", "FILL OUT",
+                               "CHECK CARD", "SIGNATURE"]
+                let hits = markers.reduce(0) { $0 + (text.contains($1) ? 1 : 0) }
+                continuation.resume(returning: hits >= 2)
+            }
+            request.recognitionLevel = .fast
+            request.usesLanguageCorrection = false
+            try? VNImageRequestHandler(cgImage: cropped, options: [:]).perform([request])
         }
     }
 
