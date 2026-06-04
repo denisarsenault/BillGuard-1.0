@@ -1519,7 +1519,8 @@ struct BillReviewView: View {
     
     // Save state
     @State private var isSaving = false
-    
+    @State private var rawOCRCopied = false
+
     @State private var savedClaimId: String?
     
     // Duplicate detection
@@ -1780,6 +1781,26 @@ struct BillReviewView: View {
                                 Text("Procedures:").font(.caption).fontWeight(.bold)
                                 Text(procedureText).font(.caption2).foregroundColor(.secondary)
                             }
+
+                            Button {
+                                let dump = """
+                                === PATIENT ===
+                                \(patientText)
+                                === PROVIDER ===
+                                \(providerText)
+                                === INSURANCE ===
+                                \(insuranceText)
+                                === PROCEDURES ===
+                                \(procedureText)
+                                """
+                                UIPasteboard.general.string = dump
+                                rawOCRCopied = true
+                            } label: {
+                                Label(rawOCRCopied ? "Copied!" : "Copy All OCR Text",
+                                      systemImage: rawOCRCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                                    .font(.caption)
+                            }
+                            .padding(.top, 4)
                         }
                     }
                 }
@@ -2544,11 +2565,16 @@ struct BillReviewView: View {
             ]
             let ccTerms = ["CARDHOLDER", "CARD NUMBER", "EXP DATE", "EXPIRATION",
                           "MASTERCARD", "VISA", "SIGNATURE", "VERIFICATION"]
+            // Statement-structure / header labels that are not a carrier name.
+            let statementNoise = ["ACCOUNT", "PATIENT BALANCE", "SHOW AMOUNT", "PAID HERE",
+                                  "STATEMENT", "RETURN THIS", "DUE DATE", "STATEMENT DATE",
+                                  "REMIT", "OFFICE PHONE", "PAGE ", "BALANCE", "AMOUNT"]
             for line in lines {
                 let upper = line.uppercased()
                 guard !line.contains(":"), line.count > 3 else { continue }
                 guard !providerFacilityKeywords.contains(where: { upper.contains($0) }) else { continue }
                 guard !ccTerms.contains(where: { upper.contains($0) }) else { continue }
+                guard !statementNoise.contains(where: { upper.contains($0) }) else { continue }
                 guard !looksLikeAddress(line), !looksLikePhone(line) else { continue }
                 insuranceCarrier = line; break
             }
@@ -3174,7 +3200,28 @@ struct BillReviewView: View {
                 
                 // For CPT, reject if < 10000
                 if codeType == .cpt, let num = Int(code), num < 10000 { continue }
-                
+
+                // Context-aware false-positive rejection for 5-digit "CPT" matches:
+                // ZIP codes (FL 32720 / 32720-0824) and account/voucher numbers are
+                // 5 digits too and otherwise get mistaken for procedure codes.
+                if codeType == .cpt {
+                    let ns = allText as NSString
+                    let loc = match.range(at: 1).location
+                    let len = match.range(at: 1).length
+                    let preStart = max(0, loc - 16)
+                    let pre = ns.substring(with: NSRange(location: preStart, length: loc - preStart))
+                    let postLen = min(6, ns.length - (loc + len))
+                    let post = ns.substring(with: NSRange(location: loc + len, length: postLen))
+                    // ZIP+4 (e.g. 32720-0824)
+                    if post.range(of: #"^-\d{4}"#, options: .regularExpression) != nil { continue }
+                    // ZIP preceded by a 2-letter US state abbreviation (…DELAND FL 32720)
+                    let preTrim = pre.trimmingCharacters(in: .whitespaces)
+                    if preTrim.count >= 2, Self.usStateCodes.contains(String(preTrim.suffix(2))) { continue }
+                    // Account / voucher / balance / phone context
+                    if ["ACCOUNT", "ACCT", "VOUCHER", "BALANCE", "ZIP", "PHONE", "#"]
+                        .contains(where: { pre.contains($0) }) { continue }
+                }
+
                 // Avoid duplicates in new items
                 guard !newItems.contains(where: { $0.code == code }) else { continue }
                 
