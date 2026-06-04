@@ -2218,19 +2218,34 @@ struct BillReviewView: View {
                             name = String(name[name.startIndex..<startIdx]).trimmingCharacters(in: .whitespaces)
                         }
                     }
-                    // Strip address portion if OCR merged name + address on one line
-                    // Look for a street number pattern (e.g., "1234 Main St") and truncate
+                    // Strip a LEADING street-address segment when OCR merged
+                    // "1070 NORTH STONE STREET SUITE  WEST VOLUSIA MEDICAL ASSOCIAT"
+                    // (street first, name after). Requires a leading street number so
+                    // it can't eat a normal facility name.
+                    let streetSuffix = #"(STREET|ST|AVENUE|AVE|ROAD|RD|BLVD|DRIVE|DR|LANE|LN|SUITE|STE|WAY|COURT|CT|PLACE|PL|HWY|HIGHWAY|PIKE|CIRCLE|CIR|BOX)"#
+                    if let r = name.range(of: "^\\s*\\d{1,6}\\s+.*\\b\(streetSuffix)\\b\\.?\\s+",
+                                          options: [.regularExpression, .caseInsensitive]) {
+                        let stripped = String(name[r.upperBound...]).trimmingCharacters(in: .whitespaces)
+                        if !stripped.isEmpty,
+                           facilityKeywords.contains(where: { stripped.uppercased().contains($0) }) {
+                            name = stripped
+                        }
+                    }
+                    // Strip a TRAILING street-address segment (name then street)
                     if let addrRange = name.range(of: #"\s+\d{2,5}\s+[A-Za-z]"#, options: .regularExpression) {
-                        // Check if what follows looks like an address
                         let afterAddr = String(name[addrRange.lowerBound...])
                         if looksLikeAddress(afterAddr) {
                             name = String(name[name.startIndex..<addrRange.lowerBound]).trimmingCharacters(in: .whitespaces)
                         }
                     }
-                    if !name.isEmpty && !looksLikeAddress(name) {
+                    name = name.trimmingCharacters(in: .whitespaces)
+                    // No looksLikeAddress guard here: this line CONTAINS a facility
+                    // keyword, so it IS the provider name — even if it contains a
+                    // directional word like "WEST"/"NORTH" that looksLikeAddress flags.
+                    if !name.isEmpty {
                         providerName = name
+                        break
                     }
-                    break
                 }
             }
         }
@@ -2716,9 +2731,20 @@ struct BillReviewView: View {
                 amount = extractPlainAmount(from: line)
             }
             
+            // Skip statement header / contact rows misread as procedures, e.g.
+            // "1  10/24/11  11/08/11  (386) 943-7100  38142  52.74"
+            // (Page / Statement Date / Due Date / Phone / Account # / Balance).
+            let phonePattern = #"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]\d{4}"#
+            if line.range(of: phonePattern, options: .regularExpression) != nil
+                || lower.contains("account #") || lower.contains("account number")
+                || lower.contains("patient balance") || lower.contains("statement date")
+                || lower.contains("due date") || lower.contains("office phone") {
+                continue
+            }
+
             // Extract procedure code from the line
             let code = extractProcedureCode(from: line)
-            
+
             // Must have at least an amount or a code to be a valid line item
             guard amount != nil || code != nil else { continue }
             
@@ -2770,14 +2796,22 @@ struct BillReviewView: View {
             
             // Skip if we only got a code with no amount (likely a header fragment)
             if amount == nil && desc.isEmpty { continue }
-            
+
+            let newCode = code ?? ""
+            // Dedup: the same code + amount appearing twice is an OCR/accumulation
+            // artifact (e.g. the table captured twice), not two real charges.
+            if !newCode.isEmpty,
+               items.contains(where: { $0.code == newCode && abs($0.amount - (amount ?? 0)) < 0.01 }) {
+                continue
+            }
+
             items.append(ParsedLineItem(
-                code: code ?? "",
+                code: newCode,
                 description: desc.isEmpty ? (code != nil ? "Procedure \(code!)" : "Unknown") : desc,
                 amount: amount ?? 0
             ))
         }
-        
+
         lineItems = items
     }
     
