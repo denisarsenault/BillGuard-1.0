@@ -3146,6 +3146,21 @@ struct BillReviewView: View {
             return nil
         }
 
+        // Human-readable label for a payment/credit row from the keywords present.
+        func paymentLabel(from line: String) -> String {
+            let l = line.lowercased()
+            if l.contains("adjustment") || l.contains("contractual") || l.contains("write off") || l.contains("write-off") {
+                return "Insurance Adjustment"
+            }
+            if l.contains("transfer")            { return "Transfer" }
+            if l.contains("self pay") || l.contains("master card") || l.contains("credit card") || l.contains("mastercard") || l.contains("visa") {
+                return "Self-Pay / Card Payment"
+            }
+            if l.contains("refund")              { return "Refund" }
+            if l.contains("payment")             { return "Insurance Payment" }
+            return "Payment / Credit"
+        }
+
         for line in lines {
             let lower = line.lowercased()
 
@@ -3194,6 +3209,18 @@ struct BillReviewView: View {
                 let description = extractStatementDescription(from: line, code: cpt)
                 items.append(ParsedLineItem(code: cpt, description: description,
                                             amount: charge, codeType: classifyCodeType(cpt)))
+
+                // If OCR merged this voucher's payment/credit rows onto the charge
+                // line, surface each NEGATIVE amount as its own payment line so the
+                // credits associated with the charge aren't lost.
+                if layout.accountingRowKeywords.contains(where: { lower.contains($0.lowercased()) }) {
+                    let credits = money.filter { $0 < 0 }
+                    let creditLabel = paymentLabel(from: line)
+                    for c in credits {
+                        items.append(ParsedLineItem(code: "", description: creditLabel,
+                                                    amount: c, isSelected: false, kind: .payment))
+                    }
+                }
                 continue
             }
 
