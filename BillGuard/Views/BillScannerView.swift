@@ -4010,6 +4010,21 @@ struct BillReviewView: View {
             )
         }
         
+        // Build insurance payments/credits from the parsed account-statement credit
+        // lines (Cigna adjustments/payments/transfers, etc.). Stored as positive
+        // amounts; the detail screens render them as deductions.
+        let insurancePaymentsFromScan: [InsurancePayment] = lineItems
+            .filter { $0.kind == .payment && abs($0.amount) > 0 }
+            .map { item in
+                InsurancePayment(
+                    payerName: insuranceCarrier.isEmpty ? "Insurance" : insuranceCarrier,
+                    amount: abs(item.amount),
+                    paymentDate: serviceDate,
+                    transactionType: .other,
+                    notes: item.description.isEmpty ? "Payment / Credit" : item.description
+                )
+            }
+
         // Extract procedure codes using classified types
         let cptCodes = lineItems.filter(\.isSelected).compactMap { item -> String? in
             guard !item.code.isEmpty else { return nil }
@@ -4046,12 +4061,12 @@ struct BillReviewView: View {
                 status: .notSubmitted,
                 serviceDate: serviceDate,
                 billedAmount: totalAmount,
-                patientResponsibility: totalAmount,
+                patientResponsibility: Double(amountDue) ?? totalAmount,
                 procedureCodes: cptCodes.isEmpty ? nil : cptCodes,
                 diagnosisCodes: diagCodes.isEmpty ? nil : diagCodes,
                 notes: notesParts.isEmpty ? nil : notesParts.joined(separator: "\n"),
                 lineItems: billLineItems,
-                insurancePayments: [],
+                insurancePayments: insurancePaymentsFromScan,
                 createdAt: Date(),
                 updatedAt: Date()
             )
