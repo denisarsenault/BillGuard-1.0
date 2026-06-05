@@ -4010,11 +4010,17 @@ struct BillReviewView: View {
             )
         }
         
-        // Build insurance payments/credits from the parsed account-statement credit
-        // lines (Cigna adjustments/payments/transfers, etc.). Stored as positive
-        // amounts; the detail screens render them as deductions.
-        let insurancePaymentsFromScan: [InsurancePayment] = lineItems
-            .filter { $0.kind == .payment && abs($0.amount) > 0 }
+        // Split the parsed account-statement credits: self-pay / card credits go to
+        // Patient Payments; insurer credits (adjustments, payments, transfers) go to
+        // Insurance Payments. Stored as positive amounts; detail screens render them
+        // as deductions.
+        let scanCredits = lineItems.filter { $0.kind == .payment && abs($0.amount) > 0 }
+        func isSelfPayCredit(_ label: String) -> Bool {
+            let l = label.lowercased()
+            return l.contains("self") || l.contains("card")   // self-pay / credit card / master card
+        }
+        let insurancePaymentsFromScan: [InsurancePayment] = scanCredits
+            .filter { !isSelfPayCredit($0.description) }
             .map { item in
                 InsurancePayment(
                     payerName: insuranceCarrier.isEmpty ? "Insurance" : insuranceCarrier,
@@ -4022,6 +4028,18 @@ struct BillReviewView: View {
                     paymentDate: serviceDate,
                     transactionType: .other,
                     notes: item.description.isEmpty ? "Payment / Credit" : item.description
+                )
+            }
+        let patientPaymentsFromScan: [PatientPayment] = scanCredits
+            .filter { isSelfPayCredit($0.description) }
+            .map { item in
+                PatientPayment(
+                    amount: abs(item.amount),
+                    paymentDate: serviceDate,
+                    paymentMethod: .creditCard,
+                    confirmationNumber: nil,
+                    paidToProvider: providerName.isEmpty ? nil : providerName,
+                    notes: item.description.isEmpty ? "Self-Pay / Card Payment" : item.description
                 )
             }
 
@@ -4067,6 +4085,7 @@ struct BillReviewView: View {
                 notes: notesParts.isEmpty ? nil : notesParts.joined(separator: "\n"),
                 lineItems: billLineItems,
                 insurancePayments: insurancePaymentsFromScan,
+                patientPayments: patientPaymentsFromScan.isEmpty ? nil : patientPaymentsFromScan,
                 createdAt: Date(),
                 updatedAt: Date()
             )
