@@ -3171,14 +3171,11 @@ struct BillReviewView: View {
             // Statement header/contact row (carries the office phone + account #)
             if line.range(of: #"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]\d{4}"#, options: .regularExpression) != nil { continue }
 
-            // ── Visit Total → patient responsibility (Patient Amount = last money) ──
-            if layout.visitTotalLabels.contains(where: { lower.contains($0.lowercased()) })
-                || lower.contains("visit total") {
-                if let amt = moneyValues(in: line).last { visitTotalSum += amt }
-                continue
-            }
+            // ── Skip footer / instruction junk ──
+            if lower.contains("return this portion") || lower.contains("reverse side")
+                || lower.contains("indicate address") || lower.contains("show amount") { continue }
 
-            // ── Global summary labels ──
+            // ── Explicit summary labels ──
             if lower.contains("total charge") || lower.contains("charges total") {
                 if let amt = moneyValues(in: line).max() {
                     totalCharges = String(format: "%.2f", amt)
@@ -3186,64 +3183,70 @@ struct BillReviewView: View {
                 }
                 continue
             }
-            if lower.contains("insurance adjust") || lower.contains("contractual") {
-                if let amt = moneyValues(in: line).first { insuranceAdjustment = String(format: "%.2f", abs(amt)) }
-                continue
-            }
             if lower.contains("insurance paid") || lower.contains("ins paid") {
-                if let amt = moneyValues(in: line).first { insurancePaid = String(format: "%.2f", abs(amt)) }
+                if let amt = moneyValues(in: line).first(where: { $0 != 0 }) {
+                    insurancePaid = String(format: "%.2f", abs(amt))
+                }
                 continue
             }
             if lower.contains("patient balance") || lower.contains("amount due") || lower.contains("balance due") {
-                if let amt = moneyValues(in: line).last { amountDue = String(format: "%.2f", amt) }
+                if let amt = moneyValues(in: line).last(where: { $0 > 0 }) {
+                    amountDue = String(format: "%.2f", amt)
+                }
                 continue
             }
 
             let money = moneyValues(in: line)
 
-            // ── CPT-PRIORITY: a row with a procedure code is a CHARGE, even when OCR
-            //    merged accounting words into it. Charge = first POSITIVE money value
-            //    (the "Charges & Debits" column). ──
+            // ── CPT row → CHARGE (first positive money = Charges & Debits column) ──
             if let cpt = firstCPT(in: line) {
                 let charge = money.first(where: { $0 > 0 }) ?? 0
                 let description = extractStatementDescription(from: line, code: cpt)
                 items.append(ParsedLineItem(code: cpt, description: description,
                                             amount: charge, codeType: classifyCodeType(cpt)))
-
-                // If OCR merged this voucher's payment/credit rows onto the charge
-                // line, surface each NEGATIVE amount as its own payment line so the
-                // credits associated with the charge aren't lost.
-                if layout.accountingRowKeywords.contains(where: { lower.contains($0.lowercased()) }) {
-                    let credits = money.filter { $0 < 0 }
-                    let creditLabel = paymentLabel(from: line)
-                    for c in credits {
-                        items.append(ParsedLineItem(code: "", description: creditLabel,
-                                                    amount: c, isSelected: false, kind: .payment))
-                    }
+                // Any negative merged onto this row is a credit.
+                for c in money.filter({ $0 < 0 }) {
+                    items.append(ParsedLineItem(code: "", description: paymentLabel(from: line),
+                                                amount: c, isSelected: false, kind: .payment))
                 }
                 continue
             }
 
-            // ── Accounting / payment / credit rows (no CPT) → separate payment line ──
-            if layout.accountingRowKeywords.contains(where: { lower.contains($0.lowercased()) }) {
-                let amt = money.last ?? 0
-                var label = extractStatementDescription(from: line, code: "")
-                label = label.replacingOccurrences(of: #"^\d{4,}\s+"#, with: "", options: .regularExpression)
-                    .trimmingCharacters(in: .whitespaces)
-                if label.isEmpty { label = "Payment / Credit" }
-                items.append(ParsedLineItem(code: "", description: label, amount: amt,
-                                            isSelected: false, kind: .payment))
+            // ── A NEGATIVE amount anywhere is a credit/payment — regardless of which
+            //    line OCR scattered it onto (incl. ones misplaced onto a Visit Total
+            //    row). This is robust to the heavy column-merging in these statements. ──
+            let negatives = money.filter { $0 < 0 }
+            if !negatives.isEmpty {
+                let label = paymentLabel(from: line)
+                for n in negatives {
+                    items.append(ParsedLineItem(code: "", description: label,
+                                                amount: n, isSelected: false, kind: .payment))
+                }
+                continue
+            }
+
+            // ── A genuine (positive) Visit Total = patient responsibility ──
+            if lower.contains("visit total") {
+                if let amt = money.last(where: { $0 > 0 }) { visitTotalSum += amt }
                 continue
             }
         }
 
         lineItems = items
 
-        if amountDue.isEmpty && visitTotalSum != 0 {
-            amountDue = String(format: "%.2f", visitTotalSum)
+        let chargesSum = items.filter { $0.kind == .charge }.reduce(0) { $0 + $1.amount }
+        let creditsSum = items.filter { $0.kind == .payment }.reduce(0) { $0 + $1.amount }
+
+        if amountDue.isEmpty {
+            if visitTotalSum > 0 {
+                amountDue = String(format: "%.2f", visitTotalSum)
+            } else {
+                // Patient owes charges minus credits (credits are stored negative).
+                let bal = chargesSum + creditsSum
+                if bal >= 0 { amountDue = String(format: "%.2f", bal) }
+            }
         }
         if billedAmount.isEmpty {
-            let chargesSum = items.filter { $0.kind == .charge }.reduce(0) { $0 + $1.amount }
             billedAmount = !totalCharges.isEmpty ? totalCharges
                 : (chargesSum > 0 ? String(format: "%.2f", chargesSum) : amountDue)
         }
@@ -3251,7 +3254,7 @@ struct BillReviewView: View {
         #if DEBUG
         let c = items.filter { $0.kind == .charge }.count
         let p = items.filter { $0.kind == .payment }.count
-        print("── AccountStatement: \(c) charges, \(p) payments, visitTotalSum=\(visitTotalSum)")
+        print("── AccountStatement: \(c) charges, \(p) credits, chargesSum=\(chargesSum), creditsSum=\(creditsSum), amountDue=\(amountDue)")
         #endif
     }
 
