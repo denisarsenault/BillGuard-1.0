@@ -1420,6 +1420,11 @@ struct ResizeHandles: View {
 
 // MARK: - Parsed Line Item (editable in review)
 
+enum LineItemKind {
+    case charge    // a billed procedure/charge row
+    case payment   // a payment, adjustment, credit, or transfer row
+}
+
 struct ParsedLineItem: Identifiable {
     let id = UUID()
     var code: String
@@ -1429,7 +1434,8 @@ struct ParsedLineItem: Identifiable {
     var codeType: MedicalCodeType?
     var matchedMedicalCode: MedicalCode?
     var lookupFailed: Bool = false
-    
+    var kind: LineItemKind = .charge
+
     /// Best description — prefer database match over OCR text
     var bestDescription: String {
         if let mc = matchedMedicalCode {
@@ -1610,21 +1616,58 @@ struct BillReviewView: View {
                         }
                     } else {
                         ForEach($lineItems) { $item in
-                            LineItemRow(item: $item)
+                            if item.kind == .payment {
+                                // Payment / credit / adjustment row — shown separately,
+                                // excluded from the charges total.
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.down.left.circle.fill")
+                                        .foregroundColor(.green)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.description.isEmpty ? "Payment / Credit" : item.description)
+                                            .font(.subheadline)
+                                        Text("Payment / Credit")
+                                            .font(.caption2).foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(item.amount, format: .currency(code: "USD"))
+                                        .fontWeight(.medium)
+                                        .foregroundColor(item.amount < 0 ? .green : .secondary)
+                                }
+                            } else {
+                                LineItemRow(item: $item)
+                            }
                         }
                         .onDelete { offsets in
                             lineItems.remove(atOffsets: offsets)
                         }
-                        
-                        // Totals
-                        let selectedTotal = lineItems.filter(\.isSelected).reduce(0) { $0 + $1.amount }
+
+                        // Charges subtotal — selected charge rows only (payments excluded)
+                        let hasPayments = lineItems.contains { $0.kind == .payment }
+                        let chargesTotal = lineItems
+                            .filter { $0.kind == .charge && $0.isSelected }
+                            .reduce(0) { $0 + $1.amount }
                         HStack {
-                            Text("Line Items Total")
+                            Text(hasPayments ? "Charges Total" : "Line Items Total")
                                 .fontWeight(.medium)
                             Spacer()
-                            Text(selectedTotal, format: .currency(code: "USD"))
+                            Text(chargesTotal, format: .currency(code: "USD"))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.accentColor)
+                        }
+
+                        // Payments & credits subtotal
+                        if hasPayments {
+                            let paymentsTotal = lineItems
+                                .filter { $0.kind == .payment }
+                                .reduce(0) { $0 + $1.amount }
+                            HStack {
+                                Text("Payments & Credits")
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Text(paymentsTotal, format: .currency(code: "USD"))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.green)
+                            }
                         }
                     }
                 } header: {
@@ -1707,8 +1750,9 @@ struct BillReviewView: View {
                 // Scanned Totals
                 if !lineItems.isEmpty {
                     Section("Scanned Totals") {
-                        let allTotal = lineItems.reduce(0) { $0 + $1.amount }
-                        let selectedTotal = lineItems.filter(\.isSelected).reduce(0) { $0 + $1.amount }
+                        let charges = lineItems.filter { $0.kind == .charge }
+                        let allTotal = charges.reduce(0) { $0 + $1.amount }
+                        let selectedTotal = charges.filter(\.isSelected).reduce(0) { $0 + $1.amount }
                         HStack {
                             Text("All Codes Total")
                             Spacer()
@@ -1956,9 +2000,9 @@ struct BillReviewView: View {
         print("  Insurance: \(insuranceCarrier), Policy: \(policyNumber), Member: \(memberId), Discharge: \(dischargeDate)")
         #endif
         
-        // Compute total from line items if not already set
+        // Compute total from line items if not already set (charges only)
         if billedAmount.isEmpty && !lineItems.isEmpty {
-            let total = lineItems.reduce(0) { $0 + $1.amount }
+            let total = lineItems.filter { $0.kind == .charge }.reduce(0) { $0 + $1.amount }
             billedAmount = String(format: "%.2f", total)
         }
     }
@@ -2049,7 +2093,32 @@ struct BillReviewView: View {
                 }
             }
         }
-        
+
+        // Fallback 2: a name merged onto an address line, e.g.
+        // "PO BOX 391402  MARY M ARSENAULT" — extract the longest run of
+        // consecutive name-like words (skipping address/provider tokens).
+        if patientName.isEmpty {
+            let stop: Set<String> = ["PO", "BOX", "STREET", "ST", "AVE", "AVENUE",
+                "ROAD", "RD", "SUITE", "STE", "DR", "LANE", "LN", "APT", "UNIT",
+                "FL", "DELAND", "DELTONA", "MEDICAL", "HOSPITAL", "CLINIC", "ASSOC",
+                "ASSOCIATES", "ADDRESSEE", "ADDRESS", "SERVICE", "REQUESTED",
+                "STATEMENT", "PATIENT", "ACCOUNT", "VOUCHER"]
+            for line in lines {
+                var run: [String] = [], best: [String] = []
+                for w in line.split(separator: " ").map(String.init) {
+                    let isNameWord = (w.first?.isLetter == true)
+                        && w.allSatisfy { $0.isLetter || $0 == "." || $0 == "'" || $0 == "-" }
+                    if isNameWord, !stop.contains(w.uppercased()) {
+                        run.append(w)
+                        if run.count > best.count { best = run }
+                    } else { run = [] }
+                }
+                if best.count >= 2 && best.count <= 4 {
+                    patientName = best.joined(separator: " "); break
+                }
+            }
+        }
+
         // Fallback: find address after patient name
         if patientAddress.isEmpty {
             var foundName = false
@@ -2652,10 +2721,39 @@ struct BillReviewView: View {
 
     // MARK: - Line Item Parsing
 
+    /// Detects the multi-column "account statement" layout from its distinctive
+    /// headers/rows so the column-aware parser runs even when the provider-name OCR
+    /// is too poor to match a template. ≥2 signals required (standard itemized bills
+    /// have none of these), so it can't false-positive on a normal bill.
+    private func looksLikeAccountStatement(_ text: String) -> Bool {
+        let l = text.lowercased()
+        var signals = 0
+        if l.contains("voucher")            { signals += 1 }
+        if l.contains("visit total")        { signals += 1 }
+        if l.contains("insurance pending")  { signals += 1 }
+        if l.contains("patient amount")     { signals += 1 }
+        if l.contains("icpt")               { signals += 1 }
+        if l.contains("charges") && (l.contains("credits") || l.contains("debits")) { signals += 1 }
+        return signals >= 2
+    }
+
     private func parseLineItems() {
         // Route to template-specific parser when available
         if let layout = detectedTemplate?.procedureColumnLayout,
            detectedTemplate?.billFormat == .accountStatement {
+            parseAccountStatementLineItems(layout: layout)
+            return
+        }
+
+        // Format-based fallback: recognize the account-statement layout from the
+        // procedure text itself, even without a provider-template match.
+        if looksLikeAccountStatement(procedureText) {
+            var layout = ProcedureColumnLayout()
+            layout.accountingRowKeywords += [
+                "cigna", "aetna", "humana", "bcbs", "blue cross", "united health",
+                "unitedhealth", "anthem", "medicare", "medicaid", "tricare",
+                "self pay", "master card", "mastercard", "visa", "discover"
+            ]
             parseAccountStatementLineItems(layout: layout)
             return
         }
@@ -3021,106 +3119,112 @@ struct BillReviewView: View {
 
         var items: [ParsedLineItem] = []
         var visitTotalSum: Double = 0
-        var totalChargesSum: Double = 0
 
-        let datePattern = #"^\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}"#
+        // Money tokens REQUIRE decimals, so dates ("07/11/11") and codes/vouchers are
+        // never mistaken for a charge (this is what caused the bogus $7.00 / $10.00 —
+        // the old "first number" grabbed "07" from the date). Preserves sign.
+        func moneyValues(in line: String) -> [Double] {
+            let pattern = #"-?\$?\s*\d{1,3}(?:,\d{3})*\.\d{2}\b"#
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+            let ns = line as NSString
+            return regex.matches(in: line, range: NSRange(location: 0, length: ns.length)).compactMap {
+                let raw = ns.substring(with: $0.range)
+                guard let v = normalizeAmountToken(raw) else { return nil }
+                return raw.contains("-") ? -abs(v) : v
+            }
+        }
+
+        // First valid CPT (5-digit in range) or HCPCS code on a line.
+        func firstCPT(in line: String) -> String? {
+            if let r = line.range(of: #"\b\d{5}\b"#, options: .regularExpression) {
+                let c = String(line[r])
+                if let n = Int(c), n >= 10000 && n <= 99499 { return c }
+            }
+            if let r = line.range(of: #"\b[A-Z]\d{4}\b"#, options: .regularExpression) {
+                return String(line[r])
+            }
+            return nil
+        }
 
         for line in lines {
             let lower = line.lowercased()
 
-            // ── Skip column headers ──
+            // ── Skip headers / patient / contact rows ──
             if lower.hasPrefix("date") && (lower.contains("code") || lower.contains("reason")
                 || lower.contains("activity") || lower.contains("description")) { continue }
-            if layout.chargesColumnKeywords.contains(where: { lower.contains($0) })
-                && layout.paymentsColumnKeywords.contains(where: { lower.contains($0) }) { continue }
-
-            // ── Skip voucher group headers ──
-            if layout.voucherLabels.contains(where: { lower.hasPrefix($0.lowercased()) }) { continue }
             if lower.hasPrefix("patient:") { continue }
+            // Statement header/contact row (carries the office phone + account #)
+            if line.range(of: #"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]\d{4}"#, options: .regularExpression) != nil { continue }
 
-            // ── Capture Visit Total for patient-responsibility sum ──
-            if layout.visitTotalLabels.contains(where: { lower.contains($0.lowercased()) }) {
-                // The patient-amount column is the LAST dollar value on the line
-                if let amt = extractLastDollarAmount(from: line) {
-                    visitTotalSum += amt
-                }
+            // ── Visit Total → patient responsibility (Patient Amount = last money) ──
+            if layout.visitTotalLabels.contains(where: { lower.contains($0.lowercased()) })
+                || lower.contains("visit total") {
+                if let amt = moneyValues(in: line).last { visitTotalSum += amt }
                 continue
             }
 
-            // ── Global total/summary lines ──
+            // ── Global summary labels ──
             if lower.contains("total charge") || lower.contains("charges total") {
-                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
-                    totalChargesSum = amt
+                if let amt = moneyValues(in: line).max() {
                     totalCharges = String(format: "%.2f", amt)
                     if billedAmount.isEmpty { billedAmount = totalCharges }
                 }
                 continue
             }
             if lower.contains("insurance adjust") || lower.contains("contractual") {
-                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
-                    insuranceAdjustment = String(format: "%.2f", amt)
-                }
+                if let amt = moneyValues(in: line).first { insuranceAdjustment = String(format: "%.2f", abs(amt)) }
                 continue
             }
             if lower.contains("insurance paid") || lower.contains("ins paid") {
-                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
-                    insurancePaid = String(format: "%.2f", amt)
-                }
+                if let amt = moneyValues(in: line).first { insurancePaid = String(format: "%.2f", abs(amt)) }
                 continue
             }
             if lower.contains("patient balance") || lower.contains("amount due") || lower.contains("balance due") {
-                if let amt = extractStrictDollarAmount(from: line) ?? extractPlainAmount(from: line) {
-                    amountDue = String(format: "%.2f", amt)
-                }
+                if let amt = moneyValues(in: line).last { amountDue = String(format: "%.2f", amt) }
                 continue
             }
 
-            // ── Skip accounting/payment rows ──
+            let money = moneyValues(in: line)
+
+            // ── CPT-PRIORITY: a row with a procedure code is a CHARGE, even when OCR
+            //    merged accounting words into it. Charge = first POSITIVE money value
+            //    (the "Charges & Debits" column). ──
+            if let cpt = firstCPT(in: line) {
+                let charge = money.first(where: { $0 > 0 }) ?? 0
+                let description = extractStatementDescription(from: line, code: cpt)
+                items.append(ParsedLineItem(code: cpt, description: description,
+                                            amount: charge, codeType: classifyCodeType(cpt)))
+                continue
+            }
+
+            // ── Accounting / payment / credit rows (no CPT) → separate payment line ──
             if layout.accountingRowKeywords.contains(where: { lower.contains($0.lowercased()) }) {
-                // But capture negative patient payments for insurance-paid running total
+                let amt = money.last ?? 0
+                var label = extractStatementDescription(from: line, code: "")
+                label = label.replacingOccurrences(of: #"^\d{4,}\s+"#, with: "", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces)
+                if label.isEmpty { label = "Payment / Credit" }
+                items.append(ParsedLineItem(code: "", description: label, amount: amt,
+                                            isSelected: false, kind: .payment))
                 continue
             }
-
-            // ── Procedure rows: must start with a date ──
-            guard line.range(of: datePattern, options: .regularExpression) != nil else { continue }
-
-            // Extract the charge amount — first dollar value on the line is the
-            // "Charges & Debits" column in the multi-column statement format.
-            let charge = extractFirstDollarAmount(from: line) ?? 0.0
-            guard charge > 0 else { continue }
-
-            // Extract code — a 5-digit CPT code or alphanumeric HCPCS
-            let code = extractFirstMedicalCode(from: line)
-
-            // Description is everything between the code and the first dollar amount
-            let description = extractStatementDescription(from: line, code: code)
-
-            let item = ParsedLineItem(
-                code:        code,
-                description: description,
-                amount:      charge,
-                codeType:    code.isEmpty ? nil : classifyCodeType(code)
-            )
-            items.append(item)
         }
 
         lineItems = items
 
-        // Set amountDue from visit total sum if not already found on a labelled line
         if amountDue.isEmpty && visitTotalSum != 0 {
             amountDue = String(format: "%.2f", visitTotalSum)
         }
-        if totalCharges.isEmpty && totalChargesSum > 0 {
-            totalCharges = String(format: "%.2f", totalChargesSum)
-        }
         if billedAmount.isEmpty {
-            billedAmount = totalCharges.isEmpty
-                ? (amountDue.isEmpty ? "" : amountDue)
-                : totalCharges
+            let chargesSum = items.filter { $0.kind == .charge }.reduce(0) { $0 + $1.amount }
+            billedAmount = !totalCharges.isEmpty ? totalCharges
+                : (chargesSum > 0 ? String(format: "%.2f", chargesSum) : amountDue)
         }
 
         #if DEBUG
-        print("── AccountStatement: \(items.count) procedures, visitTotalSum=\(visitTotalSum)")
+        let c = items.filter { $0.kind == .charge }.count
+        let p = items.filter { $0.kind == .payment }.count
+        print("── AccountStatement: \(c) charges, \(p) payments, visitTotalSum=\(visitTotalSum)")
         #endif
     }
 
@@ -3181,9 +3285,10 @@ struct BillReviewView: View {
         let cloudKit = appState.cloudKitService
         
         for i in lineItems.indices {
+            guard lineItems[i].kind == .charge else { continue }   // payments/credits carry no code
             let code = lineItems[i].code
             guard !code.isEmpty else { continue }
-            
+
             // Classify the code type
             lineItems[i].codeType = classifyCodeType(code)
 
@@ -3856,10 +3961,10 @@ struct BillReviewView: View {
         }
         isSaving = true
         
-        let totalAmount = Double(billedAmount) ?? lineItems.reduce(0) { $0 + $1.amount }
-        
-        // Build BillLineItems from parsed items with enriched data
-        let billLineItems: [BillLineItem] = lineItems.filter(\.isSelected).map { item in
+        let totalAmount = Double(billedAmount) ?? lineItems.filter { $0.kind == .charge }.reduce(0) { $0 + $1.amount }
+
+        // Build BillLineItems from parsed items with enriched data (charges only)
+        let billLineItems: [BillLineItem] = lineItems.filter { $0.isSelected && $0.kind == .charge }.map { item in
             var notes: String? = nil
             if let mc = item.matchedMedicalCode, mc.hasValidPricing {
                 notes = "Typical range: \(mc.formattedPriceRange)"
