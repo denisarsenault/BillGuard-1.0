@@ -2,6 +2,9 @@
 //  PatientsView.swift
 //  BillGuard (macOS)
 //
+//
+//  Medical billing code lookup app
+
 //  Lists patients from the shared BillGuardCore data layer (local cache today,
 //  CloudKit-synced once the container/entitlement are configured).
 //

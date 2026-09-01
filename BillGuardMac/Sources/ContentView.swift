@@ -2,6 +2,9 @@
 //  ContentView.swift
 //  BillGuard (macOS)
 //
+//  Medical billing code lookup app
+
+//
 //  App shell: a sidebar-driven layout mirroring the iOS app's sections. Each
 //  section is a placeholder for now; they get wired to BillGuardCore
 //  (CloudKit-backed patients/claims), the file-import document scanner, and the
