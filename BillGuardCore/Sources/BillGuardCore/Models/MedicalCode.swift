@@ -227,7 +227,8 @@ extension MedicalCode {
     public static let sampleCodes: [MedicalCode] = {
         let t0 = CFAbsoluteTimeGetCurrent()
         
-        let jsonURL = Bundle.main.url(forResource: "medical_codes", withExtension: "json")
+        let jsonURL = Bundle.module.url(forResource: "medical_codes", withExtension: "json")
+            ?? Bundle.main.url(forResource: "medical_codes", withExtension: "json")
             ?? Bundle.main.url(forResource: "medical_codes", withExtension: "json", subdirectory: "Resources")
         
         guard let url = jsonURL else {

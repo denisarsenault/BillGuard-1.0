@@ -13,6 +13,8 @@ struct ScanReviewView: View {
     let result: BillParseResult
     var onClose: () -> Void
 
+    @State private var isSaved = false
+
     private var charges: [ParsedLineItem] { result.lineItems.filter { $0.kind == .charge } }
     private var credits: [ParsedLineItem] { result.lineItems.filter { $0.kind == .payment } }
     private var chargesTotal: Double { charges.reduce(0) { $0 + $1.amount } }
@@ -23,7 +25,15 @@ struct ScanReviewView: View {
             HStack {
                 Text("Review Bill").font(.title2.bold())
                 Spacer()
-                Button("Done") { onClose() }.keyboardShortcut(.defaultAction)
+                Button("Cancel") { onClose() }
+                Button(isSaved ? "Saved ✓" : "Save Bill") {
+                    _ = BillImporter.saveScannedBill(result)
+                    isSaved = true
+                    onClose()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(isSaved)
             }
             .padding()
 

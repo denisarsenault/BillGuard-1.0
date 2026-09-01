@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "BillGuardCore", targets: ["BillGuardCore"])
     ],
     targets: [
-        .target(name: "BillGuardCore"),
+        .target(name: "BillGuardCore", resources: [.process("Resources")]),
         .testTarget(name: "BillGuardCoreTests", dependencies: ["BillGuardCore"])
     ]
 )

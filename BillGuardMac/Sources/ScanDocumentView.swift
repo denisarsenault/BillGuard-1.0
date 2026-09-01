@@ -151,7 +151,8 @@ struct ScanDocumentView: View {
         let insurance = await ocr(.insurance)
         let procedure = await ocr(.procedure)
         let parsed = BillParser(patientText: patient, providerText: provider,
-                                insuranceText: insurance, procedureText: procedure).parse()
+                                insuranceText: insurance, procedureText: procedure,
+                                lookup: { MedicalCodeDatabase.lookup($0) }).parse()
         await MainActor.run { result = parsed; isExtracting = false }
     }
 
