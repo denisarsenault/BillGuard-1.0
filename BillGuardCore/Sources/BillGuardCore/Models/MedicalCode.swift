@@ -10,13 +10,13 @@ import CloudKit
 
 // MARK: - Code Type Enum
 
-enum MedicalCodeType: String, Codable, CaseIterable {
+public enum MedicalCodeType: String, Codable, CaseIterable {
     case cpt = "CPT"
     case icd10 = "ICD-10"
     case icd10pcs = "ICD-10-PCS"
     case hcpcs = "HCPCS"
     
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .cpt: return "CPT (Procedure)"
         case .icd10: return "ICD-10 (Diagnosis)"
@@ -25,7 +25,7 @@ enum MedicalCodeType: String, Codable, CaseIterable {
         }
     }
     
-    var color: String {
+    public var color: String {
         switch self {
         case .cpt: return "cptBlue"
         case .icd10: return "icd10Green"
@@ -37,54 +37,54 @@ enum MedicalCodeType: String, Codable, CaseIterable {
 
 // MARK: - Medical Code Model
 
-struct MedicalCode: Identifiable, Codable, Hashable {
+public struct MedicalCode: Identifiable, Codable, Hashable {
     
-    let id: String
-    let code: String
-    let codeType: MedicalCodeType
-    let shortDescription: String
-    let plainEnglishDescription: String
-    let category: String
-    let subcategory: String?
+    public let id: String
+    public let code: String
+    public let codeType: MedicalCodeType
+    public let shortDescription: String
+    public let plainEnglishDescription: String
+    public let category: String
+    public let subcategory: String?
     
     // Pricing
-    let priceLow: Double?
-    let priceAverage: Double?
-    let priceHigh: Double?
+    public let priceLow: Double?
+    public let priceAverage: Double?
+    public let priceHigh: Double?
     
     // Additional info
-    let commonUses: [String]
-    let insuranceNotes: String?
-    let misuseWarning: String?
-    let relatedCodes: [String]
-    let keywords: [String]
+    public let commonUses: [String]
+    public let insuranceNotes: String?
+    public let misuseWarning: String?
+    public let relatedCodes: [String]
+    public let keywords: [String]
     
     // Metadata
-    let lastUpdated: Date
+    public let lastUpdated: Date
     
     // MARK: - Computed Properties
     
-    var formattedPriceRange: String {
+    public var formattedPriceRange: String {
         guard let low = priceLow, let high = priceHigh else {
             return "Price data unavailable"
         }
         return "$\(Int(low)) – $\(Int(high))"
     }
     
-    var formattedAveragePrice: String {
+    public var formattedAveragePrice: String {
         guard let avg = priceAverage else {
             return "N/A"
         }
         return "$\(Int(avg))"
     }
     
-    var hasValidPricing: Bool {
+    public var hasValidPricing: Bool {
         return priceLow != nil && priceHigh != nil
     }
     
     // MARK: - CloudKit Record Type
     
-    static let recordType = "MedicalCode"
+    public static let recordType = "MedicalCode"
     
     // MARK: - CloudKit Field Keys
     
@@ -224,7 +224,7 @@ struct MedicalCode: Identifiable, Codable, Hashable {
 extension MedicalCode {
     
     /// All medical codes loaded from the bundled JSON file
-    static let sampleCodes: [MedicalCode] = {
+    public static let sampleCodes: [MedicalCode] = {
         let t0 = CFAbsoluteTimeGetCurrent()
         
         let jsonURL = Bundle.main.url(forResource: "medical_codes", withExtension: "json")
@@ -358,7 +358,7 @@ extension MedicalCode {
         )
     ]
     
-    static var sample: MedicalCode {
+    public static var sample: MedicalCode {
         sampleCodes.first ?? defaultSampleCodes[0]
     }
 }
@@ -366,22 +366,22 @@ extension MedicalCode {
 // MARK: - JSON Decoding Helper
 
 private struct JSONMedicalCode: Codable {
-    let recordName: String
-    let code: String
-    let codeType: String
-    let shortDescription: String
-    let plainEnglishDescription: String
-    let category: String
-    let subcategory: String?
-    let priceLow: Double?
-    let priceAverage: Double?
-    let priceHigh: Double?
-    let commonUses: [String]?
-    let insuranceNotes: String?
-    let misuseWarning: String?
-    let relatedCodes: [String]?
-    let keywords: [String]?
-    let lastUpdated: String?
+    public let recordName: String
+    public let code: String
+    public let codeType: String
+    public let shortDescription: String
+    public let plainEnglishDescription: String
+    public let category: String
+    public let subcategory: String?
+    public let priceLow: Double?
+    public let priceAverage: Double?
+    public let priceHigh: Double?
+    public let commonUses: [String]?
+    public let insuranceNotes: String?
+    public let misuseWarning: String?
+    public let relatedCodes: [String]?
+    public let keywords: [String]?
+    public let lastUpdated: String?
     
     func toMedicalCode() -> MedicalCode {
         let codeTypeEnum: MedicalCodeType

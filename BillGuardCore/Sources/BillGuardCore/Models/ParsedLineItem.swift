@@ -8,24 +8,24 @@
 
 import Foundation
 
-enum LineItemKind {
+public enum LineItemKind {
     case charge    // a billed procedure/charge row
     case payment   // a payment, adjustment, credit, or transfer row
 }
 
-struct ParsedLineItem: Identifiable {
-    let id = UUID()
-    var code: String
-    var description: String
-    var amount: Double
-    var isSelected: Bool = true
-    var codeType: MedicalCodeType?
-    var matchedMedicalCode: MedicalCode?
-    var lookupFailed: Bool = false
-    var kind: LineItemKind = .charge
+public struct ParsedLineItem: Identifiable {
+    public let id = UUID()
+    public var code: String
+    public var description: String
+    public var amount: Double
+    public var isSelected: Bool = true
+    public var codeType: MedicalCodeType?
+    public var matchedMedicalCode: MedicalCode?
+    public var lookupFailed: Bool = false
+    public var kind: LineItemKind = .charge
 
     /// Best description — prefer database match over OCR text
-    var bestDescription: String {
+    public var bestDescription: String {
         if let mc = matchedMedicalCode {
             return mc.shortDescription
         }
@@ -33,7 +33,7 @@ struct ParsedLineItem: Identifiable {
     }
 
     /// Database price range if available
-    var databasePriceRange: String? {
+    public var databasePriceRange: String? {
         guard let mc = matchedMedicalCode, mc.hasValidPricing else { return nil }
         return mc.formattedPriceRange
     }

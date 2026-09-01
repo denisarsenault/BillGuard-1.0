@@ -10,19 +10,19 @@
 
 import Foundation
 
-struct BillParseResult {
-    var patientName = "", accountNumber = "", dateOfBirth = "", patientAddress = ""
-    var mrn = "", dischargeDate = "", admitDate = ""
-    var providerName = "", providerAddress = "", providerPhone = "", providerFax = ""
-    var providerEmail = "", providerWebsite = "", providerNPI = "", providerTaxId = "", providerLicense = ""
-    var insuranceCarrier = "", policyNumber = "", memberId = "", groupNumber = "", insurancePlanType = ""
-    var serviceDate = Date()
-    var billedAmount = "", totalCharges = "", insuranceAdjustment = "", insurancePaid = "", amountDue = ""
-    var lineItems: [ParsedLineItem] = []
+public struct BillParseResult {
+    public var patientName = "", accountNumber = "", dateOfBirth = "", patientAddress = ""
+    public var mrn = "", dischargeDate = "", admitDate = ""
+    public var providerName = "", providerAddress = "", providerPhone = "", providerFax = ""
+    public var providerEmail = "", providerWebsite = "", providerNPI = "", providerTaxId = "", providerLicense = ""
+    public var insuranceCarrier = "", policyNumber = "", memberId = "", groupNumber = "", insurancePlanType = ""
+    public var serviceDate = Date()
+    public var billedAmount = "", totalCharges = "", insuranceAdjustment = "", insurancePaid = "", amountDue = ""
+    public var lineItems: [ParsedLineItem] = []
     var detectedTemplate: ProviderBillTemplate?
 }
 
-final class BillParser {
+public final class BillParser {
     private let patientText: String
     private let providerText: String
     private let insuranceText: String
@@ -42,7 +42,7 @@ final class BillParser {
     var billedAmount = "", totalCharges = "", insuranceAdjustment = "", insurancePaid = "", amountDue = ""
     var lineItems: [ParsedLineItem] = []
 
-    init(patientText: String = "",
+    public init(patientText: String = "",
          providerText: String = "",
          insuranceText: String = "",
          procedureText: String = "",
@@ -57,7 +57,7 @@ final class BillParser {
     }
 
     @discardableResult
-    func parse() -> BillParseResult {
+    public func parse() -> BillParseResult {
         parsePatientFields()
         parseProviderFields()
         parseInsuranceFields()
