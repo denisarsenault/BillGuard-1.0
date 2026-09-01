@@ -47,10 +47,7 @@ struct ContentView: View {
         } detail: {
             switch selection ?? .patients {
             case .patients: PatientsView()
-            case .scan: PlaceholderView(
-                title: "Scan a Document",
-                systemImage: "doc.viewfinder",
-                message: "Import a photo or PDF of a medical bill (⌘O) — it's processed with the same on-device text recognition and parsing as the iOS app. No camera on Mac.")
+            case .scan: ScanDocumentView()
             case .search: PlaceholderView(
                 title: "Search & Codes",
                 systemImage: "magnifyingglass",
