@@ -37,3 +37,7 @@ fastlane/test_output
 
 # Swift Package Manager (BillGuardCore)
 BillGuardCore/.build/
+BillGuardCore/build/
+BillGuardMac/build/
+BillGuardMac/**/xcuserdata/
+BillGuardMac/DerivedData/

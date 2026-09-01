@@ -1,0 +1,34 @@
+name: BillGuardMac
+options:
+  bundleIdPrefix: com.mybrightzone
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  BillGuardCore:
+    path: ../BillGuardCore
+targets:
+  BillGuardMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources
+    dependencies:
+      - package: BillGuardCore
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: BillGuard
+        LSApplicationCategoryType: public.app-category.medical
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mybrightzone.BillGuardMac
+        PRODUCT_NAME: BillGuard
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
