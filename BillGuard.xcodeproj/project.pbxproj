@@ -42,9 +42,6 @@
 		A1000070 /* DocumentScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000071 /* DocumentScannerService.swift */; };
 		A1000090 /* BillScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000091 /* BillScannerView.swift */; };
 		A1000092 /* BillDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000093 /* BillDetailViews.swift */; };
-		A2000001 /* InsuranceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* InsuranceViews.swift */; };
-		A2000003 /* VisitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* VisitViews.swift */; };
-		A2000005 /* PaymentMethodViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* PaymentMethodViews.swift */; };
 		A1000094 /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000095 /* SplashScreen.swift */; };
 		A1000096 /* BillDocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000097 /* BillDocumentScanner.swift */; };
 		A1000098 /* SmartDocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000099 /* SmartDocumentScanner.swift */; };
@@ -52,6 +49,9 @@
 		A10000A2 /* ProviderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A3 /* ProviderViews.swift */; };
 		A10000A4 /* ContactInfoScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A5 /* ContactInfoScanner.swift */; };
 		A10000A6 /* DocumentClassifierScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000A7 /* DocumentClassifierScanner.swift */; };
+		A2000001 /* InsuranceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* InsuranceViews.swift */; };
+		A2000003 /* VisitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* VisitViews.swift */; };
+		A2000005 /* PaymentMethodViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* PaymentMethodViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,9 +93,6 @@
 		A1000071 /* DocumentScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerService.swift; sourceTree = "<group>"; };
 		A1000091 /* BillScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillScannerView.swift; sourceTree = "<group>"; };
 		A1000093 /* BillDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillDetailViews.swift; sourceTree = "<group>"; };
-		A2000002 /* InsuranceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceViews.swift; sourceTree = "<group>"; };
-		A2000004 /* VisitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViews.swift; sourceTree = "<group>"; };
-		A2000006 /* PaymentMethodViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodViews.swift; sourceTree = "<group>"; };
 		A1000095 /* SplashScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreen.swift; sourceTree = "<group>"; };
 		A1000097 /* BillDocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillDocumentScanner.swift; sourceTree = "<group>"; };
 		A1000099 /* SmartDocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartDocumentScanner.swift; sourceTree = "<group>"; };
@@ -103,6 +100,9 @@
 		A10000A3 /* ProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderViews.swift; sourceTree = "<group>"; };
 		A10000A5 /* ContactInfoScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactInfoScanner.swift; sourceTree = "<group>"; };
 		A10000A7 /* DocumentClassifierScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentClassifierScanner.swift; sourceTree = "<group>"; };
+		A2000002 /* InsuranceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceViews.swift; sourceTree = "<group>"; };
+		A2000004 /* VisitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViews.swift; sourceTree = "<group>"; };
+		A2000006 /* PaymentMethodViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -497,7 +497,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BillGuard/BillGuard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -531,7 +531,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BillGuard/BillGuard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
