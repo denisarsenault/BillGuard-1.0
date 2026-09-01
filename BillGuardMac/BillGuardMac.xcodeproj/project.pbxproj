@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		522DDE3D8D7F7FBDD3166A14 /* BillGuardMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0506957F733702338F048847 /* BillGuardMacApp.swift */; };
+		B22354BAE3EB5D3954BCF850 /* PatientsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAADC3FD3E12653523EC9EAD /* PatientsView.swift */; };
 		B2263A799B464202EF087F24 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D872AB130842D129304F57C /* ContentView.swift */; };
 		FFE3013A9AB5DABCAB4A0ED1 /* BillGuardCore in Frameworks */ = {isa = PBXBuildFile; productRef = D594CB971EF93ABC3D7ACF43 /* BillGuardCore */; };
 /* End PBXBuildFile section */
@@ -17,6 +18,7 @@
 		1D872AB130842D129304F57C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5A42DF2A8D67A73F8EA33195 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9501E22A6092950FCFDCED33 /* BillGuardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BillGuardCore; path = ../BillGuardCore; sourceTree = SOURCE_ROOT; };
+		DAADC3FD3E12653523EC9EAD /* PatientsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientsView.swift; sourceTree = "<group>"; };
 		FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuardMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -54,6 +56,7 @@
 				0506957F733702338F048847 /* BillGuardMacApp.swift */,
 				1D872AB130842D129304F57C /* ContentView.swift */,
 				5A42DF2A8D67A73F8EA33195 /* Info.plist */,
+				DAADC3FD3E12653523EC9EAD /* PatientsView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -132,6 +135,7 @@
 			files = (
 				522DDE3D8D7F7FBDD3166A14 /* BillGuardMacApp.swift in Sources */,
 				B2263A799B464202EF087F24 /* ContentView.swift in Sources */,
+				B22354BAE3EB5D3954BCF850 /* PatientsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

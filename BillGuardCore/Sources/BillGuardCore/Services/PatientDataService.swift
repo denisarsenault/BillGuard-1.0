@@ -9,20 +9,20 @@ import Foundation
 import Combine
 
 @MainActor
-class PatientDataService: ObservableObject {
-    static let shared = PatientDataService()
+public final class PatientDataService: ObservableObject {
+    public static let shared = PatientDataService()
     
     // MARK: - Published Data
-    @Published var patients: [Patient]
+    @Published public var patients: [Patient]
     @Published var insurancePolicies: [InsurancePolicy]
     @Published var insuranceCarriers: [InsuranceCarrier]
     @Published var paymentMethods: [PaymentMethod]
     @Published var providers: [Provider]
     @Published var visits: [Visit]
-    @Published var claims: [Claim]
+    @Published public var claims: [Claim]
     @Published var scannedDocuments: [ScannedDocument]
     
-    @Published var isLoading = false
+    @Published public var isLoading = false
     @Published var errorMessage: String?
     
     // MARK: - Storage Keys
@@ -429,7 +429,7 @@ class PatientDataService: ObservableObject {
         save(claims, key: StorageKeys.claims)
     }
     
-    func claims(for patientId: String) -> [Claim] {
+    public func claims(for patientId: String) -> [Claim] {
         claims.filter { $0.patientId == patientId }
     }
     

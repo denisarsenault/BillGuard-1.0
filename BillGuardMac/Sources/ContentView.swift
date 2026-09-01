@@ -43,10 +43,7 @@ struct ContentView: View {
             .navigationTitle("BillGuard")
         } detail: {
             switch selection ?? .patients {
-            case .patients: PlaceholderView(
-                title: "Patients",
-                systemImage: "person.2.fill",
-                message: "Your patients and their bills will sync here from CloudKit.")
+            case .patients: PatientsView()
             case .scan: PlaceholderView(
                 title: "Scan a Document",
                 systemImage: "doc.viewfinder",

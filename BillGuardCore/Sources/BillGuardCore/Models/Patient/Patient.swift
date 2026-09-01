@@ -10,8 +10,8 @@ import CloudKit
 
 // MARK: - Patient
 
-struct Patient: Identifiable, Codable, Hashable {
-    var id: String
+public struct Patient: Identifiable, Codable, Hashable {
+    public var id: String
     var guardianUserId: String  // The user who manages this patient
     
     // Basic Info
@@ -86,20 +86,20 @@ struct Patient: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var fullName: String {
+    public var fullName: String {
         if let middle = middleName, !middle.isEmpty {
             return "\(firstName) \(middle) \(lastName)"
         }
         return "\(firstName) \(lastName)"
     }
     
-    var displayName: String { "\(firstName) \(lastName)" }
+    public var displayName: String { "\(firstName) \(lastName)" }
     
-    var initials: String {
+    public var initials: String {
         "\(firstName.prefix(1).uppercased())\(lastName.prefix(1).uppercased())"
     }
     
-    var age: Int? {
+    public var age: Int? {
         guard let dob = dateOfBirth else { return nil }
         return Calendar.current.dateComponents([.year], from: dob, to: Date()).year
     }
@@ -116,8 +116,8 @@ struct Patient: Identifiable, Codable, Hashable {
         emailAddresses.first { $0.isPrimary } ?? emailAddresses.first
     }
     
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
-    static func == (lhs: Patient, rhs: Patient) -> Bool { lhs.id == rhs.id }
+    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    public static func == (lhs: Patient, rhs: Patient) -> Bool { lhs.id == rhs.id }
 }
 
 // MARK: - Patient Address

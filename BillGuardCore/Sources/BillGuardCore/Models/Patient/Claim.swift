@@ -177,8 +177,8 @@ import SwiftUI
 
 // MARK: - Claim Model
 
-struct Claim: Identifiable, Codable, Hashable {
-    var id: String
+public struct Claim: Identifiable, Codable, Hashable {
+    public var id: String
     var patientId: String
     var visitId: String?
     var billId: String?
