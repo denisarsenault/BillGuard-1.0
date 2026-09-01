@@ -13,7 +13,7 @@ import Combine
 
 struct CloudKitConfig {
     // Update this with your actual container identifier
-    static let containerIdentifier = "iCloud.com.yourcompany.BillGuard"
+    static let containerIdentifier = "iCloud.com.billguard.BillGuard"
     
     // Use public database for shared medical code data
     static let databaseScope: CKDatabase.Scope = .public

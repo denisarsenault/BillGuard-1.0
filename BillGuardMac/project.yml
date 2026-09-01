@@ -31,4 +31,5 @@ targets:
         SWIFT_VERSION: "5.9"
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Sources/BillGuardMac.entitlements
         GENERATE_INFOPLIST_FILE: NO

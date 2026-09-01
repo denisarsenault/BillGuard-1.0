@@ -1,6 +1,8 @@
 //
 //  BillGuardMacApp.swift
-//  BillGuard (macOS)
+//  BillGuard
+//
+//  Medical billing code lookup app
 //
 //  Native macOS app entry point. Shares its data/model layer with the iOS app
 //  via the BillGuardCore Swift package. Unlike iOS there is no live camera —
