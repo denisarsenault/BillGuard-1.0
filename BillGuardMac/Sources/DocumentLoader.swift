@@ -16,22 +16,31 @@ enum DocumentLoader {
     static let acceptedTypes: [UTType] = [.image, .pdf]
 
     /// Produce a CGImage from a file URL (first page for PDFs).
+    ///
+    /// Reads the whole file into memory WHILE the security-scoped access is held —
+    /// otherwise a lazily-decoded CGImage would try to read the file later (after
+    /// the scope is released) and hit a sandbox "Operation not permitted".
     static func cgImage(from url: URL) -> CGImage? {
         let needsScope = url.startAccessingSecurityScopedResource()
         defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
 
-        if url.pathExtension.lowercased() == "pdf" || (UTType(filenameExtension: url.pathExtension) == .pdf) {
-            return pdfFirstPage(url)
+        guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return nil }
+
+        let isPDF = url.pathExtension.lowercased() == "pdf"
+            || UTType(filenameExtension: url.pathExtension) == .pdf
+        if isPDF { return pdfFirstPage(data) }
+
+        // Force a fully-decoded, memory-backed image so nothing touches the file later.
+        let opts: [CFString: Any] = [kCGImageSourceShouldCacheImmediately: true]
+        if let src = CGImageSourceCreateWithData(data as CFData, nil),
+           let image = CGImageSourceCreateImageAtIndex(src, 0, opts as CFDictionary) {
+            return image
         }
-        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let image = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
-            return pdfFirstPage(url)   // last-ditch (some PDFs lack .pdf extension)
-        }
-        return image
+        return pdfFirstPage(data)   // last-ditch (some PDFs lack .pdf extension)
     }
 
-    private static func pdfFirstPage(_ url: URL, targetWidth: CGFloat = 2000) -> CGImage? {
-        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
+    private static func pdfFirstPage(_ data: Data, targetWidth: CGFloat = 2000) -> CGImage? {
+        guard let doc = PDFDocument(data: data), let page = doc.page(at: 0) else { return nil }
         let bounds = page.bounds(for: .mediaBox)
         guard bounds.width > 0 else { return nil }
         let scale = targetWidth / bounds.width

@@ -25,7 +25,7 @@
 		9501E22A6092950FCFDCED33 /* BillGuardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BillGuardCore; path = ../BillGuardCore; sourceTree = SOURCE_ROOT; };
 		A842CF327B791F779DE6F958 /* BillGuardMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BillGuardMac.entitlements; sourceTree = "<group>"; };
 		DAADC3FD3E12653523EC9EAD /* PatientsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientsView.swift; sourceTree = "<group>"; };
-		FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuardMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA9D5430A680AFB5CCDFA284 /* BillGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD0D9A4FB8B1400E450278FF /* DocumentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentLoader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -52,7 +52,7 @@
 		107371484A048DB4175913BD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */,
+				FA9D5430A680AFB5CCDFA284 /* BillGuard.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,7 +100,7 @@
 				D594CB971EF93ABC3D7ACF43 /* BillGuardCore */,
 			);
 			productName = BillGuardMac;
-			productReference = FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */;
+			productReference = FA9D5430A680AFB5CCDFA284 /* BillGuard.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -164,6 +164,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -307,6 +308,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;

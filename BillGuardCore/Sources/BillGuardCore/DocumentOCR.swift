@@ -31,9 +31,15 @@ public enum DocumentOCR {
         let prepared = prepareForOCR(cropped)
 
         return await withCheckedContinuation { continuation in
+            // Resume exactly once: Vision can both invoke the completion handler
+            // (with an error / nil results) AND have perform() throw, which would
+            // otherwise resume the continuation twice and crash.
+            let resumed = ResumeGuard()
+            func finish(_ s: String) { if resumed.take() { continuation.resume(returning: s) } }
+
             let request = VNRecognizeTextRequest { request, _ in
                 guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    continuation.resume(returning: ""); return
+                    finish(""); return
                 }
 
                 struct TextBlock { let text: String; let midX: CGFloat; let midY: CGFloat; let height: CGFloat }
@@ -65,16 +71,22 @@ public enum DocumentOCR {
                 let lines = rows.map { row in
                     row.sorted { $0.midX < $1.midX }.map { $0.text }.joined(separator: "  ")
                 }
-                continuation.resume(returning: lines.joined(separator: "\n"))
+                finish(lines.joined(separator: "\n"))
             }
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
             do {
                 try VNImageRequestHandler(cgImage: prepared, options: [:]).perform([request])
             } catch {
-                continuation.resume(returning: "")
+                finish("")
             }
         }
+    }
+
+    /// One-shot latch so a continuation is resumed at most once.
+    private final class ResumeGuard {
+        private var used = false
+        func take() -> Bool { if used { return false }; used = true; return true }
     }
 
     // MARK: - Dark-background pre-processing (verbatim from iOS)
