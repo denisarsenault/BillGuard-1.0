@@ -75,6 +75,10 @@ public enum DocumentOCR {
             }
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
+            // Force CPU: under the macOS App Sandbox, loading the Neural-Engine text
+            // model can fail/time out ("failed to load ANE model … sandboxExtension …
+            // timed out"), hanging OCR. CPU uses the same model with no accuracy loss.
+            request.usesCPUOnly = true
             do {
                 try VNImageRequestHandler(cgImage: prepared, options: [:]).perform([request])
             } catch {
