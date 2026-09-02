@@ -73,12 +73,13 @@ public enum DocumentOCR {
                 }
                 finish(lines.joined(separator: "\n"))
             }
-            request.recognitionLevel = .accurate
+            // Use .fast, not .accurate: the .accurate model is the Neural-Engine
+            // "latincyrillic" model, which fails to load under the macOS App Sandbox
+            // (loadModel:sandboxExtension:… times out → ~30s hang, zero results).
+            // .fast uses a separate model that loads reliably and is quick (~0.3s),
+            // and its output parses cleanly for printed bills.
+            request.recognitionLevel = .fast
             request.usesLanguageCorrection = true
-            // Force CPU: under the macOS App Sandbox, loading the Neural-Engine text
-            // model can fail/time out ("failed to load ANE model … sandboxExtension …
-            // timed out"), hanging OCR. CPU uses the same model with no accuracy loss.
-            request.usesCPUOnly = true
             do {
                 try VNImageRequestHandler(cgImage: prepared, options: [:]).perform([request])
             } catch {
