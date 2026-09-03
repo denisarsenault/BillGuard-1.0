@@ -17,21 +17,30 @@ struct PatientsView: View {
     @State private var selection: Patient.ID?
 
     var body: some View {
-        Group {
-            if data.patients.isEmpty {
-                emptyState
-            } else {
-                List(data.patients, selection: $selection) { patient in
-                    PatientRow(patient: patient,
-                               billCount: data.claims(for: patient.id).count)
+        NavigationStack {
+            Group {
+                if data.patients.isEmpty {
+                    emptyState
+                } else {
+                    List(data.patients, selection: $selection) { patient in
+                        NavigationLink(value: patient.id) {
+                            PatientRow(patient: patient,
+                                       billCount: data.claims(for: patient.id).count)
+                        }
                         .tag(patient.id)
+                    }
                 }
             }
-        }
-        .navigationTitle("Patients")
-        .overlay(alignment: .bottom) {
-            if data.isLoading {
-                ProgressView().padding(8)
+            .navigationTitle("Patients")
+            .navigationDestination(for: Patient.ID.self) { id in
+                if let patient = data.patients.first(where: { $0.id == id }) {
+                    PatientDetailView(patient: patient)
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if data.isLoading {
+                    ProgressView().padding(8)
+                }
             }
         }
     }
