@@ -18,7 +18,9 @@ struct BillGuardMacApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 900, minHeight: 600)
+                .frame(minWidth: 960, minHeight: 640)
+                .tint(.brandCyan)
+                .preferredColorScheme(.dark)   // BillGuard is a dark-only brand (matches iOS)
         }
         .windowStyle(.titleBar)
         .commands {

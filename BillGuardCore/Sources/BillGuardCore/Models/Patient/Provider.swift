@@ -11,7 +11,7 @@ import CoreLocation
 
 // MARK: - Provider Type
 
-enum ProviderType: String, Codable, CaseIterable, Identifiable {
+public enum ProviderType: String, Codable, CaseIterable, Identifiable {
     case clinic = "Clinic"
     case doctor = "Doctor"
     case hospital = "Hospital"
@@ -26,9 +26,9 @@ enum ProviderType: String, Codable, CaseIterable, Identifiable {
     case therapist = "Therapist"
     case other = "Other"
     
-    var id: String { rawValue }
+    public var id: String { rawValue }
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .clinic: return "cross.case.fill"
         case .doctor: return "stethoscope"
@@ -49,7 +49,7 @@ enum ProviderType: String, Codable, CaseIterable, Identifiable {
 
 // MARK: - Provider Specialty
 
-enum ProviderSpecialty: String, Codable, CaseIterable {
+public enum ProviderSpecialty: String, Codable, CaseIterable {
     case generalPractice = "General Practice"
     case familyMedicine = "Family Medicine"
     case internalMedicine = "Internal Medicine"
@@ -76,67 +76,67 @@ enum ProviderSpecialty: String, Codable, CaseIterable {
 
 // MARK: - Provider Reminder Settings
 
-struct ProviderReminderSettings: Codable, Hashable {
-    var isEnabled: Bool = true
-    var geofenceRadius: Double = 100  // meters
-    var remindOnArrival: Bool = true
-    var remindOnDeparture: Bool = true
-    var reminderMessage: String = "Remember to:\n• Take photos of all documents\n• Request itemized bill\n• Get procedure codes (CPT)\n• Ask for diagnosis codes (ICD-10)"
+public struct ProviderReminderSettings: Codable, Hashable {
+    public var isEnabled: Bool = true
+    public var geofenceRadius: Double = 100  // meters
+    public var remindOnArrival: Bool = true
+    public var remindOnDeparture: Bool = true
+    public var reminderMessage: String = "Remember to:\n• Take photos of all documents\n• Request itemized bill\n• Get procedure codes (CPT)\n• Ask for diagnosis codes (ICD-10)"
     
     // What to remind about
-    var remindToPhotograph: Bool = true
-    var remindForProcedureCodes: Bool = true
-    var remindForDiagnosisCodes: Bool = true
-    var remindForItemizedBill: Bool = true
-    var remindForFollowUpDocs: Bool = true
+    public var remindToPhotograph: Bool = true
+    public var remindForProcedureCodes: Bool = true
+    public var remindForDiagnosisCodes: Bool = true
+    public var remindForItemizedBill: Bool = true
+    public var remindForFollowUpDocs: Bool = true
     
-    static let `default` = ProviderReminderSettings()
+    public static let `default` = ProviderReminderSettings()
 }
 
 // MARK: - Provider Model
 
-struct Provider: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var providerType: ProviderType
-    var specialty: ProviderSpecialty?
+public struct Provider: Identifiable, Codable, Hashable {
+    public var id: String
+    public var name: String
+    public var providerType: ProviderType
+    public var specialty: ProviderSpecialty?
     
     // Contact Information
-    var address: Address?
-    var phones: [PhoneNumber]
-    var emails: [String]
-    var fax: String?
-    var website: String?
+    public var address: Address?
+    public var phones: [PhoneNumber]
+    public var emails: [String]
+    public var fax: String?
+    public var website: String?
     
     // Business Information
-    var npi: String?  // National Provider Identifier
-    var taxId: String?
-    var licenseNumber: String?
+    public var npi: String?  // National Provider Identifier
+    public var taxId: String?
+    public var licenseNumber: String?
     
     // Billing Contact
-    var billingAddress: Address?
-    var billingPhone: String?
-    var billingEmail: String?
-    var billingFax: String?
+    public var billingAddress: Address?
+    public var billingPhone: String?
+    public var billingEmail: String?
+    public var billingFax: String?
     
     // Hours of Operation
-    var hoursOfOperation: [DayHours]?
+    public var hoursOfOperation: [DayHours]?
     
     // Location-based Reminder Settings
-    var reminderSettings: ProviderReminderSettings
-    var isGeofenceActive: Bool
-    var lastVisitDate: Date?
-    var visitCount: Int
+    public var reminderSettings: ProviderReminderSettings
+    public var isGeofenceActive: Bool
+    public var lastVisitDate: Date?
+    public var visitCount: Int
     
     // Notes
-    var notes: String?
+    public var notes: String?
     
     // Metadata
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         name: String,
         providerType: ProviderType,
@@ -192,7 +192,7 @@ struct Provider: Identifiable, Codable, Hashable {
     
     // MARK: - Custom Decoding for Legacy Data
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case id, name, providerType, specialty
         case address, phones, emails, fax, website
         case npi, taxId, licenseNumber
@@ -202,7 +202,7 @@ struct Provider: Identifiable, Codable, Hashable {
         case notes, createdAt, updatedAt, recordId
     }
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         // Required fields
@@ -240,45 +240,45 @@ struct Provider: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var primaryPhone: String? {
+    public var primaryPhone: String? {
         phones.first?.number
     }
     
-    var primaryEmail: String? {
+    public var primaryEmail: String? {
         emails.first
     }
     
-    var displayAddress: String? {
+    public var displayAddress: String? {
         address?.formatted
     }
     
-    var hasLocation: Bool {
+    public var hasLocation: Bool {
         address?.hasCoordinates ?? false
     }
     
-    var coordinate: CLLocationCoordinate2D? {
+    public var coordinate: CLLocationCoordinate2D? {
         address?.coordinate
     }
     
-    var canSetupGeofence: Bool {
+    public var canSetupGeofence: Bool {
         hasLocation && reminderSettings.isEnabled
     }
     
     // Geofence region identifier
-    var geofenceIdentifier: String {
+    public var geofenceIdentifier: String {
         "provider_\(id)"
     }
 }
 
 // MARK: - Phone Number
 
-struct PhoneNumber: Codable, Hashable, Identifiable {
-    var id: String
-    var label: PhoneLabel
-    var number: String
-    var isPrimary: Bool
+public struct PhoneNumber: Codable, Hashable, Identifiable {
+    public var id: String
+    public var label: PhoneLabel
+    public var number: String
+    public var isPrimary: Bool
     
-    init(id: String = UUID().uuidString, label: PhoneLabel = .main, number: String, isPrimary: Bool = false) {
+    public init(id: String = UUID().uuidString, label: PhoneLabel = .main, number: String, isPrimary: Bool = false) {
         self.id = id
         self.label = label
         self.number = number
@@ -286,7 +286,7 @@ struct PhoneNumber: Codable, Hashable, Identifiable {
     }
 }
 
-enum PhoneLabel: String, Codable, CaseIterable {
+public enum PhoneLabel: String, Codable, CaseIterable {
     case main = "Main"
     case mobile = "Mobile"
     case office = "Office"
@@ -301,14 +301,14 @@ enum PhoneLabel: String, Codable, CaseIterable {
 
 // MARK: - Hours of Operation
 
-struct DayHours: Codable, Hashable, Identifiable {
-    var id: String
-    var day: DayOfWeek
-    var isOpen: Bool
-    var openTime: Date?
-    var closeTime: Date?
+public struct DayHours: Codable, Hashable, Identifiable {
+    public var id: String
+    public var day: DayOfWeek
+    public var isOpen: Bool
+    public var openTime: Date?
+    public var closeTime: Date?
     
-    init(id: String = UUID().uuidString, day: DayOfWeek, isOpen: Bool = true, openTime: Date? = nil, closeTime: Date? = nil) {
+    public init(id: String = UUID().uuidString, day: DayOfWeek, isOpen: Bool = true, openTime: Date? = nil, closeTime: Date? = nil) {
         self.id = id
         self.day = day
         self.isOpen = isOpen
@@ -316,7 +316,7 @@ struct DayHours: Codable, Hashable, Identifiable {
         self.closeTime = closeTime
     }
     
-    var displayHours: String {
+    public var displayHours: String {
         guard isOpen, let open = openTime, let close = closeTime else {
             return "Closed"
         }
@@ -326,7 +326,7 @@ struct DayHours: Codable, Hashable, Identifiable {
     }
 }
 
-enum DayOfWeek: String, Codable, CaseIterable {
+public enum DayOfWeek: String, Codable, CaseIterable {
     case sunday = "Sunday"
     case monday = "Monday"
     case tuesday = "Tuesday"
@@ -335,7 +335,7 @@ enum DayOfWeek: String, Codable, CaseIterable {
     case friday = "Friday"
     case saturday = "Saturday"
     
-    var shortName: String {
+    public var shortName: String {
         String(rawValue.prefix(3))
     }
 }

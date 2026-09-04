@@ -8,12 +8,13 @@
 import Foundation
 import Combine
 
-class FavoritesManager: ObservableObject {
+public final class FavoritesManager: ObservableObject {
+    public static let shared = FavoritesManager()
     
     // MARK: - Published Properties
     
-    @Published var favorites: [MedicalCode]
-    @Published var favoriteIDs: Set<String>
+    @Published public var favorites: [MedicalCode]
+    @Published public var favoriteIDs: Set<String>
     
     // MARK: - Private Properties
     
@@ -22,7 +23,7 @@ class FavoritesManager: ObservableObject {
     
     // MARK: - Initialization
     
-    init() {
+    public init() {
         // Load into locals first — no @Published triggers
         var loadedFavorites: [MedicalCode] = []
         if let data = UserDefaults.standard.data(forKey: storageKey) {
@@ -35,16 +36,16 @@ class FavoritesManager: ObservableObject {
     // MARK: - Public Methods
     
     /// Check if a code is in favorites
-    func isFavorite(_ code: MedicalCode) -> Bool {
+    public func isFavorite(_ code: MedicalCode) -> Bool {
         return favoriteIDs.contains(code.id)
     }
     
-    func isFavorite(id: String) -> Bool {
+    public func isFavorite(id: String) -> Bool {
         return favoriteIDs.contains(id)
     }
     
     /// Add a code to favorites
-    func addFavorite(_ code: MedicalCode) {
+    public func addFavorite(_ code: MedicalCode) {
         guard !isFavorite(code) else { return }
         
         favorites.insert(code, at: 0)
@@ -53,20 +54,20 @@ class FavoritesManager: ObservableObject {
     }
     
     /// Remove a code from favorites
-    func removeFavorite(_ code: MedicalCode) {
+    public func removeFavorite(_ code: MedicalCode) {
         favorites.removeAll { $0.id == code.id }
         favoriteIDs.remove(code.id)
         saveFavorites()
     }
     
-    func removeFavorite(id: String) {
+    public func removeFavorite(id: String) {
         favorites.removeAll { $0.id == id }
         favoriteIDs.remove(id)
         saveFavorites()
     }
     
     /// Toggle favorite status
-    func toggleFavorite(_ code: MedicalCode) {
+    public func toggleFavorite(_ code: MedicalCode) {
         if isFavorite(code) {
             removeFavorite(code)
         } else {
@@ -75,19 +76,19 @@ class FavoritesManager: ObservableObject {
     }
     
     /// Clear all favorites
-    func clearAll() {
+    public func clearAll() {
         favorites.removeAll()
         favoriteIDs.removeAll()
         saveFavorites()
     }
     
     /// Get favorites count
-    var count: Int {
+    public var count: Int {
         return favorites.count
     }
     
     /// Get favorites filtered by code type
-    func favorites(ofType type: MedicalCodeType) -> [MedicalCode] {
+    public func favorites(ofType type: MedicalCodeType) -> [MedicalCode] {
         return favorites.filter { $0.codeType == type }
     }
     

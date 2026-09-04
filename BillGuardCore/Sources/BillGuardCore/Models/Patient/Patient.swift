@@ -122,18 +122,18 @@ public struct Patient: Identifiable, Codable, Hashable {
 
 // MARK: - Patient Address
 
-struct PatientAddress: Identifiable, Codable, Hashable {
-    var id: String
-    var label: AddressLabel
-    var street1: String
-    var street2: String?
-    var city: String
-    var state: String
-    var zipCode: String
-    var country: String
-    var isPrimary: Bool
+public struct PatientAddress: Identifiable, Codable, Hashable {
+    public var id: String
+    public var label: AddressLabel
+    public var street1: String
+    public var street2: String?
+    public var city: String
+    public var state: String
+    public var zipCode: String
+    public var country: String
+    public var isPrimary: Bool
     
-    init(id: String = UUID().uuidString, label: AddressLabel = .home, street1: String = "",
+    public init(id: String = UUID().uuidString, label: AddressLabel = .home, street1: String = "",
          street2: String? = nil, city: String = "", state: String = "", zipCode: String = "",
          country: String = "USA", isPrimary: Bool = false) {
         self.id = id; self.label = label; self.street1 = street1; self.street2 = street2
@@ -141,7 +141,7 @@ struct PatientAddress: Identifiable, Codable, Hashable {
         self.country = country; self.isPrimary = isPrimary
     }
     
-    var formatted: String {
+    public var formatted: String {
         var lines = [street1]
         if let s2 = street2, !s2.isEmpty { lines.append(s2) }
         lines.append("\(city), \(state) \(zipCode)")
@@ -150,23 +150,23 @@ struct PatientAddress: Identifiable, Codable, Hashable {
     }
 }
 
-enum AddressLabel: String, Codable, CaseIterable {
+public enum AddressLabel: String, Codable, CaseIterable {
     case home = "Home", work = "Work", billing = "Billing", mailing = "Mailing", other = "Other"
 }
 
 // MARK: - Patient Phone
 
-struct PatientPhone: Identifiable, Codable, Hashable {
-    var id: String
-    var label: PhoneLabel
-    var number: String
-    var isPrimary: Bool
+public struct PatientPhone: Identifiable, Codable, Hashable {
+    public var id: String
+    public var label: PhoneLabel
+    public var number: String
+    public var isPrimary: Bool
     
-    init(id: String = UUID().uuidString, label: PhoneLabel = .mobile, number: String = "", isPrimary: Bool = false) {
+    public init(id: String = UUID().uuidString, label: PhoneLabel = .mobile, number: String = "", isPrimary: Bool = false) {
         self.id = id; self.label = label; self.number = number; self.isPrimary = isPrimary
     }
     
-    var formatted: String {
+    public var formatted: String {
         let digits = number.filter { $0.isNumber }
         guard digits.count == 10 else { return number }
         return "(\(digits.prefix(3))) \(digits.dropFirst(3).prefix(3))-\(digits.dropFirst(6))"
@@ -175,28 +175,28 @@ struct PatientPhone: Identifiable, Codable, Hashable {
 
 // MARK: - Patient Email
 
-struct PatientEmail: Identifiable, Codable, Hashable {
-    var id: String
-    var label: EmailLabel
-    var address: String
-    var isPrimary: Bool
+public struct PatientEmail: Identifiable, Codable, Hashable {
+    public var id: String
+    public var label: EmailLabel
+    public var address: String
+    public var isPrimary: Bool
     
-    init(id: String = UUID().uuidString, label: EmailLabel = .personal, address: String = "", isPrimary: Bool = false) {
+    public init(id: String = UUID().uuidString, label: EmailLabel = .personal, address: String = "", isPrimary: Bool = false) {
         self.id = id; self.label = label; self.address = address; self.isPrimary = isPrimary
     }
 }
 
-enum EmailLabel: String, Codable, CaseIterable {
+public enum EmailLabel: String, Codable, CaseIterable {
     case personal = "Personal", work = "Work", other = "Other"
 }
 
 // MARK: - Enums
 
-enum Gender: String, Codable, CaseIterable {
+public enum Gender: String, Codable, CaseIterable {
     case male = "Male", female = "Female", other = "Other", preferNotToSay = "Prefer not to say"
 }
 
-enum PatientRelationship: String, Codable, CaseIterable {
+public enum PatientRelationship: String, Codable, CaseIterable {
     case myself = "Myself", spouse = "Spouse", child = "Child", parent = "Parent"
     case sibling = "Sibling", grandparent = "Grandparent", grandchild = "Grandchild", other = "Other"
 }

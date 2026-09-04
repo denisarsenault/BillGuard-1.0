@@ -61,7 +61,7 @@ struct PatientDetailView: View {
 }
 
 /// One saved bill rendered from its ClaimSummary.
-private struct BillCard: View {
+struct BillCard: View {
     let summary: ClaimSummary
 
     // patientResponsibility is the bill's own Amount Due — already net of the

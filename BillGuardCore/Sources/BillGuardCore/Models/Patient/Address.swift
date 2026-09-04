@@ -10,7 +10,7 @@ import CoreLocation
 
 // MARK: - Address Type
 
-enum AddressType: String, Codable, CaseIterable {
+public enum AddressType: String, Codable, CaseIterable {
     case home = "Home"
     case work = "Work"
     case billing = "Billing"
@@ -21,22 +21,22 @@ enum AddressType: String, Codable, CaseIterable {
 
 // MARK: - Address Model
 
-struct Address: Codable, Hashable, Identifiable {
-    var id: String
-    var type: AddressType
-    var street1: String
-    var street2: String?
-    var city: String
-    var state: String
-    var zipCode: String
-    var country: String
-    var isPrimary: Bool
+public struct Address: Codable, Hashable, Identifiable {
+    public var id: String
+    public var type: AddressType
+    public var street1: String
+    public var street2: String?
+    public var city: String
+    public var state: String
+    public var zipCode: String
+    public var country: String
+    public var isPrimary: Bool
     
     // Location coordinates for mapping/geofencing
-    var latitude: Double?
-    var longitude: Double?
+    public var latitude: Double?
+    public var longitude: Double?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         type: AddressType = .home,
         street1: String,
@@ -64,7 +64,7 @@ struct Address: Codable, Hashable, Identifiable {
     
     // MARK: - Computed Properties
     
-    var formatted: String {
+    public var formatted: String {
         var lines: [String] = []
         lines.append(street1)
         if let street2 = street2, !street2.isEmpty {
@@ -77,7 +77,7 @@ struct Address: Codable, Hashable, Identifiable {
         return lines.joined(separator: "\n")
     }
     
-    var singleLine: String {
+    public var singleLine: String {
         var parts: [String] = [street1]
         if let street2 = street2, !street2.isEmpty {
             parts.append(street2)
@@ -88,32 +88,32 @@ struct Address: Codable, Hashable, Identifiable {
         return parts.joined(separator: ", ")
     }
     
-    var cityStateZip: String {
+    public var cityStateZip: String {
         "\(city), \(state) \(zipCode)"
     }
     
-    var hasCoordinates: Bool {
+    public var hasCoordinates: Bool {
         latitude != nil && longitude != nil
     }
     
-    var coordinate: CLLocationCoordinate2D? {
+    public var coordinate: CLLocationCoordinate2D? {
         guard let lat = latitude, let lon = longitude else { return nil }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
     
     // For geocoding lookup
-    var fullAddressForGeocoding: String {
+    public var fullAddressForGeocoding: String {
         "\(street1), \(city), \(state) \(zipCode), \(country)"
     }
 }
 
 // MARK: - US States
 
-struct USState {
-    let name: String
-    let abbreviation: String
+public struct USState {
+    public let name: String
+    public let abbreviation: String
     
-    static let all: [USState] = [
+    public static let all: [USState] = [
         USState(name: "Alabama", abbreviation: "AL"),
         USState(name: "Alaska", abbreviation: "AK"),
         USState(name: "Arizona", abbreviation: "AZ"),
@@ -167,7 +167,7 @@ struct USState {
         USState(name: "District of Columbia", abbreviation: "DC"),
     ]
     
-    static var abbreviations: [String] {
+    public static var abbreviations: [String] {
         all.map { $0.abbreviation }
     }
 }

@@ -12,14 +12,14 @@ import Security
 // MARK: - User Manager
 
 @MainActor
-class UserManager: ObservableObject {
+public final class UserManager: ObservableObject {
     
     // MARK: - Published Properties
     
-    @Published var currentUser: User?
-    @Published var isAuthenticated: Bool = false
-    @Published var isLoading: Bool = false
-    @Published var errorMessage: String?
+    @Published public var currentUser: User?
+    @Published public var isAuthenticated: Bool = false
+    @Published public var isLoading: Bool = false
+    @Published public var errorMessage: String?
     
     // MARK: - UserDefaults Keys
     
@@ -33,7 +33,7 @@ class UserManager: ObservableObject {
     
     // MARK: - Singleton
     
-    static let shared = UserManager()
+    public static let shared = UserManager()
     
     // MARK: - Initialization
     
@@ -150,14 +150,14 @@ class UserManager: ObservableObject {
     }
     
     /// Logout current user
-    func logout() {
+    public func logout() {
         currentUser = nil
         isAuthenticated = false
         UserDefaults.standard.set(false, forKey: Keys.isLoggedIn)
     }
     
     /// Check if user is already logged in
-    func checkAuthState() {
+    public func checkAuthState() {
         let isLoggedIn = UserDefaults.standard.bool(forKey: Keys.isLoggedIn)
         
         if isLoggedIn, let username = UserDefaults.standard.string(forKey: Keys.lastUsername),
@@ -170,7 +170,7 @@ class UserManager: ObservableObject {
     // MARK: - User Management
     
     /// Update current user
-    func updateUser(_ user: User) {
+    public func updateUser(_ user: User) {
         saveUser(user)
         if user.id == currentUser?.id {
             currentUser = user

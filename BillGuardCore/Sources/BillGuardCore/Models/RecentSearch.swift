@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct RecentSearch: Identifiable, Codable, Hashable {
-    let id: String
-    let query: String
-    let resultCode: String?
-    let resultDescription: String?
-    let timestamp: Date
+public struct RecentSearch: Identifiable, Codable, Hashable {
+    public let id: String
+    public let query: String
+    public let resultCode: String?
+    public let resultDescription: String?
+    public let timestamp: Date
     
-    init(id: String = UUID().uuidString,
+    public init(id: String = UUID().uuidString,
          query: String,
          resultCode: String? = nil,
          resultDescription: String? = nil,
@@ -26,7 +26,7 @@ struct RecentSearch: Identifiable, Codable, Hashable {
         self.timestamp = timestamp
     }
     
-    var displayText: String {
+    public var displayText: String {
         if let code = resultCode, let description = resultDescription {
             return "\(code) – \(description)"
         }
@@ -36,18 +36,18 @@ struct RecentSearch: Identifiable, Codable, Hashable {
 
 // MARK: - Recent Search Manager
 
-class RecentSearchManager: ObservableObject {
+public class RecentSearchManager: ObservableObject {
     
-    @Published var recentSearches: [RecentSearch] = []
+    @Published public var recentSearches: [RecentSearch] = []
     
     private let maxRecentSearches = 10
     private let storageKey = "recentSearches"
     
-    init() {
+    public init() {
         loadRecentSearches()
     }
     
-    func addSearch(_ search: RecentSearch) {
+    public func addSearch(_ search: RecentSearch) {
         // Remove duplicate if exists
         recentSearches.removeAll { $0.query.lowercased() == search.query.lowercased() }
         
@@ -62,7 +62,7 @@ class RecentSearchManager: ObservableObject {
         saveRecentSearches()
     }
     
-    func addSearch(query: String, code: MedicalCode? = nil) {
+    public func addSearch(query: String, code: MedicalCode? = nil) {
         let search = RecentSearch(
             query: query,
             resultCode: code?.code,
@@ -71,12 +71,12 @@ class RecentSearchManager: ObservableObject {
         addSearch(search)
     }
     
-    func clearAll() {
+    public func clearAll() {
         recentSearches.removeAll()
         saveRecentSearches()
     }
     
-    func removeSearch(_ search: RecentSearch) {
+    public func removeSearch(_ search: RecentSearch) {
         recentSearches.removeAll { $0.id == search.id }
         saveRecentSearches()
     }

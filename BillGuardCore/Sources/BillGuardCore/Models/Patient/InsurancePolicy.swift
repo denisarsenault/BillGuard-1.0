@@ -10,7 +10,7 @@ import CloudKit
 
 // MARK: - Policy Type
 
-enum PolicyType: String, Codable, CaseIterable {
+public enum PolicyType: String, Codable, CaseIterable {
     case medical = "Medical"
     case dental = "Dental"
     case vision = "Vision"
@@ -26,7 +26,7 @@ enum PolicyType: String, Codable, CaseIterable {
 
 // MARK: - Plan Type
 
-enum PlanType: String, Codable, CaseIterable {
+public enum PlanType: String, Codable, CaseIterable {
     case hmo = "HMO"
     case ppo = "PPO"
     case epo = "EPO"
@@ -42,7 +42,7 @@ enum PlanType: String, Codable, CaseIterable {
 
 // MARK: - Coverage Level
 
-enum CoverageLevel: String, Codable, CaseIterable {
+public enum CoverageLevel: String, Codable, CaseIterable {
     case individual = "Individual"
     case individualPlusSpouse = "Individual + Spouse"
     case individualPlusChild = "Individual + Child"
@@ -52,59 +52,59 @@ enum CoverageLevel: String, Codable, CaseIterable {
 
 // MARK: - Insurance Policy Model
 
-struct InsurancePolicy: Identifiable, Codable, Hashable {
-    var id: String
-    var patientId: String
-    var carrierId: String
+public struct InsurancePolicy: Identifiable, Codable, Hashable {
+    public var id: String
+    public var patientId: String
+    public var carrierId: String
     
     // Policy Information
-    var policyType: PolicyType
-    var planType: PlanType?
-    var planName: String?
-    var coverageLevel: CoverageLevel?
+    public var policyType: PolicyType
+    public var planType: PlanType?
+    public var planName: String?
+    public var coverageLevel: CoverageLevel?
     
     // Member Information
-    var memberId: String
-    var groupNumber: String?
-    var policyNumber: String?
-    var rxBin: String?           // Pharmacy BIN number
-    var rxPcn: String?           // Pharmacy PCN
-    var rxGroup: String?         // Pharmacy Group
+    public var memberId: String
+    public var groupNumber: String?
+    public var policyNumber: String?
+    public var rxBin: String?           // Pharmacy BIN number
+    public var rxPcn: String?           // Pharmacy PCN
+    public var rxGroup: String?         // Pharmacy Group
     
     // Subscriber Information (if different from patient)
-    var subscriberName: String?
-    var subscriberDOB: Date?
-    var subscriberRelationship: PatientRelationship?
-    var subscriberEmployer: String?
+    public var subscriberName: String?
+    public var subscriberDOB: Date?
+    public var subscriberRelationship: PatientRelationship?
+    public var subscriberEmployer: String?
     
     // Coverage Dates
-    var effectiveDate: Date?
-    var terminationDate: Date?
+    public var effectiveDate: Date?
+    public var terminationDate: Date?
     
     // Cost Sharing
-    var copay: CopayStructure?
-    var deductible: DeductibleInfo?
-    var coinsurance: Double?       // Percentage (e.g., 0.20 for 20%)
-    var outOfPocketMax: Double?
-    var outOfPocketMet: Double?
+    public var copay: CopayStructure?
+    public var deductible: DeductibleInfo?
+    public var coinsurance: Double?       // Percentage (e.g., 0.20 for 20%)
+    public var outOfPocketMax: Double?
+    public var outOfPocketMet: Double?
     
     // Priority
-    var isPrimary: Bool
-    var coordinationOfBenefits: Int?  // 1 = primary, 2 = secondary, etc.
+    public var isPrimary: Bool
+    public var coordinationOfBenefits: Int?  // 1 = primary, 2 = secondary, etc.
     
     // Card Images
-    var frontCardImageUrl: String?
-    var backCardImageUrl: String?
+    public var frontCardImageUrl: String?
+    public var backCardImageUrl: String?
     
     // Notes
-    var notes: String?
+    public var notes: String?
     
     // Metadata
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         patientId: String,
         carrierId: String,
@@ -174,7 +174,7 @@ struct InsurancePolicy: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var isActive: Bool {
+    public var isActive: Bool {
         let now = Date()
         if let termDate = terminationDate, termDate < now {
             return false
@@ -185,17 +185,17 @@ struct InsurancePolicy: Identifiable, Codable, Hashable {
         return true
     }
     
-    var remainingDeductible: Double? {
+    public var remainingDeductible: Double? {
         guard let deductible = deductible else { return nil }
         return max(0, deductible.individual - deductible.individualMet)
     }
     
-    var remainingOutOfPocket: Double? {
+    public var remainingOutOfPocket: Double? {
         guard let max = outOfPocketMax, let met = outOfPocketMet else { return nil }
         return Swift.max(0, max - met)
     }
     
-    var displayMemberId: String {
+    public var displayMemberId: String {
         if let group = groupNumber {
             return "\(memberId) / \(group)"
         }
@@ -205,21 +205,21 @@ struct InsurancePolicy: Identifiable, Codable, Hashable {
 
 // MARK: - Copay Structure
 
-struct CopayStructure: Codable, Hashable {
-    var primaryCare: Double?
-    var specialist: Double?
-    var urgentCare: Double?
-    var emergencyRoom: Double?
-    var genericDrug: Double?
-    var brandDrug: Double?
-    var specialtyDrug: Double?
-    var preventiveCare: Double?
-    var labWork: Double?
-    var imaging: Double?
-    var mentalHealth: Double?
-    var physicalTherapy: Double?
+public struct CopayStructure: Codable, Hashable {
+    public var primaryCare: Double?
+    public var specialist: Double?
+    public var urgentCare: Double?
+    public var emergencyRoom: Double?
+    public var genericDrug: Double?
+    public var brandDrug: Double?
+    public var specialtyDrug: Double?
+    public var preventiveCare: Double?
+    public var labWork: Double?
+    public var imaging: Double?
+    public var mentalHealth: Double?
+    public var physicalTherapy: Double?
     
-    init(
+    public init(
         primaryCare: Double? = nil,
         specialist: Double? = nil,
         urgentCare: Double? = nil,
@@ -250,29 +250,29 @@ struct CopayStructure: Codable, Hashable {
 
 // MARK: - Deductible Info
 
-struct DeductibleInfo: Codable, Hashable {
-    var individual: Double
-    var individualMet: Double
-    var family: Double?
-    var familyMet: Double?
+public struct DeductibleInfo: Codable, Hashable {
+    public var individual: Double
+    public var individualMet: Double
+    public var family: Double?
+    public var familyMet: Double?
     
-    init(individual: Double, individualMet: Double = 0, family: Double? = nil, familyMet: Double? = nil) {
+    public init(individual: Double, individualMet: Double = 0, family: Double? = nil, familyMet: Double? = nil) {
         self.individual = individual
         self.individualMet = individualMet
         self.family = family
         self.familyMet = familyMet
     }
     
-    var individualRemaining: Double {
+    public var individualRemaining: Double {
         max(0, individual - individualMet)
     }
     
-    var familyRemaining: Double? {
+    public var familyRemaining: Double? {
         guard let fam = family, let met = familyMet else { return nil }
         return max(0, fam - met)
     }
     
-    var individualPercentMet: Double {
+    public var individualPercentMet: Double {
         guard individual > 0 else { return 0 }
         return min(1.0, individualMet / individual)
     }

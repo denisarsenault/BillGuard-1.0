@@ -10,49 +10,49 @@ import CloudKit
 
 // MARK: - Visit
 
-struct Visit: Identifiable, Codable, Hashable {
-    var id: String
-    var patientId: String
-    var providerId: String
+public struct Visit: Identifiable, Codable, Hashable {
+    public var id: String
+    public var patientId: String
+    public var providerId: String
     
     // Visit Details
-    var visitDate: Date
-    var visitType: VisitType
-    var status: VisitStatus
+    public var visitDate: Date
+    public var visitType: VisitType
+    public var status: VisitStatus
     
     // Reason & Diagnosis
-    var reasonForVisit: String?
-    var primaryDiagnosis: String?
-    var diagnosisCodes: [String]  // ICD-10 codes
-    var procedureCodes: [String]  // CPT codes
+    public var reasonForVisit: String?
+    public var primaryDiagnosis: String?
+    public var diagnosisCodes: [String]  // ICD-10 codes
+    public var procedureCodes: [String]  // CPT codes
     
     // Provider Info (denormalized for display)
-    var providerName: String?
-    var providerType: ProviderType?
+    public var providerName: String?
+    public var providerType: ProviderType?
     
     // Insurance
-    var insurancePolicyId: String?
-    var copayAmount: Double?
-    var copayPaid: Bool
+    public var insurancePolicyId: String?
+    public var copayAmount: Double?
+    public var copayPaid: Bool
     
     // Linked Data
-    var claimIds: [String]
-    var documentIds: [String]  // Scanned invoices, receipts
+    public var claimIds: [String]
+    public var documentIds: [String]  // Scanned invoices, receipts
     
     // Follow-up
-    var followUpRequired: Bool
-    var followUpDate: Date?
-    var followUpNotes: String?
+    public var followUpRequired: Bool
+    public var followUpDate: Date?
+    public var followUpNotes: String?
     
     // Notes
-    var notes: String?
+    public var notes: String?
     
     // Metadata
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         patientId: String,
         providerId: String,
@@ -106,28 +106,28 @@ struct Visit: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var displayDate: String {
+    public var displayDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: visitDate)
     }
     
-    var shortDate: String {
+    public var shortDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: visitDate)
     }
     
-    var isPast: Bool {
+    public var isPast: Bool {
         visitDate < Date()
     }
     
-    var isToday: Bool {
+    public var isToday: Bool {
         Calendar.current.isDateInToday(visitDate)
     }
     
-    var displayTitle: String {
+    public var displayTitle: String {
         if let name = providerName {
             return "\(visitType.rawValue) - \(name)"
         }
@@ -137,7 +137,7 @@ struct Visit: Identifiable, Codable, Hashable {
 
 // MARK: - Visit Type
 
-enum VisitType: String, Codable, CaseIterable {
+public enum VisitType: String, Codable, CaseIterable {
     case officeVisit = "Office Visit"
     case telehealth = "Telehealth"
     case urgentCare = "Urgent Care"
@@ -154,7 +154,7 @@ enum VisitType: String, Codable, CaseIterable {
     case followUp = "Follow-up"
     case other = "Other"
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .officeVisit: return "stethoscope"
         case .telehealth: return "video.fill"
@@ -177,7 +177,7 @@ enum VisitType: String, Codable, CaseIterable {
 
 // MARK: - Visit Status
 
-enum VisitStatus: String, Codable, CaseIterable {
+public enum VisitStatus: String, Codable, CaseIterable {
     case scheduled = "Scheduled"
     case confirmed = "Confirmed"
     case checkedIn = "Checked In"
@@ -187,7 +187,7 @@ enum VisitStatus: String, Codable, CaseIterable {
     case noShow = "No Show"
     case rescheduled = "Rescheduled"
     
-    var color: String {
+    public var color: String {
         switch self {
         case .scheduled: return "blue"
         case .confirmed: return "green"
@@ -200,7 +200,7 @@ enum VisitStatus: String, Codable, CaseIterable {
         }
     }
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .scheduled: return "calendar"
         case .confirmed: return "checkmark.circle"

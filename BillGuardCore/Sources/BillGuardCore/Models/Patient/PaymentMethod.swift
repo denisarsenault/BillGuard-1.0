@@ -10,7 +10,7 @@ import CloudKit
 
 // MARK: - Payment Method Type
 
-enum PaymentMethodType: String, Codable, CaseIterable {
+public enum PaymentMethodType: String, Codable, CaseIterable {
     case creditCard = "Credit Card"
     case debitCard = "Debit Card"
     case hsa = "HSA Card"
@@ -26,7 +26,7 @@ enum PaymentMethodType: String, Codable, CaseIterable {
     case cash = "Cash"
     case other = "Other"
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .creditCard: return "creditcard.fill"
         case .debitCard: return "creditcard"
@@ -47,14 +47,14 @@ enum PaymentMethodType: String, Codable, CaseIterable {
 
 // MARK: - Card Brand
 
-enum CardBrand: String, Codable, CaseIterable {
+public enum CardBrand: String, Codable, CaseIterable {
     case visa = "Visa"
     case mastercard = "Mastercard"
     case amex = "American Express"
     case discover = "Discover"
     case other = "Other"
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .visa: return "v.square.fill"
         case .mastercard: return "m.square.fill"
@@ -67,42 +67,42 @@ enum CardBrand: String, Codable, CaseIterable {
 
 // MARK: - Payment Method Model
 
-struct PaymentMethod: Identifiable, Codable, Hashable {
-    var id: String
-    var patientId: String
+public struct PaymentMethod: Identifiable, Codable, Hashable {
+    public var id: String
+    public var patientId: String
     
-    var type: PaymentMethodType
-    var nickname: String?
-    var isDefault: Bool
+    public var type: PaymentMethodType
+    public var nickname: String?
+    public var isDefault: Bool
     
     // Card Information (for cards)
-    var cardBrand: CardBrand?
-    var lastFourDigits: String?
-    var expirationMonth: Int?
-    var expirationYear: Int?
-    var cardholderName: String?
+    public var cardBrand: CardBrand?
+    public var lastFourDigits: String?
+    public var expirationMonth: Int?
+    public var expirationYear: Int?
+    public var cardholderName: String?
     
     // Bank Account Information
-    var bankName: String?
-    var accountLastFour: String?
-    var routingLastFour: String?
-    var accountType: BankAccountType?
+    public var bankName: String?
+    public var accountLastFour: String?
+    public var routingLastFour: String?
+    public var accountType: BankAccountType?
     
     // Digital Payment Info
-    var digitalPaymentHandle: String?  // Username/email/phone for Venmo, PayPal, etc.
+    public var digitalPaymentHandle: String?  // Username/email/phone for Venmo, PayPal, etc.
     
     // Billing Address
-    var billingAddress: Address?
+    public var billingAddress: Address?
     
     // Notes
-    var notes: String?
+    public var notes: String?
     
     // Metadata
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         patientId: String,
         type: PaymentMethodType,
@@ -148,7 +148,7 @@ struct PaymentMethod: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var displayName: String {
+    public var displayName: String {
         if let nickname = nickname {
             return nickname
         }
@@ -179,17 +179,17 @@ struct PaymentMethod: Identifiable, Codable, Hashable {
         }
     }
     
-    var maskedNumber: String? {
+    public var maskedNumber: String? {
         guard let last4 = lastFourDigits else { return nil }
         return "•••• •••• •••• \(last4)"
     }
     
-    var expirationDisplay: String? {
+    public var expirationDisplay: String? {
         guard let month = expirationMonth, let year = expirationYear else { return nil }
         return String(format: "%02d/%02d", month, year % 100)
     }
     
-    var isExpired: Bool {
+    public var isExpired: Bool {
         guard let month = expirationMonth, let year = expirationYear else { return false }
         let calendar = Calendar.current
         let now = Date()
@@ -204,18 +204,18 @@ struct PaymentMethod: Identifiable, Codable, Hashable {
         return false
     }
     
-    var isCard: Bool {
+    public var isCard: Bool {
         [.creditCard, .debitCard, .hsa, .fsa].contains(type)
     }
     
-    var isDigitalWallet: Bool {
+    public var isDigitalWallet: Bool {
         [.venmo, .paypal, .applePay, .googlePay, .zelle, .cashApp].contains(type)
     }
 }
 
 // MARK: - Bank Account Type
 
-enum BankAccountType: String, Codable, CaseIterable {
+public enum BankAccountType: String, Codable, CaseIterable {
     case checking = "Checking"
     case savings = "Savings"
 }

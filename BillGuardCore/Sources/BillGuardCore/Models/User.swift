@@ -9,22 +9,22 @@ import Foundation
 
 // MARK: - User Model (Local Storage)
 
-struct User: Codable, Identifiable {
-    let id: String
-    var username: String
-    var email: String
-    var firstName: String
-    var lastName: String
-    var createdAt: Date
-    var lastLoginAt: Date?
+public struct User: Codable, Identifiable {
+    public let id: String
+    public var username: String
+    public var email: String
+    public var firstName: String
+    public var lastName: String
+    public var createdAt: Date
+    public var lastLoginAt: Date?
     
     /// IDs of patients associated with this user
-    var patientIds: [String]
+    public var patientIds: [String]
     
     /// User preferences
-    var preferences: UserPreferences
+    public var preferences: UserPreferences
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         username: String,
         email: String,
@@ -44,7 +44,7 @@ struct User: Codable, Identifiable {
         self.preferences = preferences
     }
     
-    var displayName: String {
+    public var displayName: String {
         if !firstName.isEmpty || !lastName.isEmpty {
             return "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
         }
@@ -54,19 +54,19 @@ struct User: Codable, Identifiable {
 
 // MARK: - User Preferences
 
-struct UserPreferences: Codable {
-    var defaultPatientId: String?
-    var enableNotifications: Bool
-    var enableBiometricAuth: Bool
-    var defaultCurrency: String
-    var dateFormat: String
-    var showPriceEstimates: Bool
-    var autoScanOnLaunch: Bool
+public struct UserPreferences: Codable {
+    public var defaultPatientId: String?
+    public var enableNotifications: Bool
+    public var enableBiometricAuth: Bool
+    public var defaultCurrency: String
+    public var dateFormat: String
+    public var showPriceEstimates: Bool
+    public var autoScanOnLaunch: Bool
     
     /// Future preferences placeholder
-    var customDefaults: [String: String]
+    public var customDefaults: [String: String]
     
-    init(
+    public init(
         defaultPatientId: String? = nil,
         enableNotifications: Bool = true,
         enableBiometricAuth: Bool = false,
@@ -89,15 +89,15 @@ struct UserPreferences: Codable {
 
 // MARK: - Registration Data
 
-struct RegistrationData {
-    var username: String = ""
-    var email: String = ""
-    var password: String = ""
-    var confirmPassword: String = ""
-    var firstName: String = ""
-    var lastName: String = ""
+public struct RegistrationData {
+    public var username: String = ""
+    public var email: String = ""
+    public var password: String = ""
+    public var confirmPassword: String = ""
+    public var firstName: String = ""
+    public var lastName: String = ""
     
-    var isValid: Bool {
+    public var isValid: Bool {
         !username.isEmpty &&
         !email.isEmpty &&
         email.contains("@") &&
@@ -105,7 +105,7 @@ struct RegistrationData {
         password == confirmPassword
     }
     
-    var validationErrors: [String] {
+    public var validationErrors: [String] {
         var errors: [String] = []
         if username.isEmpty { errors.append("Username is required") }
         if username.count < 3 { errors.append("Username must be at least 3 characters") }

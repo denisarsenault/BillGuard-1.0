@@ -14,16 +14,16 @@ public final class PatientDataService: ObservableObject {
     
     // MARK: - Published Data
     @Published public var patients: [Patient]
-    @Published var insurancePolicies: [InsurancePolicy]
-    @Published var insuranceCarriers: [InsuranceCarrier]
-    @Published var paymentMethods: [PaymentMethod]
-    @Published var providers: [Provider]
-    @Published var visits: [Visit]
+    @Published public var insurancePolicies: [InsurancePolicy]
+    @Published public var insuranceCarriers: [InsuranceCarrier]
+    @Published public var paymentMethods: [PaymentMethod]
+    @Published public var providers: [Provider]
+    @Published public var visits: [Visit]
     @Published public var claims: [Claim]
-    @Published var scannedDocuments: [ScannedDocument]
+    @Published public var scannedDocuments: [ScannedDocument]
     
     @Published public var isLoading = false
-    @Published var errorMessage: String?
+    @Published public var errorMessage: String?
     
     // MARK: - Storage Keys
     private enum StorageKeys {
@@ -274,7 +274,7 @@ public final class PatientDataService: ObservableObject {
         save(patients, key: StorageKeys.patients)
     }
     
-    func patients(for userId: String) -> [Patient] {
+    public func patients(for userId: String) -> [Patient] {
         // In a real app, filter by user ownership
         return patients
     }
@@ -302,7 +302,7 @@ public final class PatientDataService: ObservableObject {
         save(insurancePolicies, key: StorageKeys.policies)
     }
     
-    func policies(for patientId: String) -> [InsurancePolicy] {
+    public func policies(for patientId: String) -> [InsurancePolicy] {
         insurancePolicies.filter { $0.patientId == patientId }
     }
     
@@ -352,7 +352,7 @@ public final class PatientDataService: ObservableObject {
         save(paymentMethods, key: StorageKeys.payments)
     }
     
-    func paymentMethods(for patientId: String) -> [PaymentMethod] {
+    public func paymentMethods(for patientId: String) -> [PaymentMethod] {
         paymentMethods.filter { $0.patientId == patientId }
     }
     
@@ -402,7 +402,7 @@ public final class PatientDataService: ObservableObject {
         save(visits, key: StorageKeys.visits)
     }
     
-    func visits(for patientId: String) -> [Visit] {
+    public func visits(for patientId: String) -> [Visit] {
         visits.filter { $0.patientId == patientId }
     }
     
@@ -456,7 +456,7 @@ public final class PatientDataService: ObservableObject {
         save(scannedDocuments, key: StorageKeys.documents)
     }
     
-    func documents(for patientId: String) -> [ScannedDocument] {
+    public func documents(for patientId: String) -> [ScannedDocument] {
         scannedDocuments.filter { $0.patientId == patientId }
     }
     
@@ -513,21 +513,21 @@ public final class PatientDataService: ObservableObject {
     
     // MARK: - Summary Data
     
-    func totalOutstandingBalance(for patientId: String) -> Double {
+    public func totalOutstandingBalance(for patientId: String) -> Double {
         claims(for: patientId)
             .filter { $0.status != .paid && $0.status != .closed }
             .reduce(0) { $0 + ($1.patientResponsibility ?? 0) }
     }
     
-    func totalBills(for patientId: String) -> Int {
+    public func totalBills(for patientId: String) -> Int {
         claims(for: patientId).count
     }
     
-    func pendingClaims(for patientId: String) -> [Claim] {
+    public func pendingClaims(for patientId: String) -> [Claim] {
         claims(for: patientId).filter { $0.isPending }
     }
     
-    func recentVisits(for patientId: String, limit: Int = 5) -> [Visit] {
+    public func recentVisits(for patientId: String, limit: Int = 5) -> [Visit] {
         Array(visits(for: patientId)
             .sorted { $0.visitDate > $1.visitDate }
             .prefix(limit))

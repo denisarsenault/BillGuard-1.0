@@ -10,46 +10,46 @@ import CloudKit
 
 // MARK: - Insurance Carrier Model
 
-struct InsuranceCarrier: Identifiable, Codable, Hashable {
-    var id: String
-    var name: String
-    var shortName: String?
+public struct InsuranceCarrier: Identifiable, Codable, Hashable {
+    public var id: String
+    public var name: String
+    public var shortName: String?
     
     // Contact Information
-    var address: Address?
-    var phones: [PhoneNumber]
-    var fax: String?
-    var website: String?
-    var memberPortalUrl: String?
-    var providerPortalUrl: String?
+    public var address: Address?
+    public var phones: [PhoneNumber]
+    public var fax: String?
+    public var website: String?
+    public var memberPortalUrl: String?
+    public var providerPortalUrl: String?
     
     // Claims Information
-    var claimsAddress: Address?
-    var claimsPhone: String?
-    var claimsFax: String?
-    var claimsEmail: String?
-    var electronicPayerId: String?  // EDI Payer ID
+    public var claimsAddress: Address?
+    public var claimsPhone: String?
+    public var claimsFax: String?
+    public var claimsEmail: String?
+    public var electronicPayerId: String?  // EDI Payer ID
     
     // Customer Service
-    var customerServicePhone: String?
-    var customerServiceHours: String?
+    public var customerServicePhone: String?
+    public var customerServiceHours: String?
     
     // Pharmacy Benefits
-    var pharmacyBenefitsPhone: String?
-    var pharmacyBenefitsManager: String?  // PBM name
+    public var pharmacyBenefitsPhone: String?
+    public var pharmacyBenefitsManager: String?  // PBM name
     
     // Notes
-    var notes: String?
+    public var notes: String?
     
     // Logo (URL or asset name)
-    var logoUrl: String?
+    public var logoUrl: String?
     
     // Metadata
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         name: String,
         shortName: String? = nil,
@@ -101,11 +101,11 @@ struct InsuranceCarrier: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var displayName: String {
+    public var displayName: String {
         shortName ?? name
     }
     
-    var primaryPhone: String? {
+    public var primaryPhone: String? {
         customerServicePhone ?? phones.first?.number
     }
 }

@@ -10,7 +10,7 @@ import CloudKit
 
 // MARK: - Document Type
 
-enum ScannedDocumentType: String, Codable, CaseIterable {
+public enum ScannedDocumentType: String, Codable, CaseIterable {
     case invoice = "Invoice"
     case bill = "Bill"
     case receipt = "Receipt"
@@ -24,7 +24,7 @@ enum ScannedDocumentType: String, Codable, CaseIterable {
     case priorAuth = "Prior Authorization"
     case other = "Other"
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .invoice, .bill: return "doc.text.fill"
         case .receipt: return "receipt.fill"
@@ -43,17 +43,17 @@ enum ScannedDocumentType: String, Codable, CaseIterable {
 
 // MARK: - Text Block (extracted from OCR)
 
-struct TextBlock: Codable, Hashable, Identifiable {
-    var id: String
-    var text: String
-    var confidence: Double      // OCR confidence 0-1
-    var boundingBox: CGRectData // Position in the image/PDF
-    var pageNumber: Int
-    var fieldType: FieldType?   // What type of data this might be
-    var isSelected: Bool        // User has selected this block
-    var mappedTo: String?       // What field the user mapped this to
+public struct TextBlock: Codable, Hashable, Identifiable {
+    public var id: String
+    public var text: String
+    public var confidence: Double      // OCR confidence 0-1
+    public var boundingBox: CGRectData // Position in the image/PDF
+    public var pageNumber: Int
+    public var fieldType: FieldType?   // What type of data this might be
+    public var isSelected: Bool        // User has selected this block
+    public var mappedTo: String?       // What field the user mapped this to
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         text: String,
         confidence: Double = 1.0,
@@ -76,7 +76,7 @@ struct TextBlock: Codable, Hashable, Identifiable {
 
 // MARK: - Field Type (for auto-detection and mapping)
 
-enum FieldType: String, Codable, CaseIterable {
+public enum FieldType: String, Codable, CaseIterable {
     // Names
     case patientName = "Patient Name"
     case providerName = "Provider Name"
@@ -132,7 +132,7 @@ enum FieldType: String, Codable, CaseIterable {
     // Other
     case unknown = "Unknown"
     
-    var icon: String {
+    public var icon: String {
         switch self {
         case .patientName, .providerName, .subscriberName:
             return "person.fill"
@@ -164,68 +164,68 @@ enum FieldType: String, Codable, CaseIterable {
 
 // MARK: - CGRect Data (Codable wrapper)
 
-struct CGRectData: Codable, Hashable {
-    var x: Double
-    var y: Double
-    var width: Double
-    var height: Double
+public struct CGRectData: Codable, Hashable {
+    public var x: Double
+    public var y: Double
+    public var width: Double
+    public var height: Double
     
-    init(x: Double, y: Double, width: Double, height: Double) {
+    public init(x: Double, y: Double, width: Double, height: Double) {
         self.x = x
         self.y = y
         self.width = width
         self.height = height
     }
     
-    init(from rect: CGRect) {
+    public init(from rect: CGRect) {
         self.x = Double(rect.origin.x)
         self.y = Double(rect.origin.y)
         self.width = Double(rect.size.width)
         self.height = Double(rect.size.height)
     }
     
-    var cgRect: CGRect {
+    public var cgRect: CGRect {
         CGRect(x: x, y: y, width: width, height: height)
     }
 }
 
 // MARK: - Scanned Document Model
 
-struct ScannedDocument: Identifiable, Codable, Hashable {
-    var id: String
-    var patientId: String?
-    var visitId: String?
-    var providerId: String?
-    var claimId: String?
+public struct ScannedDocument: Identifiable, Codable, Hashable {
+    public var id: String
+    public var patientId: String?
+    public var visitId: String?
+    public var providerId: String?
+    public var claimId: String?
     
     // Document Info
-    var documentType: ScannedDocumentType
-    var name: String
-    var notes: String?
+    public var documentType: ScannedDocumentType
+    public var name: String
+    public var notes: String?
     
     // File Storage
-    var localFileName: String      // Local file name in app's documents
-    var cloudAssetId: String?      // CloudKit asset ID if uploaded
-    var thumbnailData: Data?       // Small preview image
-    var pageCount: Int
-    var fileSize: Int              // In bytes
+    public var localFileName: String      // Local file name in app's documents
+    public var cloudAssetId: String?      // CloudKit asset ID if uploaded
+    public var thumbnailData: Data?       // Small preview image
+    public var pageCount: Int
+    public var fileSize: Int              // In bytes
     
     // OCR Results
-    var textBlocks: [TextBlock]
-    var fullText: String?          // Combined full text
-    var ocrProcessed: Bool
-    var ocrLanguage: String?
+    public var textBlocks: [TextBlock]
+    public var fullText: String?          // Combined full text
+    public var ocrProcessed: Bool
+    public var ocrLanguage: String?
     
     // Extracted/Mapped Data
-    var extractedData: [String: String]?  // Key = FieldType.rawValue, Value = extracted text
+    public var extractedData: [String: String]?  // Key = FieldType.rawValue, Value = extracted text
     
     // Metadata
-    var scannedAt: Date
-    var createdAt: Date
-    var updatedAt: Date
-    var recordId: String?
+    public var scannedAt: Date
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var recordId: String?
     
-    init(
+    public init(
         id: String = UUID().uuidString,
         patientId: String? = nil,
         visitId: String? = nil,
@@ -275,23 +275,23 @@ struct ScannedDocument: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    var localFileURL: URL? {
+    public var localFileURL: URL? {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         return documentsPath?.appendingPathComponent(localFileName)
     }
     
-    var fileSizeFormatted: String {
+    public var fileSizeFormatted: String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(fileSize))
     }
     
-    var selectedBlocks: [TextBlock] {
+    public var selectedBlocks: [TextBlock] {
         textBlocks.filter { $0.isSelected }
     }
     
-    var mappedBlocks: [TextBlock] {
+    public var mappedBlocks: [TextBlock] {
         textBlocks.filter { $0.mappedTo != nil }
     }
     
@@ -324,7 +324,7 @@ struct ScannedDocument: Identifiable, Codable, Hashable {
         }
     }
     
-    func getExtractedValue(for fieldType: FieldType) -> String? {
+    public func getExtractedValue(for fieldType: FieldType) -> String? {
         extractedData?[fieldType.rawValue]
     }
 }
