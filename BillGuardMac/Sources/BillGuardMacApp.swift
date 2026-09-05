@@ -22,7 +22,7 @@ struct BillGuardMacApp: App {
                 .tint(.brandCyan)
                 .preferredColorScheme(.dark)   // BillGuard is a dark-only brand (matches iOS)
         }
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Scan Document…") {

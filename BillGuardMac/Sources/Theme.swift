@@ -129,6 +129,46 @@ struct BrandHeader: View {
     }
 }
 
+/// Full-width branded header banner across the top of the app window: the
+/// glowing shield logo + "BillGuard" wordmark on the navy gradient, with a
+/// subtle cyan glow graphic. Leading inset clears the window traffic lights.
+struct WindowBrandBar: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            Image("BrandLogoTransparent")
+                .resizable().scaledToFit()
+                .frame(width: 44, height: 44)
+                .shadow(color: .brandCyan.opacity(0.65), radius: 9)
+                .shadow(color: .brandCyan.opacity(0.35), radius: 18)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("BillGuard")
+                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.brandAccentGradient)
+                Text("MEDICAL BILLING")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(3.5)
+                    .foregroundStyle(Color.brandCyan.opacity(0.7))
+            }
+            Spacer()
+        }
+        .padding(.leading, 82)   // clear the macOS traffic-light buttons
+        .padding(.trailing, 22)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: 72)
+        .background(
+            ZStack {
+                Color.brandNavyGradient
+                RadialGradient(colors: [Color.brandCyan.opacity(0.22), .clear],
+                               center: .init(x: 0.85, y: 0.5), startRadius: 4, endRadius: 360)
+            }
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.brandCyan.opacity(0.28)).frame(height: 1)
+        }
+    }
+}
+
 /// The BillGuard wordmark/logo lockup, reused in the sidebar and headers.
 struct BrandLogoMark: View {
     var size: CGFloat = 28

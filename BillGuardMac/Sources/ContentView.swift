@@ -61,22 +61,20 @@ struct ContentView: View {
     @StateObject private var favorites = FavoritesManager.shared
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selection) {
-                ForEach(Self.groups) { group in
-                    SidebarGroup(group: group, favoritesCount: favorites.count)
+        VStack(spacing: 0) {
+            WindowBrandBar()
+            NavigationSplitView {
+                List(selection: $selection) {
+                    ForEach(Self.groups) { group in
+                        SidebarGroup(group: group, favoritesCount: favorites.count)
+                    }
                 }
+                .navigationSplitViewColumnWidth(min: 210, ideal: 230)
+            } detail: {
+                detail(for: selection ?? .search)
             }
-            .navigationSplitViewColumnWidth(min: 210, ideal: 230)
-            .safeAreaInset(edge: .top) {
-                BrandLogoMark(size: 26)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14).padding(.vertical, 12)
-                    .background(Color.brandNavyGradient)
-            }
-        } detail: {
-            detail(for: selection ?? .search)
         }
+        .ignoresSafeArea(.container, edges: .top)
     }
 
     @ViewBuilder
