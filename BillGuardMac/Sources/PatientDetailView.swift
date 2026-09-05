@@ -19,10 +19,19 @@ struct PatientDetailView: View {
             .sorted { $0.serviceDate > $1.serviceDate }
     }
 
+    private var policies: [InsurancePolicy] {
+        data.policies(for: patient.id)
+            .sorted { ($0.isPrimary ? 0 : 1) < ($1.isPrimary ? 0 : 1) }
+    }
+    private func carrierName(_ id: String) -> String {
+        data.insuranceCarriers.first { $0.id == id }?.name ?? "Insurance"
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                if !policies.isEmpty { insuranceSection }
                 if summaries.isEmpty {
                     ContentUnavailableView("No Bills", systemImage: "doc.text.magnifyingglass",
                                            description: Text("Scanned or captured bills for \(patient.displayName) will appear here."))
@@ -38,6 +47,38 @@ struct PatientDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle(patient.displayName)
+    }
+
+    private var insuranceSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Insurance", systemImage: "shield.lefthalf.filled")
+                .font(.headline).foregroundStyle(.tint)
+            ForEach(policies, id: \.id) { pol in
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled").foregroundStyle(.tint)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(pol.planName ?? carrierName(pol.carrierId)).font(.body.weight(.medium))
+                            if pol.isPrimary {
+                                Text("PRIMARY").font(.system(size: 9, weight: .bold))
+                                    .padding(.horizontal, 5).padding(.vertical, 1)
+                                    .background(.green.opacity(0.2), in: Capsule()).foregroundStyle(.green)
+                            }
+                        }
+                        Text([carrierName(pol.carrierId),
+                              pol.memberId.isEmpty ? nil : "Member \(pol.memberId)",
+                              pol.planType?.rawValue].compactMap { $0 }.joined(separator: "  •  "))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
     }
 
     private var header: some View {

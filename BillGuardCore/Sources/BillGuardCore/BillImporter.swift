@@ -39,6 +39,42 @@ public enum BillImporter {
             patient = p
         }
 
+        // ── Insurance: find-or-create carrier + policy for the patient ──
+        var resolvedPolicyId = r.policyNumber.isEmpty ? r.memberId : r.policyNumber
+        let hasInsurance = !r.insuranceCarrier.isEmpty || !r.policyNumber.isEmpty || !r.memberId.isEmpty
+        if hasInsurance {
+            let carrierName = r.insuranceCarrier.isEmpty ? "Insurance" : r.insuranceCarrier
+            let carrier: InsuranceCarrier
+            if let existing = service.insuranceCarriers.first(where: { $0.name.lowercased() == carrierName.lowercased() }) {
+                carrier = existing
+            } else {
+                let c = InsuranceCarrier(name: carrierName)
+                service.saveCarrier(c)
+                carrier = c
+            }
+
+            let existingPolicy = service.insurancePolicies.first(where: {
+                $0.patientId == patient.id && $0.carrierId == carrier.id &&
+                (r.memberId.isEmpty || $0.memberId.lowercased() == r.memberId.lowercased())
+            })
+            if let existingPolicy {
+                resolvedPolicyId = existingPolicy.id
+            } else {
+                let noPrimaryYet = !service.policies(for: patient.id).contains { $0.isPrimary }
+                let policy = InsurancePolicy(
+                    patientId: patient.id,
+                    carrierId: carrier.id,
+                    planType: PlanType(rawValue: r.insurancePlanType),
+                    planName: r.insurancePlanType.isEmpty ? nil : r.insurancePlanType,
+                    memberId: r.memberId,
+                    groupNumber: r.groupNumber.isEmpty ? nil : r.groupNumber,
+                    policyNumber: r.policyNumber.isEmpty ? nil : r.policyNumber,
+                    isPrimary: noPrimaryYet)
+                service.savePolicy(policy)
+                resolvedPolicyId = policy.id
+            }
+        }
+
         // ── Charges → line items + code lists ──
         let chargeItems = r.lineItems.filter { $0.kind == .charge && $0.isSelected }
         let billLineItems: [BillLineItem] = chargeItems.map { item in
@@ -80,7 +116,7 @@ public enum BillImporter {
 
         let claim = Claim(
             patientId: patient.id,
-            policyId: r.policyNumber.isEmpty ? r.memberId : r.policyNumber,
+            policyId: resolvedPolicyId,
             providerName: r.providerName.isEmpty ? nil : r.providerName,
             claimNumber: r.accountNumber.isEmpty ? nil : r.accountNumber,
             status: .notSubmitted,
