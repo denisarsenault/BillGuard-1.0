@@ -1,0 +1,327 @@
+<title>BillGuard Growth Playbook</title>
+<meta name="description" content="A saturation playbook for getting BillGuard noticed, downloaded, and used: ASO, programmatic SEO, content, community, PR, paid, referral, and a 90-day calendar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F4ECEF; --surface:#FFFFFF; --surface-2:#FBF1F5; --panel:#1A0F16;
+  --ink:#1C1218; --ink-soft:#4E3B45; --muted:#8A7580; --border:#E7D6DE; --hair:#F0E3E9;
+  --accent:#C41E6B; --accent-strong:#9E0F54; --accent-tint:#FBE1EE;
+  --cyan:#0A8DA0; --cyan-tint:#DDF0F2;
+  --good:#2A8256; --warn:#B26A16; --warn-tint:#F5EAD6; --crit:#B0403A;
+  --shadow:0 1px 2px rgba(28,18,24,.06),0 10px 26px rgba(28,18,24,.07);
+  --serif:"Fraunces",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#130A0F; --surface:#1E121A; --surface-2:#271620; --panel:#0F070C;
+  --ink:#F6E9EF; --ink-soft:#CDB6C1; --muted:#93808A; --border:#38222E; --hair:#251621;
+  --accent:#FF6FA8; --accent-strong:#FF93BE; --accent-tint:#33121F;
+  --cyan:#39C2D2; --cyan-tint:#0F2E33;
+  --good:#4CB07C; --warn:#D89B4A; --warn-tint:#2C2413; --crit:#E0685F;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#130A0F; --surface:#1E121A; --surface-2:#271620; --panel:#0F070C;
+  --ink:#F6E9EF; --ink-soft:#CDB6C1; --muted:#93808A; --border:#38222E; --hair:#251621;
+  --accent:#FF6FA8; --accent-strong:#FF93BE; --accent-tint:#33121F;
+  --cyan:#39C2D2; --cyan-tint:#0F2E33;
+  --good:#4CB07C; --warn:#D89B4A; --warn-tint:#2C2413; --crit:#E0685F;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr;gap:0}}
+.rail{position:sticky;top:0;height:100vh;padding:38px 0;display:flex;flex-direction:column;gap:20px;overflow-y:auto}
+@media(max-width:940px){.rail{position:static;height:auto;padding:28px 0 8px;overflow:visible}}
+.brandmark{display:flex;align-items:center;gap:11px}
+.shield{width:34px;height:34px;flex:none;border-radius:9px;background:linear-gradient(150deg,var(--accent),var(--accent-strong));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:600;font-size:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent)}
+.brandmark b{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.brandmark span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.toc{display:flex;flex-direction:column;gap:1px;border-left:1px solid var(--border)}
+.toc a{font-size:13px;color:var(--ink-soft);text-decoration:none;padding:5px 0 5px 16px;margin-left:-1px;border-left:2px solid transparent;transition:.15s}
+.toc a:hover{color:var(--accent-strong);border-left-color:var(--accent)}
+.toc a b{font-family:var(--mono);font-size:10px;color:var(--muted);margin-right:8px}
+.railmeta{margin-top:auto;font-family:var(--mono);font-size:10.5px;line-height:1.9;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:940px){.railmeta{display:none}}
+main{padding:38px 0 120px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent-strong);font-weight:500}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,6vw,62px);line-height:1.02;letter-spacing:-.02em;margin:.28em 0 .2em;text-wrap:balance}
+.lede{font-size:20px;line-height:1.5;color:var(--ink-soft);max-width:36em;margin:0 0 8px}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(25px,3.4vw,34px);letter-spacing:-.015em;line-height:1.1;margin:0 0 6px;text-wrap:balance}
+h3{font-size:18px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+p{margin:0 0 14px;max-width:65ch}
+section{scroll-margin-top:24px}
+section+section{margin-top:60px}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.sechead .no{font-family:var(--mono);font-size:13px;color:var(--accent-strong);font-weight:600;flex:none}
+.sechead p{color:var(--muted);font-size:14.5px;margin:6px 0 0;max-width:50ch}
+strong{font-weight:600}
+em.term{font-style:normal;font-family:var(--mono);font-size:.86em;background:var(--accent-tint);color:var(--accent-strong);padding:1px 6px;border-radius:5px}
+.hero{background:var(--panel);color:#F7E9F0;border-radius:18px;padding:40px 40px 34px;margin:18px 0 8px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(440px 320px at 85% 10%,color-mix(in srgb,var(--accent) 46%,transparent),transparent 68%),radial-gradient(360px 260px at 15% 110%,color-mix(in srgb,var(--cyan) 40%,transparent),transparent 70%);pointer-events:none}
+.hero .eyebrow{color:var(--accent)}
+.hero h1{color:#FDF2F7;margin-top:.15em}
+.hero .lede{color:#D8C2CD}
+.pillars{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;position:relative;z-index:1}
+.chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.03em;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);color:#EBD3DE;background:rgba(255,255,255,.04)}
+.cards{display:grid;gap:16px}
+.c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.c2,.c3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+.card p{font-size:14.5px;color:var(--ink-soft);margin:0}
+.card p+p{margin-top:8px}
+.card h3{display:flex;align-items:center;gap:8px}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:9px}
+.list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:9px}
+.list li{padding-left:24px;position:relative;font-size:14px;color:var(--ink-soft)}
+.list li::before{content:"";position:absolute;left:2px;top:8px;width:8px;height:8px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+.list li b{color:var(--ink)}
+.list.cyan li::before{background:var(--cyan)}
+.scoretable{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.scoretable th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 14px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.scoretable td{padding:12px 14px;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-soft)}
+.scoretable tr:last-child td{border-bottom:0}
+.scoretable td b{color:var(--ink)}
+.dot{display:inline-block;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.d-hi{background:var(--good);color:#fff} .d-md{background:var(--accent);color:#fff} .d-lo{background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
+.scroll{overflow-x:auto}
+.kw{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.kw span{font-family:var(--mono);font-size:12px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink-soft);padding:4px 9px;border-radius:7px}
+.mock{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden;box-shadow:var(--shadow)}
+.mock .bar{background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.mock .body{padding:16px}
+.mock .shot{background:var(--surface-2);border:1px dashed var(--border);border-radius:9px;padding:14px;font-size:13.5px;color:var(--ink-soft);margin-bottom:10px}
+.mock .shot b{color:var(--ink);display:block;font-size:14.5px;margin-bottom:2px}
+.mock .shot .save{color:var(--good);font-weight:600;font-family:var(--mono)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.split{grid-template-columns:1fr}}
+.metricrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:720px){.metricrow{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.metric .n{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--accent-strong)}
+.metric .l{font-size:12.5px;color:var(--ink-soft);margin-top:4px}
+.metric .t{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.cal{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.cal{grid-template-columns:1fr}}
+.month{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.month h3{font-family:var(--serif);font-weight:600;font-size:19px;display:flex;align-items:baseline;justify-content:space-between}
+.month h3 span{font-family:var(--mono);font-size:11px;color:var(--accent-strong);letter-spacing:.08em}
+.month ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:9px}
+.month li{font-size:13.5px;color:var(--ink-soft);padding-left:16px;position:relative}
+.month li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.month li b{color:var(--ink)}
+.callout{background:linear-gradient(160deg,var(--accent-tint),var(--surface));border:1px solid var(--border);border-radius:16px;padding:24px 26px}
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap grid">
+  <aside class="rail">
+    <div class="brandmark"><div class="shield">G</div><div><b>BillGuard</b><span>Growth Playbook</span></div></div>
+    <nav class="toc">
+      <a href="#thesis"><b>00</b>Growth thesis</a>
+      <a href="#aso"><b>01</b>App Store Optimization</a>
+      <a href="#seo"><b>02</b>Programmatic SEO</a>
+      <a href="#content"><b>03</b>Content &amp; video</a>
+      <a href="#community"><b>04</b>Community</a>
+      <a href="#pr"><b>05</b>PR &amp; earned media</a>
+      <a href="#partners"><b>06</b>Creators &amp; partners</a>
+      <a href="#paid"><b>07</b>Paid acquisition</a>
+      <a href="#referral"><b>08</b>Referral loops</a>
+      <a href="#lifecycle"><b>09</b>Lifecycle &amp; reviews</a>
+      <a href="#featured"><b>10</b>Get featured</a>
+      <a href="#metrics"><b>11</b>Metrics &amp; tools</a>
+      <a href="#calendar"><b>12</b>90-day calendar</a>
+    </nav>
+    <div class="railmeta">Playbook<br>v1 · 2026</div>
+  </aside>
+
+  <main>
+    <section id="thesis">
+      <div class="hero">
+        <div class="eyebrow">Distribution &amp; growth</div>
+        <h1>Be the answer at 2 a.m. when the bill arrives.</h1>
+        <p class="lede">People don't browse for a medical-bill app — they search in a panic, ask a forum, or watch someone win. This playbook saturates every one of those moments: high-intent search, earned trust, and loops that make each saved dollar recruit the next user.</p>
+        <div class="pillars">
+          <span class="chip">Own the intent</span>
+          <span class="chip">Earn the trust</span>
+          <span class="chip">Loop the wins</span>
+          <span class="chip">Then buy growth</span>
+        </div>
+      </div>
+      <p style="margin-top:26px">The order matters. Bootstrapped growth is built from <strong>owned and earned</strong> channels first — the App Store listing, thousands of search-indexed pages, community credibility, and referral loops — because they compound and cost time, not money. Paid acquisition comes last, only once you know a user is worth more than they cost. Every section below is ranked for a founder spending hours, not dollars.</p>
+    </section>
+
+    <section id="aso">
+      <div class="sechead"><span class="no">01</span><div><h2>App Store Optimization</h2><p>Your storefront is your biggest free channel. Most installs will decide here in seconds.</p></div></div>
+      <div class="split">
+        <div>
+          <p>Rank and convert for the exact phrases a panicked patient types. Optimize the metadata Apple actually indexes, then make the screenshots sell an <em>outcome</em>, not a feature tour.</p>
+          <ul class="list">
+            <li><b>Title + subtitle</b> carry the most weight — put your top keywords there, not just the brand.</li>
+            <li><b>Keyword field</b> (100 chars): no spaces, no repeats, comma-separated, singular where possible.</li>
+            <li><b>Screenshots</b> lead with the win; the first two are what most users see.</li>
+            <li><b>Preview video</b> shows a real scan → "we found something" in 15 seconds.</li>
+            <li><b>Custom product pages</b> tailored per audience (seniors, cancer patients) fed by different links.</li>
+            <li><b>Ratings prompt</b> fired right after a user's first "win," never on cold launch.</li>
+            <li><b>Localize</b> once one market works — cheap incremental installs.</li>
+          </ul>
+          <div class="kw" style="margin-top:14px">
+            <span>medical bill</span><span>explain my bill</span><span>hospital bill help</span><span>EOB</span><span>dispute medical bill</span><span>CPT code</span><span>medical bill checker</span><span>surprise bill</span>
+          </div>
+        </div>
+        <div class="mock" aria-label="Example App Store screenshot concept">
+          <div class="bar">App Store · screenshot concept</div>
+          <div class="body">
+            <div class="shot"><b>Scan any medical bill</b>Point, capture, done — bills or PDFs. <span class="save">Example</span></div>
+            <div class="shot"><b>"We found a duplicate charge"</b>Flagged line item on a real bill. <span class="save">− $312.00</span></div>
+            <div class="shot"><b>Your money back</b>Prefilled appeal letter, one tap to send. <span class="save">Example figures</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="seo">
+      <div class="sechead"><span class="no">02</span><div><h2>Programmatic SEO — your compounding engine</h2><p>The single biggest bootstrapped lever you have. Turn the code database into thousands of pages.</p></div></div>
+      <p>Every CPT, HCPCS and ICD code is something people Google in confusion. You already own a structured dataset that answers those queries. Generate a fast, static page for each — and for the questions around them — and you build an owned traffic asset that grows while you sleep and that competitors can't cheaply copy.</p>
+      <div class="cards c2" style="margin-top:16px">
+        <div class="card"><span class="kicker">Page type 01</span><h3>Code explainers</h3><p>"What is CPT 99213? What it means, why you're billed, and the typical price." One page per code, thousands of pages, each targeting a real search.</p></div>
+        <div class="card"><span class="kicker">Page type 02</span><h3>Question &amp; decoder pages</h3><p>"How to dispute a hospital bill," "EOB vs bill," and a <em class="term">CARC/RARC</em> denial-code decoder. Long-tail, high-intent, low-competition.</p></div>
+        <div class="card"><span class="kicker">Page type 03</span><h3>Provider &amp; price pages</h3><p>"Average cost of an MRI near you" fed by price-transparency data — the queries with buying intent.</p></div>
+        <div class="card"><span class="kicker">Page type 04</span><h3>The conversion hub</h3><p>Every page ends the same way: "Scan your bill with BillGuard to check this automatically." Content → install.</p></div>
+      </div>
+      <div class="callout" style="margin-top:18px">
+        <span class="kicker">Execution notes</span>
+        <ul class="list">
+          <li><b>Ship early</b> — indexing and ranking take months; the sooner the pages exist, the sooner they earn.</li>
+          <li><b>Add schema markup</b> (FAQ, medical) and tight internal linking between related codes.</li>
+          <li><b>Keep pages genuinely useful</b>, not thin — Google punishes empty programmatic pages.</li>
+          <li><b>Submit a sitemap</b> and monitor Search Console for what actually ranks, then expand there.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="content">
+      <div class="sechead"><span class="no">03</span><div><h2>Content &amp; video</h2><p>The "fought my bill and won" genre already performs. Be the tool inside the story.</p></div></div>
+      <div class="split">
+        <div class="card"><span class="kicker">Short-form video</span><h3>TikTok · Reels · Shorts</h3><p>Founder- or creator-led: "I fought a $4,200 ER bill down to $600 — step by step." Show the app catching the error. Post consistently; one hit funds months of installs.</p></div>
+        <div class="card"><span class="kicker">Long-form &amp; UGC</span><h3>YouTube &amp; user stories</h3><p>Deeper "how to read your medical bill" explainers, plus reposting users' own win screenshots (with permission). Real outcomes are the most persuasive ad you'll never pay for.</p></div>
+      </div>
+    </section>
+
+    <section id="community">
+      <div class="sechead"><span class="no">04</span><div><h2>Community</h2><p>Where confused patients already gather. Help first; the tool sells itself.</p></div></div>
+      <div class="split">
+        <div>
+          <p>Show up as a genuinely useful expert, not a marketer. Answer real bill questions, share the "here's how I'd approach this" reasoning, and let people discover the app because you were helpful. Founder credibility in these spaces compounds into trust the App Store can't buy.</p>
+          <ul class="list">
+            <li><b>Reddit</b> — r/personalfinance, r/MedicalBills, r/HealthInsurance, r/povertyfinance, disease-specific subs.</li>
+            <li><b>Facebook groups</b> — patient and caregiver communities, chronic-illness support groups.</li>
+            <li><b>Disease-specific forums</b> — cancer, dialysis, and rare-disease communities with relentless billing.</li>
+          </ul>
+        </div>
+        <div class="card"><span class="kicker">Rules of engagement</span><ul class="list cyan"><li><b>Give value 10×</b> before ever mentioning the app.</li><li><b>Disclose</b> you're the founder — honesty earns trust.</li><li><b>Never spam</b>; one bad drop can get you banned from your best audience.</li><li><b>Run an AMA</b> once you have credibility and wins to point to.</li></ul></div>
+      </div>
+    </section>
+
+    <section id="pr">
+      <div class="sechead"><span class="no">05</span><div><h2>PR &amp; earned media</h2><p>Journalists cover medical debt constantly and are starved for fresh data. Give them some.</p></div></div>
+      <div class="cards c3">
+        <div class="card"><span class="kicker">Angle 01</span><h3>Original data report</h3><p>Mine your price DB: "The 20 most-overpriced common procedures," "the widest price gaps by city." Reporters cite data; a citation is a backlink and a wave of installs.</p></div>
+        <div class="card"><span class="kicker">Angle 02</span><h3>Reporter sourcing</h3><p>Answer journalist queries (HARO/Qwoted and similar) as an expert on billing errors. Steady, free earned media.</p></div>
+        <div class="card"><span class="kicker">Angle 03</span><h3>Local &amp; timely</h3><p>Pitch "how to fight your medical bill" around tax season and open enrollment — evergreen segments local news always needs.</p></div>
+      </div>
+    </section>
+
+    <section id="partners">
+      <div class="sechead"><span class="no">06</span><div><h2>Creators &amp; partnerships</h2><p>Borrow trusted audiences instead of building from zero.</p></div></div>
+      <div class="cards c3">
+        <div class="card"><span class="kicker">Creators</span><h3>Personal-finance &amp; patient advocates</h3><p>Micro-influencers in personal finance and chronic-illness advocacy convert far above their follower count because their audience is exactly your user.</p></div>
+        <div class="card"><span class="kicker">Nonprofits</span><h3>Advocacy &amp; charity-care orgs</h3><p>Groups that help people with medical debt and charity care have your audience and no good tool. Offer the pro tier free for referrals.</p></div>
+        <div class="card"><span class="kicker">Adjacent products</span><h3>FSA/HSA &amp; benefits</h3><p>Co-marketing with FSA/HSA providers and benefits platforms — complementary, non-competing, same user.</p></div>
+      </div>
+    </section>
+
+    <section id="paid">
+      <div class="sechead"><span class="no">07</span><div><h2>Paid acquisition — last, not first</h2><p>Only buy growth once a free user reliably becomes a paying one. Then start where intent is highest.</p></div></div>
+      <div class="split">
+        <div class="card"><span class="kicker">Start here</span><h3>Apple Search Ads</h3><p>Highest-intent inventory there is — someone searching "medical bill help" in the App Store is ready to install. Start with brand defense + a tight set of exact keywords, measure cost-per-paying-user, and scale only what pays back.</p></div>
+        <div class="card"><span class="kicker">Then, carefully</span><h3>Meta &amp; TikTok</h3><p>Once you know LTV, use the "fought my bill and won" creative to acquire at scale. Guardrail: keep payback under your target window; pause anything that doesn't.</p></div>
+      </div>
+      <p style="margin-top:14px;color:var(--muted);font-size:14px">Rule: never scale a channel whose cost-per-paying-user exceeds what that user is worth. Paid is an amplifier for a working loop, never a substitute for one.</p>
+    </section>
+
+    <section id="referral">
+      <div class="sechead"><span class="no">08</span><div><h2>Referral &amp; virality loops</h2><p>Make each saved dollar recruit the next user.</p></div></div>
+      <div class="cards c3">
+        <div class="card"><span class="kicker">Loop 01</span><h3>Shareable win</h3><p>After a caught error, offer a clean "I saved $312 with BillGuard" card to share. Social proof and acquisition in one tap.</p></div>
+        <div class="card"><span class="kicker">Loop 02</span><h3>Family &amp; caregiver invites</h3><p>Multi-patient already exists — let users invite a spouse or an adult child managing a parent's bills. Households spread naturally.</p></div>
+        <div class="card"><span class="kicker">Loop 03</span><h3>Give-get referral</h3><p>Give a free month to both sides. Simple, measurable, and cheap versus paid installs.</p></div>
+      </div>
+    </section>
+
+    <section id="lifecycle">
+      <div class="sechead"><span class="no">09</span><div><h2>Lifecycle &amp; reviews</h2><p>Getting the install is half the job; keeping and reactivating is the other half.</p></div></div>
+      <div class="split">
+        <div class="card"><span class="kicker">Keep them</span><ul class="list"><li><b>Onboarding</b> to first "win" as fast as possible.</li><li><b>Deadline push</b> for appeal windows — genuinely useful, drives re-open.</li><li><b>New-bill nudge</b> — "got a new bill? scan it."</li><li><b>Win-back</b> for lapsed users when a new feature ships.</li></ul></div>
+        <div class="card"><span class="kicker">Grow the rating</span><ul class="list cyan"><li><b>Ask after a win</b>, never on a cold launch.</li><li><b>Route unhappy users to support</b> before the review box.</li><li><b>Reply to reviews</b> — Apple lets you, and it converts skeptics.</li><li><b>High ratings feed ASO</b> — reviews are a growth channel, not an afterthought.</li></ul></div>
+      </div>
+    </section>
+
+    <section id="featured">
+      <div class="sechead"><span class="no">10</span><div><h2>Get featured by Apple</h2><p>An App Store feature is the biggest free install spike available. Earn it deliberately.</p></div></div>
+      <div class="cards c2">
+        <div class="card"><span class="kicker">Why you're a fit</span><p>Apple loves privacy-first, beautifully designed apps that solve a real human problem — BillGuard's on-device story and clean SwiftUI design are exactly the pitch editors respond to.</p></div>
+        <div class="card"><span class="kicker">How to ask</span><p>Nominate your app through App Store Connect ahead of launch, tie it to a timely moment (tax season, open enrollment), lead with the privacy angle, and send editors a crisp story with great assets.</p></div>
+      </div>
+    </section>
+
+    <section id="metrics">
+      <div class="sechead"><span class="no">11</span><div><h2>Metrics &amp; tools</h2><p>Instrument the funnel so you spend hours and dollars only where they pay back.</p></div></div>
+      <div class="metricrow">
+        <div class="metric"><div class="n">CAC</div><div class="l">Cost per paying user</div><div class="t">must be &lt; LTV</div></div>
+        <div class="metric"><div class="n">D1/7/30</div><div class="l">Retention curve</div><div class="t">habit signal</div></div>
+        <div class="metric"><div class="n">Free→Paid</div><div class="l">Conversion to subscription</div><div class="t">the north star</div></div>
+        <div class="metric"><div class="n">k-factor</div><div class="l">Invites × acceptance</div><div class="t">virality</div></div>
+      </div>
+      <p style="margin-top:16px">Track ASO impressions→installs (App Store Connect), subscriptions and cohorts (RevenueCat or StoreKit analytics), in-app funnel (a privacy-respecting analytics tool), search rankings (Search Console), and paid ROAS (Apple Search Ads). Watch <em>one</em> north-star weekly — free→paid conversion — and let it decide where the next hour goes.</p>
+    </section>
+
+    <section id="calendar">
+      <div class="sechead"><span class="no">12</span><div><h2>The first 90 days</h2><p>A concrete launch cadence. Owned and earned first; paid only once the loop proves out.</p></div></div>
+      <div class="cal">
+        <div class="month"><h3>Month 1 <span>SEED</span></h3><ul>
+          <li><b>Ship 50+ SEO pages</b> and submit the sitemap — start the clock.</li>
+          <li><b>Finalize ASO</b>: title, subtitle, keywords, outcome screenshots, preview.</li>
+          <li><b>Join the communities</b> and start answering — no pitching yet.</li>
+          <li><b>Draft the data report</b> and build the press list.</li>
+          <li><b>Set up analytics</b>, RevenueCat, and the review-prompt-after-win.</li>
+        </ul></div>
+        <div class="month"><h3>Month 2 <span>LAUNCH</span></h3><ul>
+          <li><b>Launch day</b>: Product Hunt + PR report + community posts + waitlist email, same 48h.</li>
+          <li><b>Submit the Apple featuring</b> nomination.</li>
+          <li><b>Publish 3–5 short videos</b>; seed the first "win" stories.</li>
+          <li><b>Line up 2–3 creators / advocate partners.</b></li>
+          <li><b>Triage reviews &amp; crashes daily</b>; ship fast fixes.</li>
+        </ul></div>
+        <div class="month"><h3>Month 3 <span>AMPLIFY</span></h3><ul>
+          <li><b>Turn on referral</b> (shareable win + give-get).</li>
+          <li><b>Small Apple Search Ads test</b> on exact keywords — measure cost per paying user.</li>
+          <li><b>Double down</b> on the one channel that actually moved installs; cut the rest.</li>
+          <li><b>Expand SEO</b> into the pages Search Console shows ranking.</li>
+          <li><b>Ship a feature</b> as a fresh launch beat and PR hook.</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <footer>
+      <span>BillGuard · Growth Playbook</span>
+      <span>Document 3 of 3 — companion to the Launch Plan &amp; Angel Round</span>
+    </footer>
+  </main>
+</div>

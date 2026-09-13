@@ -1,0 +1,268 @@
+<title>BillGuard Pitch Deck</title>
+<meta name="description" content="A 12-slide investor pitch deck for BillGuard — the medical-bill defender.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#08131D; --bg2:#0C1B29; --panel:#0F2130; --ink:#EAF3F5; --ink-soft:#A9C0CA; --muted:#6E8794;
+  --accent:#1FC7DC; --accent-2:#12A6BB; --line:#1D3646; --good:#4FCB90; --warn:#E0A24A;
+  --serif:"Fraunces",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:clamp(28px,6vw,84px);opacity:0;transition:opacity .35s ease}
+.slide.active{display:flex;opacity:1}
+.slide::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(520px 380px at 88% 8%,rgba(31,199,220,.14),transparent 70%),
+  radial-gradient(460px 340px at 6% 104%,rgba(18,166,187,.10),transparent 70%);pointer-events:none}
+.inner{position:relative;z-index:1;max-width:1000px;width:100%;margin:0 auto}
+.eyebrow{font-family:var(--mono);font-size:clamp(10px,1.4vw,12.5px);letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:12px}
+.eyebrow .n{color:var(--muted)}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,74px);line-height:1.0;letter-spacing:-.02em;margin:.28em 0 .24em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(28px,5vw,52px);line-height:1.04;letter-spacing:-.02em;margin:.2em 0 .3em;text-wrap:balance}
+.lede{font-size:clamp(16px,2.3vw,23px);line-height:1.45;color:var(--ink-soft);max-width:34ch}
+p{margin:0 0 12px}
+.brandline{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.shield{width:clamp(44px,7vw,60px);height:clamp(44px,7vw,60px);border-radius:14px;background:linear-gradient(150deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#03212a;font-family:var(--serif);font-weight:700;font-size:clamp(26px,4vw,34px);box-shadow:0 8px 30px rgba(31,199,220,.4)}
+.brandline b{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.4vw,30px)}
+.brandline span{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);display:block;margin-top:3px}
+.cols{display:grid;gap:18px;margin-top:14px}
+.c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:760px){.c2,.c3,.c4{grid-template-columns:1fr}}
+.card{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.card .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px}
+.card h3{margin:0 0 6px;font-size:clamp(16px,2.2vw,20px);font-weight:600;font-family:var(--serif)}
+.card p{margin:0;font-size:clamp(13px,1.7vw,15px);color:var(--ink-soft)}
+.big{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,46px);color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.big+.l{font-size:13px;color:var(--ink-soft);margin-top:8px}
+.big+.l+.src{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+li{padding-left:26px;position:relative;font-size:clamp(14px,2vw,17px);color:var(--ink-soft)}
+li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:9px;background:var(--accent);transform:rotate(45deg)}
+li b{color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+@media(max-width:760px){.steps{grid-template-columns:1fr}}
+.step{border:1px solid var(--line);border-radius:16px;padding:22px;background:linear-gradient(160deg,var(--panel),var(--bg2));position:relative}
+.step .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600}
+.step h3{font-family:var(--serif);font-weight:600;font-size:clamp(18px,2.4vw,23px);margin:8px 0 6px}
+.step p{margin:0;font-size:14px;color:var(--ink-soft)}
+.askgrid{display:flex;flex-wrap:wrap;gap:34px;margin-top:20px}
+.askgrid .a b{display:block;font-family:var(--serif);font-weight:600;font-size:clamp(26px,4vw,40px);color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.askgrid .a span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:8px;display:block}
+.uof{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+@media(max-width:760px){.uof{grid-template-columns:repeat(2,1fr)}}
+.uof .u{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.uof .u b{font-family:var(--serif);font-size:22px;color:var(--accent);font-variant-numeric:tabular-nums}
+.uof .u span{display:block;font-size:12px;color:var(--ink-soft);margin-top:4px}
+.note{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:.03em}
+/* chrome */
+.hud{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:14px clamp(18px,4vw,40px);pointer-events:none}
+.dots{display:flex;gap:7px;pointer-events:auto}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line);border:0;padding:0;cursor:pointer;transition:.2s}
+.dot.on{background:var(--accent);transform:scale(1.25)}
+.dot:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.nav{display:flex;align-items:center;gap:10px;pointer-events:auto}
+.nav button{background:var(--panel);border:1px solid var(--line);color:var(--ink);width:38px;height:38px;border-radius:10px;font-size:16px;cursor:pointer;transition:.15s}
+.nav button:hover{border-color:var(--accent);color:var(--accent)}
+.nav button:disabled{opacity:.35;cursor:not-allowed}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:52px;text-align:center}
+.brandhud{position:fixed;top:0;left:0;z-index:20;padding:16px clamp(18px,4vw,40px);font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.brandhud b{color:var(--accent);font-weight:600}
+.hint{position:fixed;top:16px;right:clamp(18px,4vw,40px);z-index:20;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+
+<div class="brandhud"><b>BillGuard</b> · Pitch</div>
+<div class="hint">← → to navigate</div>
+
+<div class="deck" id="deck">
+  <!-- 1 -->
+  <section class="slide active"><div class="inner">
+    <div class="brandline"><div class="shield">G</div><div><b>BillGuard</b><span>Pre-seed · 2026 · Confidential</span></div></div>
+    <div class="eyebrow"><span>Investor pitch</span></div>
+    <h1>Your medical bill,<br>decoded and defended.</h1>
+    <p class="lede">The app that reads any medical bill, catches the error, and gets money back — privately, on your own device.</p>
+  </div></section>
+
+  <!-- 2 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">02 / 12</span><span>The problem</span></div>
+    <h2>Billing is confusing on purpose.</h2>
+    <div class="cols c3">
+      <div class="card"><div class="big">~100M</div><div class="l">U.S. adults carrying medical debt</div><div class="src">KFF — verify</div></div>
+      <div class="card"><div class="big">$200B+</div><div class="l">Estimated medical debt outstanding</div><div class="src">KFF — verify</div></div>
+      <div class="card"><div class="big">Most</div><div class="l">bills carry an error or ambiguity</div><div class="src">Industry est. — verify</div></div>
+    </div>
+    <ul style="margin-top:18px"><li>Bills arrive in <b>codes</b>, with a separate insurer <b>EOB</b> no patient can reconcile.</li><li>Disputing means <b>hours on the phone</b> and appeal deadlines that quietly expire.</li></ul>
+  </div></section>
+
+  <!-- 3 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">03 / 12</span><span>Why now</span></div>
+    <h2>Three forces made this buildable in 2026.</h2>
+    <div class="cols c3">
+      <div class="card"><div class="k">Law</div><h3>Transparency is mandated</h3><p>The No Surprises Act and price-transparency rules created awareness — and machine-readable price data to benchmark against.</p></div>
+      <div class="card"><div class="k">Technology</div><h3>On-device AI matured</h3><p>Vision OCR and small models now parse a messy bill on the phone, privately, at near-zero marginal cost.</p></div>
+      <div class="card"><div class="k">Sentiment</div><h3>Trust collapsed</h3><p>"Fight your medical bill" is now a cultural genre. Demand is pulling, not being pushed.</p></div>
+    </div>
+  </div></section>
+
+  <!-- 4 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">04 / 12</span><span>The solution</span></div>
+    <h2>Scan. Understand. Act.</h2>
+    <div class="steps">
+      <div class="step"><div class="num">01</div><h3>Scan</h3><p>Snap a bill or import a PDF. On-device OCR extracts every line item and code.</p></div>
+      <div class="step"><div class="num">02</div><h3>Understand</h3><p>Plain-English explanations, fair-price context, and reconciliation against your insurer's EOB.</p></div>
+      <div class="step"><div class="num">03</div><h3>Act</h3><p>Flag the overcharge and generate the specific next step — a question, a correction, or an appeal.</p></div>
+    </div>
+  </div></section>
+
+  <!-- 5 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">05 / 12</span><span>Product &amp; moat</span></div>
+    <h2>Private by design. Defensible by data.</h2>
+    <div class="cols c3">
+      <div class="card"><div class="k">Moat 01</div><h3>Code + price dataset</h3><p>Structured CPT/HCPCS/ICD data with plain-English text and price bands — product engine and SEO surface in one.</p></div>
+      <div class="card"><div class="k">Moat 02</div><h3>On-device privacy</h3><p>Bills never centralize. Genuine trust differentiator, lower cost, smaller breach surface.</p></div>
+      <div class="card"><div class="k">Moat 03</div><h3>Capture anywhere</h3><p>Phone camera, PDF import, and a browser extension that grabs bills inside patient portals.</p></div>
+    </div>
+  </div></section>
+
+  <!-- 6 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">06 / 12</span><span>Market</span></div>
+    <h2>A sliver of this is a real company.</h2>
+    <div class="cols c3">
+      <div class="card"><div class="big">~150M</div><div class="l"><b>TAM</b> — U.S. adults who receive medical bills</div></div>
+      <div class="card"><div class="big">50–100M</div><div class="l"><b>SAM</b> — actively burdened by bills or debt</div></div>
+      <div class="card"><div class="big">100K–1M</div><div class="l"><b>SOM</b> — reachable organically in 3 years</div></div>
+    </div>
+    <p class="note">Figures to be sourced precisely (KFF, CFPB, Census, CMS) before diligence.</p>
+  </div></section>
+
+  <!-- 7 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">07 / 12</span><span>Business model</span></div>
+    <h2>Three lines, layered over time.</h2>
+    <div class="cols c3">
+      <div class="card"><div class="k">Now</div><h3>Consumer subscription</h3><p>Freemium: scanning free; error detection, EOB reconciliation, appeals &amp; benchmarks paid.</p></div>
+      <div class="card"><div class="k">Mid</div><h3>Success fees</h3><p>A share of dollars actually saved — revenue aligned with outcomes.</p></div>
+      <div class="card"><div class="k">Later</div><h3>B2B2C &amp; API</h3><p>White-label for employers &amp; plans; license the code/price API. Higher ACV, real durability.</p></div>
+    </div>
+  </div></section>
+
+  <!-- 8 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">08 / 12</span><span>Competition</span></div>
+    <h2>Nobody owns the private, consumer-first wedge.</h2>
+    <div class="cols c2">
+      <div class="card"><div class="k">Negotiation services</div><p>Expensive, high-friction, done-for-you. <b>We're self-serve first, managed later.</b></p></div>
+      <div class="card"><div class="k">Price-data sites</div><p>Data, but no action on <em>your</em> bill. <b>We apply price data to the actual bill.</b></p></div>
+      <div class="card"><div class="k">Benefits navigators</div><p>Locked to an employer, generic. <b>We work for anyone, direct.</b></p></div>
+      <div class="card"><div class="k">Generic scanners / PFM</div><p>No billing intelligence. <b>We're purpose-built for the bill.</b></p></div>
+    </div>
+  </div></section>
+
+  <!-- 9 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">09 / 12</span><span>Traction &amp; roadmap</span></div>
+    <h2>Built. Now proving the loop.</h2>
+    <ul>
+      <li><b>Today:</b> working product across iOS &amp; macOS, built solo — the "can actually build it" signal.</li>
+      <li><b>M1 (0–4mo):</b> ship the outcome — error detection, EOB reconciliation, appeals — and launch.</li>
+      <li><b>M2 (4–9mo):</b> prove free→paid conversion, D90 retention, organic SEO installs.</li>
+      <li><b>M3 (9–14mo):</b> web + extension live; first B2B2C pilot; success-fee test.</li>
+      <li><b>M4 (14–18mo):</b> metrics that justify a priced seed.</li>
+    </ul>
+  </div></section>
+
+  <!-- 10 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">10 / 12</span><span>Team</span></div>
+    <h2>A shipping founder — and an honest gap.</h2>
+    <div class="cols c2">
+      <div class="card"><div class="k">Strength</div><h3>Founder-operator</h3><p>Apple-platform engineer who already built the working product across iOS and macOS, solo. Rare for a pre-seed.</p></div>
+      <div class="card"><div class="k">Named gap</div><h3>Growth &amp; healthcare BD</h3><p>This round's first hires — a growth partner and healthcare business development for the B2B2C line.</p></div>
+    </div>
+  </div></section>
+
+  <!-- 11 -->
+  <section class="slide"><div class="inner">
+    <div class="eyebrow"><span class="n">11 / 12</span><span>The ask</span></div>
+    <h2>Raising $250–500K to prove the loop.</h2>
+    <div class="askgrid">
+      <div class="a"><b>$250–500K</b><span>Target</span></div>
+      <div class="a"><b>Post-money SAFE</b><span>Instrument</span></div>
+      <div class="a"><b>~18 months</b><span>Runway</span></div>
+      <div class="a"><b>Seed</b><span>Next round</span></div>
+    </div>
+    <div class="uof">
+      <div class="u"><b>40%</b><span>Product &amp; engineering</span></div>
+      <div class="u"><b>30%</b><span>Growth &amp; content</span></div>
+      <div class="u"><b>15%</b><span>Data &amp; compliance</span></div>
+      <div class="u"><b>15%</b><span>Founder runway</span></div>
+    </div>
+  </div></section>
+
+  <!-- 12 -->
+  <section class="slide"><div class="inner">
+    <div class="brandline"><div class="shield">G</div><div><b>BillGuard</b><span>Let's make the bill fair.</span></div></div>
+    <h1>Let's make the bill fair.</h1>
+    <p class="lede">Full memo, growth plan, and demo on request.</p>
+    <p class="note" style="margin-top:24px">denis2@me.com · "BillGuard" name pending trademark clearance</p>
+  </div></section>
+</div>
+
+<div class="hud">
+  <div class="dots" id="dots" role="tablist" aria-label="Slides"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous slide">‹</button>
+    <span class="count" id="count">1 / 12</span>
+    <button id="next" aria-label="Next slide">›</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var dotsWrap=document.getElementById('dots');
+  var count=document.getElementById('count');
+  var prev=document.getElementById('prev'),next=document.getElementById('next');
+  var i=0;
+  slides.forEach(function(_,idx){
+    var b=document.createElement('button');
+    b.className='dot'+(idx===0?' on':'');b.setAttribute('role','tab');
+    b.setAttribute('aria-label','Go to slide '+(idx+1));
+    b.addEventListener('click',function(){go(idx)});
+    dotsWrap.appendChild(b);
+  });
+  var dots=[].slice.call(dotsWrap.children);
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,idx){s.classList.toggle('active',idx===i)});
+    dots.forEach(function(d,idx){d.classList.toggle('on',idx===i)});
+    count.textContent=(i+1)+' / '+slides.length;
+    prev.disabled=i===0;next.disabled=i===slides.length-1;
+  }
+  prev.addEventListener('click',function(){go(i-1)});
+  next.addEventListener('click',function(){go(i+1)});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){go(i+1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(i-1);e.preventDefault();}
+    else if(e.key==='Home'){go(0);}
+    else if(e.key==='End'){go(slides.length-1);}
+  });
+  var sx=null;
+  document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>50){go(dx<0?i+1:i-1)}sx=null;
+  },{passive:true});
+  go(0);
+})();
+</script>

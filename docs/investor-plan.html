@@ -1,0 +1,329 @@
+<title>BillGuard Angel Round</title>
+<meta name="description" content="The fundraising case for BillGuard: the raise, the market, the model, and how to find and close angel investors.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F1ECE2; --surface:#FFFFFF; --surface-2:#F8F4EA; --panel:#161310;
+  --ink:#1B1712; --ink-soft:#4E463B; --muted:#847A6B; --border:#E0D6C4; --hair:#EDE6D8;
+  --accent:#9C7218; --accent-strong:#7C5910; --accent-tint:#F3E9D2;
+  --good:#2A7F52; --warn:#B26A16; --warn-tint:#F5EAD6; --crit:#B0403A; --crit-tint:#F6E4E1;
+  --teal:#0A7C8C;
+  --shadow:0 1px 2px rgba(27,23,18,.06),0 10px 26px rgba(27,23,18,.07);
+  --serif:"Fraunces",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14110C; --surface:#1E1911; --surface-2:#26200F; --panel:#0F0C08;
+  --ink:#F2EBDD; --ink-soft:#C6BBA6; --muted:#8F8472; --border:#352C1D; --hair:#241E13;
+  --accent:#E2B75C; --accent-strong:#EFCB81; --accent-tint:#2C2411;
+  --good:#4CB07C; --warn:#D89B4A; --warn-tint:#2C2413; --crit:#E0685F; --crit-tint:#2E1A17;
+  --teal:#38C0D0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#14110C; --surface:#1E1911; --surface-2:#26200F; --panel:#0F0C08;
+  --ink:#F2EBDD; --ink-soft:#C6BBA6; --muted:#8F8472; --border:#352C1D; --hair:#241E13;
+  --accent:#E2B75C; --accent-strong:#EFCB81; --accent-tint:#2C2411;
+  --good:#4CB07C; --warn:#D89B4A; --warn-tint:#2C2413; --crit:#E0685F; --crit-tint:#2E1A17;
+  --teal:#38C0D0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr;gap:0}}
+.rail{position:sticky;top:0;height:100vh;padding:38px 0;display:flex;flex-direction:column;gap:22px}
+@media(max-width:940px){.rail{position:static;height:auto;padding:28px 0 8px}}
+.brandmark{display:flex;align-items:center;gap:11px}
+.shield{width:34px;height:34px;flex:none;border-radius:9px;background:linear-gradient(150deg,var(--accent),var(--accent-strong));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:600;font-size:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent)}
+.brandmark b{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.brandmark span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.toc{display:flex;flex-direction:column;gap:1px;border-left:1px solid var(--border)}
+.toc a{font-size:13.5px;color:var(--ink-soft);text-decoration:none;padding:6px 0 6px 16px;margin-left:-1px;border-left:2px solid transparent;transition:.15s}
+.toc a:hover{color:var(--accent-strong);border-left-color:var(--accent)}
+.toc a b{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-right:9px}
+.railmeta{margin-top:auto;font-family:var(--mono);font-size:10.5px;line-height:1.9;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:940px){.railmeta{display:none}}
+main{padding:38px 0 120px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent-strong);font-weight:500}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,6vw,62px);line-height:1.02;letter-spacing:-.02em;margin:.28em 0 .2em;text-wrap:balance}
+.lede{font-size:20px;line-height:1.5;color:var(--ink-soft);max-width:36em;margin:0 0 8px}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(25px,3.4vw,34px);letter-spacing:-.015em;line-height:1.1;margin:0 0 6px;text-wrap:balance}
+h3{font-size:18px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+p{margin:0 0 14px;max-width:65ch}
+section{scroll-margin-top:24px}
+section+section{margin-top:64px}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.sechead .no{font-family:var(--mono);font-size:13px;color:var(--accent-strong);font-weight:600;flex:none}
+.sechead p{color:var(--muted);font-size:14.5px;margin:6px 0 0;max-width:48ch}
+strong{font-weight:600}
+em.term{font-style:normal;font-family:var(--mono);font-size:.86em;background:var(--accent-tint);color:var(--accent-strong);padding:1px 6px;border-radius:5px}
+.hero{background:var(--panel);color:#F3ECDD;border-radius:18px;padding:40px 40px 34px;margin:18px 0 8px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 300px at 88% 12%,color-mix(in srgb,var(--accent) 42%,transparent),transparent 70%);pointer-events:none}
+.hero .eyebrow{color:var(--accent)}
+.hero h1{color:#FBF4E6;margin-top:.15em}
+.hero .lede{color:#CBBFA9}
+.askrow{display:flex;flex-wrap:wrap;gap:26px;margin-top:24px;position:relative;z-index:1}
+.askrow .a b{display:block;font-family:var(--serif);font-weight:600;font-size:30px;color:#FBF4E6;line-height:1;font-variant-numeric:tabular-nums}
+.askrow .a span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#B49F7E;margin-top:8px;display:block}
+.cards{display:grid;gap:16px}
+.c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.c2,.c3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+.card p{font-size:14.5px;color:var(--ink-soft);margin:0}
+.card p+p{margin-top:8px}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:9px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.stat .n{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1;color:var(--accent-strong);font-variant-numeric:tabular-nums}
+.stat .l{font-size:13.5px;color:var(--ink-soft);margin-top:8px}
+.stat .src{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.06em}
+.vtable{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.vtable th{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.vtable td{padding:13px 16px;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-soft)}
+.vtable tr:last-child td{border-bottom:0}
+.vtable td b{color:var(--ink)}
+.vtable .r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.funnel{display:grid;gap:10px;margin-top:4px}
+.funnel .lvl{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center}
+.funnel .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right}
+.funnel .bar{height:38px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent-strong));display:flex;align-items:center;padding:0 14px;color:#fff;font-size:13.5px;font-weight:500;box-shadow:var(--shadow)}
+.funnel .bar.b2{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 78%,var(--surface)),var(--accent))}
+.funnel .bar.b3{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,var(--surface)),color-mix(in srgb,var(--accent) 80%,var(--surface)));color:var(--ink)}
+.phase{display:grid;grid-template-columns:64px 1fr;gap:22px}
+.phase+.phase{margin-top:8px}
+.phase .marker{display:flex;flex-direction:column;align-items:center}
+.phase .num{width:46px;height:46px;flex:none;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;font-family:var(--mono);font-weight:600;color:var(--accent-strong);font-size:14px;box-shadow:var(--shadow);text-align:center;line-height:1}
+.phase .line{flex:1;width:2px;background:var(--border);margin:6px 0}
+.phase:last-child .line{display:none}
+.phase .body{padding-bottom:24px}
+.phase .body h3{font-family:var(--serif);font-weight:600;font-size:20px;margin:0 0 4px}
+.phase .body p{font-size:14.5px;color:var(--ink-soft);margin:0}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.split{grid-template-columns:1fr}}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.list li{padding-left:24px;position:relative;font-size:14.5px;color:var(--ink-soft)}
+.list li::before{content:"";position:absolute;left:2px;top:9px;width:8px;height:8px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+.list li b{color:var(--ink)}
+.pit{border-left:4px solid var(--edge,var(--warn));background:var(--surface);border:1px solid var(--border);border-left-width:4px;border-radius:10px;padding:16px 20px}
+.pit.crit{--edge:var(--crit)} .pit.warn{--edge:var(--warn)}
+.pit .kicker{color:var(--edge,var(--warn));font-weight:600}
+.pit h3{font-size:16px;margin-bottom:5px}
+.pit p{font-size:14px;color:var(--ink-soft);margin:0}
+.stack{display:grid;gap:12px}
+.note{font-size:13px;color:var(--muted);font-style:italic;max-width:60ch}
+.callout{background:linear-gradient(160deg,var(--accent-tint),var(--surface));border:1px solid var(--border);border-radius:16px;padding:26px 28px}
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap grid">
+  <aside class="rail">
+    <div class="brandmark"><div class="shield">G</div><div><b>BillGuard</b><span>Angel Round</span></div></div>
+    <nav class="toc">
+      <a href="#ask"><b>00</b>The ask</a>
+      <a href="#why"><b>01</b>Why now</a>
+      <a href="#problem"><b>02</b>Problem</a>
+      <a href="#solution"><b>03</b>Solution &amp; moat</a>
+      <a href="#market"><b>04</b>Market size</a>
+      <a href="#model"><b>05</b>Model &amp; economics</a>
+      <a href="#milestones"><b>06</b>Milestones</a>
+      <a href="#compete"><b>07</b>Competition</a>
+      <a href="#team"><b>08</b>Team</a>
+      <a href="#terms"><b>09</b>Use of funds</a>
+      <a href="#angels"><b>10</b>Finding angels</a>
+    </nav>
+    <div class="railmeta">Confidential<br>Pre-seed · 2026<br>For discussion</div>
+  </aside>
+
+  <main>
+    <section id="ask">
+      <div class="hero">
+        <div class="eyebrow">Fundraising memorandum</div>
+        <h1>Financing the fight against medical bills.</h1>
+        <p class="lede">Roughly 100 million Americans carry medical debt, and most bills are opaque by design. BillGuard turns a phone camera into the tool that reads the bill, catches the error, and gets money back. We're raising a pre-seed angel round to convert a working product into a repeatable business.</p>
+        <div class="askrow">
+          <div class="a"><b>$250–500K</b><span>Target raise</span></div>
+          <div class="a"><b>Post-money SAFE</b><span>Instrument</span></div>
+          <div class="a"><b>~18 mo</b><span>Runway</span></div>
+          <div class="a"><b>Seed round</b><span>Next milestone</span></div>
+        </div>
+      </div>
+      <p style="margin-top:26px" class="note">Figures in this memo are the founder's working assumptions, not fixed terms; every market statistic is a widely-cited anchor to be sourced precisely in diligence. This is the companion to the Launch Plan — read this only once the product wedge there is real.</p>
+    </section>
+
+    <section id="why">
+      <div class="sechead"><span class="no">01</span><div><h2>Why now</h2><p>Three forces made this buildable and fundable in 2026, not 2016.</p></div></div>
+      <div class="cards c3">
+        <div class="card"><span class="kicker">Regulation</span><h3>Transparency is law</h3><p>The No Surprises Act (2022) and hospital price-transparency rules created both consumer awareness and machine-readable price data to benchmark against — the fuel BillGuard runs on.</p></div>
+        <div class="card"><span class="kicker">Technology</span><h3>On-device AI matured</h3><p>Vision-framework OCR and small language models now parse a messy bill on the phone, privately, at near-zero marginal cost. That wasn't true a few years ago.</p></div>
+        <div class="card"><span class="kicker">Sentiment</span><h3>Trust collapsed</h3><p>Distrust of hospital billing is at a peak; "fight your medical bill" is a cultural genre. Demand is pulling, not being pushed.</p></div>
+      </div>
+    </section>
+
+    <section id="problem">
+      <div class="sechead"><span class="no">02</span><div><h2>The problem</h2><p>Expensive, error-prone, and deliberately confusing — a durable, non-cyclical pain.</p></div></div>
+      <div class="cards c3">
+        <div class="stat"><div class="n">~100M</div><div class="l">U.S. adults with medical debt</div><div class="src">KFF — verify</div></div>
+        <div class="stat"><div class="n">$200B+</div><div class="l">Estimated U.S. medical debt outstanding</div><div class="src">KFF — verify</div></div>
+        <div class="stat"><div class="n">Most</div><div class="l">bills contain at least one error or ambiguity</div><div class="src">Industry est. — verify</div></div>
+      </div>
+      <p style="margin-top:18px">A patient receives a bill written in codes, a separate <em class="term">EOB</em> from the insurer, and no way to tell whether the two agree or whether the charge is fair. Disputing means hours on the phone, deadlines that quietly expire, and jargon designed to make people give up and pay. That friction is the moat incumbents rely on — and the opportunity BillGuard attacks.</p>
+    </section>
+
+    <section id="solution">
+      <div class="sechead"><span class="no">03</span><div><h2>Solution &amp; moat</h2><p>Read → understand → act, on-device and private — with defensibility that compounds.</p></div></div>
+      <p>BillGuard scans any medical bill, extracts the line items and codes, explains them in plain English with fair-price context, reconciles them against the insurer's EOB, and produces the specific next action — a question, a correction, or an appeal. It runs on the user's own devices via iCloud, so sensitive data never centralizes.</p>
+      <div class="split" style="margin-top:16px">
+        <div class="card"><span class="kicker">Moat 01</span><h3>Proprietary code + price layer</h3><p>A structured CPT/HCPCS/ICD dataset with plain-English explanations and price bands, extendable with transparency-file data. It powers both the product and an SEO surface competitors can't cheaply replicate.</p></div>
+        <div class="card"><span class="kicker">Moat 02</span><h3>Privacy as positioning</h3><p>On-device processing is a genuine trust differentiator in a category built on distrust — and it lowers infrastructure cost and breach surface.</p></div>
+        <div class="card"><span class="kicker">Moat 03</span><h3>Multi-surface capture</h3><p>Phone camera, file/PDF import, and a browser extension that captures bills inside patient portals — meeting bills wherever they live.</p></div>
+        <div class="card"><span class="kicker">Moat 04</span><h3>Outcome data flywheel</h3><p>Every reconciled bill and won appeal sharpens error detection and price accuracy — a data asset that grows with usage.</p></div>
+      </div>
+    </section>
+
+    <section id="market">
+      <div class="sechead"><span class="no">04</span><div><h2>Market size</h2><p>Sized by method, not by a single inflated number.</p></div></div>
+      <div class="scroll">
+      <table class="vtable">
+        <thead><tr><th>Layer</th><th>Definition</th><th class="r">Scale</th><th>Basis</th></tr></thead>
+        <tbody>
+          <tr><td><b>TAM</b></td><td>U.S. adults who receive medical bills and want help understanding/disputing them.</td><td class="r">~150M</td><td>Insured + underinsured U.S. adults</td></tr>
+          <tr><td><b>SAM</b></td><td>Smartphone users actively burdened by bills / debt today.</td><td class="r">~50–100M</td><td>Subset with acute, recurring pain</td></tr>
+          <tr><td><b>SOM (Yr 1–3)</b></td><td>Reachable via content, community &amp; ASO on iOS/macOS, then web.</td><td class="r">100K–1M</td><td>Realistic organic reach</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="margin-top:16px">Revenue framing: at even a low-single-digit conversion to a modest annual subscription, the SOM alone supports a multi-million-dollar ARR business — before the higher-value B2B2C and negotiation-fee lines. The pitch is not "capture a huge market"; it's "a sharp wedge into a market so large that a sliver is a real company."</p>
+      <p class="note">Replace ranges with sourced figures (KFF, CFPB, Census insurance coverage, CMS) before any investor meeting. Round numbers with citations beat precise numbers without.</p>
+    </section>
+
+    <section id="model">
+      <div class="sechead"><span class="no">05</span><div><h2>Business model &amp; unit economics</h2><p>Multiple lines, layered as the product earns the right to each.</p></div></div>
+      <div class="cards c3">
+        <div class="card"><span class="kicker">Line 01 · now</span><h3>Consumer subscription</h3><p>Freemium: scanning &amp; explanations free; error detection, EOB reconciliation, appeals and price benchmarks behind a subscription (est. ~$5–10/mo or ~$40–60/yr).</p></div>
+        <div class="card"><span class="kicker">Line 02 · mid</span><h3>Success fees</h3><p>Optional managed negotiation — a percentage of dollars actually saved. Aligns revenue with outcomes and needs no ad budget to convert.</p></div>
+        <div class="card"><span class="kicker">Line 03 · later</span><h3>B2B2C &amp; API</h3><p>White-label for employers, plans and TPAs; license the code/price API. Higher ACV, longer sales, real durability.</p></div>
+      </div>
+      <div class="split" style="margin-top:18px">
+        <div class="card">
+          <span class="kicker">The economics that matter</span>
+          <ul class="list" style="margin-top:6px">
+            <li><b>Near-zero marginal cost</b> — on-device processing means each user is cheap to serve.</li>
+            <li><b>CAC starts low</b> — organic SEO/content/community before any paid spend.</li>
+            <li><b>LTV rises with lines</b> — subscription + success fees + eventual B2B compound per relationship.</li>
+            <li><b>The number to prove</b> — a free user reliably becoming a paying one. Everything else follows.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="kicker">What this round buys</span>
+          <div class="funnel">
+            <div class="lvl"><div class="lbl">Prove</div><div class="bar">Free → paid conversion is real</div></div>
+            <div class="lvl"><div class="lbl">Prove</div><div class="bar b2">Retention past 90 days</div></div>
+            <div class="lvl"><div class="lbl">Prove</div><div class="bar b3">One repeatable acquisition channel</div></div>
+          </div>
+          <p style="margin-top:12px;font-size:13.5px;color:var(--ink-soft)">Three proofs turn a pre-seed into a seed-ready company.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="milestones">
+      <div class="sechead"><span class="no">06</span><div><h2>Milestones this round funds</h2><p>What the money is for, in sequence, and what it unlocks.</p></div></div>
+      <div class="timeline">
+        <div class="phase"><div class="marker"><div class="num">M1</div><div class="line"></div></div><div class="body"><h3>Ship the outcome (Mo 0–4)</h3><p>Error detection + EOB reconciliation + appeal letters live; App Store launch; first paying subscribers.</p></div></div>
+        <div class="phase"><div class="marker"><div class="num">M2</div><div class="line"></div></div><div class="body"><h3>Prove the loop (Mo 4–9)</h3><p>Free→paid conversion and D90 retention hit target; programmatic SEO driving organic installs at near-zero CAC.</p></div></div>
+        <div class="phase"><div class="marker"><div class="num">M3</div><div class="line"></div></div><div class="body"><h3>Widen the market (Mo 9–14)</h3><p>Web app + extension in market; first B2B2C pilot (an employer or advocate org); success-fee line tested.</p></div></div>
+        <div class="phase"><div class="marker"><div class="num">M4</div><div class="line"></div></div><div class="body"><h3>Raise the seed (Mo 14–18)</h3><p>Metrics that justify a priced seed round to scale paid acquisition and B2B sales.</p></div></div>
+      </div>
+    </section>
+
+    <section id="compete">
+      <div class="sechead"><span class="no">07</span><div><h2>Competition &amp; why we win</h2><p>The field is real but fragmented — nobody owns the private, consumer-first wedge.</p></div></div>
+      <div class="scroll">
+      <table class="vtable">
+        <thead><tr><th>Category</th><th>Examples</th><th>Their limit</th><th>BillGuard's edge</th></tr></thead>
+        <tbody>
+          <tr><td><b>Bill-negotiation services</b></td><td>Human/"done-for-you" negotiators</td><td>Expensive, high-friction, not self-serve</td><td>Self-serve first, managed option later</td></tr>
+          <tr><td><b>Price-data sites</b></td><td>Fair Health, Turquoise-style tools</td><td>Data, not action on <em>your</em> bill</td><td>Applies price data to the actual bill</td></tr>
+          <tr><td><b>Benefits-navigation apps</b></td><td>Employer-provided navigators</td><td>Locked to an employer; generic</td><td>Direct-to-consumer, works for anyone</td></tr>
+          <tr><td><b>Generic scanners / PFM</b></td><td>Doc scanners, budgeting apps</td><td>No medical-billing intelligence</td><td>Purpose-built code + price + appeal engine</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="team">
+      <div class="sechead"><span class="no">08</span><div><h2>Team</h2><p>Honesty here builds more credibility than a padded slide.</p></div></div>
+      <div class="split">
+        <div class="card"><span class="kicker">Strength</span><h3>Shipping founder-operator</h3><p>Apple-platform engineer who has already built the working product across iOS and macOS solo — a rare "can actually build it" signal for a pre-seed check.</p></div>
+        <div class="card"><span class="kicker">Named gap</span><h3>Growth &amp; healthcare-BD</h3><p>The plan names what's missing — a growth/marketing partner and healthcare business-development for the B2B2C line — and this round's first hires address it. Investors fund a clear gap; they flee a hidden one.</p></div>
+      </div>
+    </section>
+
+    <section id="terms">
+      <div class="sechead"><span class="no">09</span><div><h2>The raise &amp; use of funds</h2><p>What we're asking for and exactly where it goes.</p></div></div>
+      <div class="scroll">
+      <table class="vtable">
+        <thead><tr><th>Use of funds</th><th>What it buys</th><th class="r">Share</th></tr></thead>
+        <tbody>
+          <tr><td><b>Product &amp; engineering</b></td><td>Contract help to ship outcome features + web/extension</td><td class="r">40%</td></tr>
+          <tr><td><b>Growth &amp; content</b></td><td>Part-time growth hire, SEO content production, ASO, small Search Ads test</td><td class="r">30%</td></tr>
+          <tr><td><b>Data &amp; compliance</b></td><td>Price-transparency data, security review, legal/privacy, trademark</td><td class="r">15%</td></tr>
+          <tr><td><b>Founder runway</b></td><td>Full-time focus for ~18 months</td><td class="r">15%</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="callout" style="margin-top:18px">
+        <span class="kicker">Deal structure — plain English</span>
+        <ul class="list" style="margin-top:8px">
+          <li><b>Instrument:</b> post-money SAFE (the YC standard) — fast, cheap, no board, defers valuation to the priced seed.</li>
+          <li><b>Valuation cap:</b> set to keep total pre-seed dilution roughly in the 10–20% range; the exact cap is negotiable and traction-dependent.</li>
+          <li><b>Round size discipline:</b> raise enough to clearly clear M2 with margin — not so much that the cap becomes a ceiling you can't grow into.</li>
+          <li><b>Alternative path:</b> equity crowdfunding (Wefunder / Republic) can complement angels and double as a marketing event for a consumer app.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="angels">
+      <div class="sechead"><span class="no">10</span><div><h2>Finding &amp; closing angels</h2><p>Where they are, what they want, and the traps that kill first raises.</p></div></div>
+      <h3 style="font-family:var(--serif);font-size:22px;margin-bottom:10px">Where to find them</h3>
+      <div class="cards c2">
+        <div class="card"><span class="kicker">Best odds</span><h3>Warm intros</h3><p>Map your network for anyone touching health, fintech or consumer apps; ask specifically for intros to angels who invest there. A warm intro beats a hundred cold emails.</p></div>
+        <div class="card"><span class="kicker">Operator angels</span><h3>People who lived this</h3><p>Founders/execs from health-fintech, insurance, or billing who exited. They write checks <em>and</em> open doors, and they get the problem instantly.</p></div>
+        <div class="card"><span class="kicker">Platforms</span><h3>Wellfound &amp; syndicates</h3><p>Wellfound (AngelList) for angels, and syndicates that let one lead pull a group. Consumer-health and fintech syndicates exist specifically for this.</p></div>
+        <div class="card"><span class="kicker">Programs</span><h3>Accelerators</h3><p>Y Combinator / Techstars for signal + network; healthcare-specific programs (Redesign Health, Cedars-Sinai, MATTER, Rock Health community) for domain depth.</p></div>
+        <div class="card"><span class="kicker">Groups &amp; events</span><h3>Angel networks &amp; pitch nights</h3><p>Regional and healthcare-focused angel groups, plus demo days and pitch events for reps and warm leads.</p></div>
+        <div class="card"><span class="kicker">The crowd</span><h3>Equity crowdfunding</h3><p>Wefunder / Republic turn early users into investors — uniquely powerful for a consumer app where backers become evangelists.</p></div>
+      </div>
+
+      <h3 style="font-family:var(--serif);font-size:22px;margin:26px 0 10px">What they're actually buying</h3>
+      <div class="split">
+        <div class="card"><ul class="list">
+          <li><b>Founder–market fit</b> — why <em>you</em>, why this, why now.</li>
+          <li><b>Pull, not push</b> — early users who came unbidden and stayed.</li>
+          <li><b>A wedge with a path</b> — small entry, credibly large outcome.</li>
+          <li><b>Clean cap table</b> — no messy prior deals or dead equity.</li>
+          <li><b>Honest metrics</b> — retention and willingness-to-pay you can defend.</li>
+        </ul></div>
+        <div class="card"><span class="kicker">Run the process like a funnel</span><p>Build a target list of 40–60 fitting angels. Open with the strongest warm intros, create a light data room (this memo, a demo, a metrics one-pager), and run meetings in tight batches to manufacture momentum. Fundraising is a sales pipeline — treat it like one.</p></div>
+      </div>
+
+      <h3 style="font-family:var(--serif);font-size:22px;margin:26px 0 10px">Traps that kill first raises</h3>
+      <div class="stack">
+        <div class="pit crit"><span class="kicker">Timing</span><h3>Raising before there's pull</h3><p>Pre-traction, you sell a story on worst-case terms. Bootstrap to the first proof points in the Launch Plan, then raise from strength.</p></div>
+        <div class="pit warn"><span class="kicker">Sizing</span><h3>Too little to reach the next round</h3><p>Under-raising strands you between milestones. Size the round to clear the seed bar with a margin of safety.</p></div>
+        <div class="pit warn"><span class="kicker">Diligence</span><h3>Sensitive data &amp; regulatory hand-waving</h3><p>Investors will probe privacy, HIPAA posture, and the accuracy/liability of price and error claims. Have crisp, honest answers — vagueness reads as risk.</p></div>
+        <div class="pit warn"><span class="kicker">Fit</span><h3>Wrong money</h3><p>A check with no network or domain help costs more than it's worth. Optimize for investors who accelerate you, not just the highest cap.</p></div>
+      </div>
+    </section>
+
+    <footer>
+      <span>BillGuard · Angel Round</span>
+      <span>Document 2 of 3 — companion to the Launch Plan &amp; Growth Playbook</span>
+    </footer>
+  </main>
+</div>

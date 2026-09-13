@@ -1,0 +1,102 @@
+<title>BillGuard Teaser</title>
+<meta name="description" content="One-page investor teaser for BillGuard — the app that reads your medical bill, catches the error, and gets money back.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F1ECE2; --surface:#FFFFFF; --surface-2:#F8F4EA; --panel:#161310;
+  --ink:#1B1712; --ink-soft:#4E463B; --muted:#847A6B; --border:#E0D6C4; --hair:#EDE6D8;
+  --accent:#9C7218; --accent-strong:#7C5910; --accent-tint:#F3E9D2;
+  --good:#2A7F52; --teal:#0A7C8C;
+  --shadow:0 1px 2px rgba(27,23,18,.06),0 10px 26px rgba(27,23,18,.07);
+  --serif:"Fraunces",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14110C; --surface:#1E1911; --surface-2:#26200F; --panel:#0F0C08;
+  --ink:#F2EBDD; --ink-soft:#C6BBA6; --muted:#8F8472; --border:#352C1D; --hair:#241E13;
+  --accent:#E2B75C; --accent-strong:#EFCB81; --accent-tint:#2C2411; --good:#4CB07C; --teal:#38C0D0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#14110C; --surface:#1E1911; --surface-2:#26200F; --panel:#0F0C08;
+  --ink:#F2EBDD; --ink-soft:#C6BBA6; --muted:#8F8472; --border:#352C1D; --hair:#241E13;
+  --accent:#E2B75C; --accent-strong:#EFCB81; --accent-tint:#2C2411; --good:#4CB07C; --teal:#38C0D0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sheet{max-width:940px;margin:0 auto;padding:30px 26px 44px}
+.head{background:var(--panel);color:#F3ECDD;border-radius:16px;padding:26px 30px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.head::after{content:"";position:absolute;inset:0;background:radial-gradient(360px 220px at 90% 10%,color-mix(in srgb,var(--accent) 42%,transparent),transparent 70%);pointer-events:none}
+.brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.shield{width:38px;height:38px;border-radius:10px;background:linear-gradient(150deg,var(--accent),var(--accent-strong));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:600;font-size:22px}
+.brand b{font-family:var(--serif);font-weight:600;font-size:23px;letter-spacing:-.01em;color:#FBF4E6}
+.brand span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:#B49F7E;text-transform:uppercase;margin-top:2px}
+.tag{position:relative;z-index:1;font-family:var(--serif);font-weight:600;font-size:clamp(22px,3.4vw,30px);line-height:1.08;letter-spacing:-.015em;margin:16px 0 6px;color:#FBF4E6;text-wrap:balance;max-width:22ch}
+.sub{position:relative;z-index:1;color:#CBBFA9;font-size:15px;max-width:60ch;margin:0}
+.asks{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:22px;margin-top:18px}
+.asks .a b{display:block;font-family:var(--serif);font-weight:600;font-size:22px;color:#FBF4E6;line-height:1;font-variant-numeric:tabular-nums}
+.asks .a span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#B49F7E;margin-top:6px;display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+.grid.three{grid-template-columns:repeat(3,1fr)}
+@media(max-width:680px){.grid,.grid.three{grid-template-columns:1fr}}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.box h3{margin:0 0 7px;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-strong);font-weight:600}
+.box p{margin:0;font-size:13.5px;color:var(--ink-soft)}
+.box p+p{margin-top:7px}
+.box.full{grid-column:1/-1}
+.stats{display:flex;gap:22px;flex-wrap:wrap}
+.stats .s b{display:block;font-family:var(--serif);font-weight:600;font-size:26px;color:var(--accent-strong);line-height:1;font-variant-numeric:tabular-nums}
+.stats .s span{font-size:12px;color:var(--ink-soft);display:block;margin-top:5px}
+.stats .s em{font-family:var(--mono);font-style:normal;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-top:3px}
+ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+li{padding-left:20px;position:relative;font-size:13.5px;color:var(--ink-soft)}
+li::before{content:"";position:absolute;left:2px;top:7px;width:7px;height:7px;background:var(--accent);transform:rotate(45deg)}
+li b{color:var(--ink)}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.note{font-size:11px;color:var(--muted);font-style:italic;margin-top:10px}
+@media print{body{background:#fff}.head::after{display:none}}
+</style>
+<div class="sheet">
+  <div class="head">
+    <div class="brand"><div class="shield">G</div><div><b>BillGuard</b><span>Pre-seed teaser · confidential</span></div></div>
+    <div class="tag">The app that reads your medical bill, catches the error, and gets money back.</div>
+    <p class="sub">On-device OCR turns a phone camera into a medical-bill defender: it explains every code in plain English, reconciles the bill against your insurer's EOB, flags overcharges, and drafts the appeal.</p>
+    <div class="asks">
+      <div class="a"><b>$250–500K</b><span>Raising</span></div>
+      <div class="a"><b>Post-money SAFE</b><span>Instrument</span></div>
+      <div class="a"><b>~18 months</b><span>Runway</span></div>
+      <div class="a"><b>Live product</b><span>Status</span></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="box"><h3>Problem</h3><p>Medical bills are opaque by design — coded, error-prone, and paired with a separate insurer EOB no patient can reconcile. Disputing means hours on the phone and deadlines that quietly expire.</p></div>
+    <div class="box"><h3>Solution</h3><p>Scan → understand → act, privately on-device. BillGuard explains the codes, benchmarks the price, reconciles the EOB, and produces the specific next action: a question, a correction, or an appeal.</p></div>
+  </div>
+
+  <div class="box full" style="margin-top:14px">
+    <h3>The market</h3>
+    <div class="stats">
+      <div class="s"><b>~100M</b><span>U.S. adults with medical debt</span><em>KFF — verify</em></div>
+      <div class="s"><b>$200B+</b><span>Est. U.S. medical debt outstanding</span><em>KFF — verify</em></div>
+      <div class="s"><b>~150M</b><span>TAM: adults who get medical bills</span><em>founder est.</em></div>
+      <div class="s"><b>100K–1M</b><span>3-yr reachable users (SOM)</span><em>organic reach</em></div>
+    </div>
+  </div>
+
+  <div class="grid three" style="margin-top:14px">
+    <div class="box"><h3>Why now</h3><ul><li><b>Law:</b> No Surprises Act + price transparency</li><li><b>Tech:</b> on-device OCR/AI matured</li><li><b>Trust:</b> distrust of billing at a peak</li></ul></div>
+    <div class="box"><h3>Model</h3><ul><li><b>Now:</b> freemium subscription</li><li><b>Mid:</b> success fee on savings</li><li><b>Later:</b> B2B2C &amp; code/price API</li></ul></div>
+    <div class="box"><h3>Moat</h3><ul><li>Proprietary code + price dataset</li><li>Privacy: nothing centralizes</li><li>SEO engine from the data</li></ul></div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="box"><h3>Traction &amp; plan</h3><p>Working product across iOS &amp; macOS, built solo. This round ships the outcome features (error detection, EOB reconciliation, appeals), launches on the App Store, and proves free→paid conversion and D90 retention en route to a seed.</p></div>
+    <div class="box"><h3>Team &amp; ask</h3><p>Apple-platform founder-operator who already built it. Raising $250–500K on a post-money SAFE to fund ~18 months: product (40%), growth (30%), data &amp; compliance (15%), runway (15%).</p></div>
+  </div>
+
+  <div class="foot"><span>BillGuard · Guardia</span><span>denis2@me.com</span><span>Full memo &amp; growth plan on request</span></div>
+  <p class="note">Market figures are widely-cited anchors to be sourced in diligence; raise terms are working assumptions, not fixed. "BillGuard" name pending trademark clearance.</p>
+</div>

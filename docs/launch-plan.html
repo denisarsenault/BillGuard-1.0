@@ -1,0 +1,396 @@
+<title>BillGuard Launch Plan</title>
+<meta name="description" content="A bootstrapped go-to-market and launch plan for BillGuard, the medical-bill scanning app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EBF1F2; --surface:#FFFFFF; --surface-2:#F4F8F9; --panel:#0E1C29;
+  --ink:#0E1C29; --ink-soft:#3E515E; --muted:#687A85; --border:#D2DEE2; --hair:#E2EAEC;
+  --accent:#008DA0; --accent-strong:#006D7C; --accent-tint:#E1F1F3;
+  --good:#1C8A5F; --warn:#B26A16; --warn-tint:#F7ECDC; --crit:#B8403A; --crit-tint:#F8E6E4;
+  --gold:#B0812F;
+  --shadow:0 1px 2px rgba(14,28,41,.06),0 8px 24px rgba(14,28,41,.06);
+  --serif:"Fraunces",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#08131D; --surface:#0E1E2A; --surface-2:#122534; --panel:#0A1722;
+  --ink:#E8F1F3; --ink-soft:#AEC1CB; --muted:#7C909B; --border:#213544; --hair:#182A38;
+  --accent:#25C4D8; --accent-strong:#5FD6E5; --accent-tint:#0F2E36;
+  --good:#3FB483; --warn:#D89B4A; --warn-tint:#2C2415; --crit:#E0685F; --crit-tint:#2E1A18;
+  --gold:#D3A85A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#08131D; --surface:#0E1E2A; --surface-2:#122534; --panel:#0A1722;
+  --ink:#E8F1F3; --ink-soft:#AEC1CB; --muted:#7C909B; --border:#213544; --hair:#182A38;
+  --accent:#25C4D8; --accent-strong:#5FD6E5; --accent-tint:#0F2E36;
+  --good:#3FB483; --warn:#D89B4A; --warn-tint:#2C2415; --crit:#E0685F; --crit-tint:#2E1A18;
+  --gold:#D3A85A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr;gap:0}}
+
+/* Rail */
+.rail{position:sticky;top:0;height:100vh;padding:38px 0;display:flex;flex-direction:column;gap:22px}
+@media(max-width:940px){.rail{position:static;height:auto;padding:28px 0 8px}}
+.brandmark{display:flex;align-items:center;gap:11px}
+.shield{width:34px;height:34px;flex:none;border-radius:9px;background:linear-gradient(150deg,var(--accent),var(--accent-strong));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:600;font-size:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent)}
+.brandmark b{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.brandmark span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.toc{display:flex;flex-direction:column;gap:1px;border-left:1px solid var(--border)}
+.toc a{font-size:13.5px;color:var(--ink-soft);text-decoration:none;padding:6px 0 6px 16px;margin-left:-1px;border-left:2px solid transparent;transition:.15s}
+.toc a:hover{color:var(--accent);border-left-color:var(--accent)}
+.toc a b{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-right:9px}
+.railmeta{margin-top:auto;font-family:var(--mono);font-size:10.5px;line-height:1.9;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:940px){.railmeta{display:none}}
+
+/* Content */
+main{padding:38px 0 120px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:500}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,6vw,62px);line-height:1.02;letter-spacing:-.02em;margin:.28em 0 .2em;text-wrap:balance}
+.lede{font-size:20px;line-height:1.5;color:var(--ink-soft);max-width:36em;margin:0 0 8px}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(25px,3.4vw,34px);letter-spacing:-.015em;line-height:1.1;margin:0 0 6px;text-wrap:balance}
+h3{font-size:18px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+p{margin:0 0 14px;max-width:65ch}
+section{scroll-margin-top:24px}
+section+section{margin-top:64px}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.sechead .no{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;flex:none}
+.sechead p{color:var(--muted);font-size:14.5px;margin:6px 0 0;max-width:48ch}
+strong{font-weight:600}
+a.inline{color:var(--accent-strong);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+em.term{font-style:normal;font-family:var(--mono);font-size:.86em;background:var(--accent-tint);color:var(--accent-strong);padding:1px 6px;border-radius:5px}
+
+/* hero band */
+.hero{background:var(--panel);color:#EAF3F5;border-radius:18px;padding:40px 40px 34px;margin:18px 0 8px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 300px at 88% 15%,color-mix(in srgb,var(--accent) 40%,transparent),transparent 70%);pointer-events:none}
+.hero .eyebrow{color:var(--accent-strong)}
+.hero h1{color:#F3FAFB;margin-top:.15em}
+.hero .lede{color:#B7CDD3}
+.verdict{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;position:relative;z-index:1}
+.chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.18);color:#CFE3E8;background:rgba(255,255,255,.04)}
+.chip b{color:#fff;font-weight:600}
+
+/* cards */
+.cards{display:grid;gap:16px}
+.c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.c2,.c3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{display:flex;align-items:center;gap:8px}
+.card p{font-size:14.5px;color:var(--ink-soft);margin:0}
+.card p+p{margin-top:8px}
+.kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:9px}
+
+/* gap columns */
+.gap-col{border-top:3px solid var(--edge);background:var(--surface);border-radius:0 0 14px 14px;border:1px solid var(--border);border-top-width:3px;padding:20px 20px 8px}
+.gap-col h3{font-family:var(--serif);font-weight:600;font-size:20px}
+.gap-col .kicker{color:var(--edge);font-weight:600}
+.gap-list{list-style:none;margin:14px 0 0;padding:0}
+.gap-list li{padding:11px 0;border-top:1px solid var(--hair);font-size:14px;color:var(--ink-soft)}
+.gap-list li:first-child{border-top:0}
+.gap-list b{color:var(--ink);font-weight:600;display:block;font-size:14.5px}
+.col-a{--edge:var(--crit)} .col-b{--edge:var(--accent)} .col-c{--edge:var(--gold)}
+
+/* verticals table */
+.vtable{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.vtable th{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.vtable td{padding:13px 16px;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-soft)}
+.vtable tr:last-child td{border-bottom:0}
+.vtable td b{color:var(--ink)}
+.vtable .fit{font-family:var(--mono);font-size:11px;white-space:nowrap}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;letter-spacing:.03em}
+.t-now{background:var(--good);color:#fff} .t-mid{background:var(--accent);color:#fff} .t-far{background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
+.scroll{overflow-x:auto}
+
+/* channels */
+.chan{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface)}
+.chan .row{display:grid;grid-template-columns:180px 1fr 120px;gap:18px;padding:16px 20px;border-top:1px solid var(--hair);align-items:baseline}
+.chan .row:first-child{border-top:0}
+@media(max-width:640px){.chan .row{grid-template-columns:1fr;gap:5px}}
+.chan .row h3{font-size:15.5px}
+.chan .row p{font-size:13.5px;color:var(--ink-soft);margin:2px 0 0}
+.chan .cost{font-family:var(--mono);font-size:11.5px;color:var(--accent-strong);text-align:right}
+@media(max-width:640px){.chan .cost{text-align:left}}
+
+/* timeline */
+.phase{display:grid;grid-template-columns:64px 1fr;gap:22px;position:relative}
+.phase+.phase{margin-top:8px}
+.phase .marker{display:flex;flex-direction:column;align-items:center}
+.phase .num{width:46px;height:46px;flex:none;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;font-family:var(--mono);font-weight:600;color:var(--accent);font-size:16px;box-shadow:var(--shadow)}
+.phase .line{flex:1;width:2px;background:var(--border);margin:6px 0}
+.phase:last-child .line{display:none}
+.phase .body{padding-bottom:26px}
+.phase .body .when{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.phase .body h3{font-family:var(--serif);font-weight:600;font-size:21px;margin:2px 0 8px}
+.checks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:7px}
+.checks li{position:relative;padding-left:26px;font-size:14px;color:var(--ink-soft)}
+.checks li::before{content:"";position:absolute;left:0;top:6px;width:15px;height:15px;border-radius:4px;border:1.5px solid var(--accent);background:var(--accent-tint)}
+.checks li b{color:var(--ink);font-weight:600}
+.gate{margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--accent-strong);background:var(--accent-tint);border-radius:8px;padding:8px 12px;display:inline-block}
+
+/* pitfalls */
+.pit{border-left:4px solid var(--edge,var(--warn));background:var(--surface);border:1px solid var(--border);border-left-width:4px;border-radius:10px;padding:16px 20px}
+.pit.crit{--edge:var(--crit)} .pit.warn{--edge:var(--warn)}
+.pit .kicker{color:var(--edge,var(--warn));font-weight:600}
+.pit h3{font-size:16px;margin-bottom:5px}
+.pit p{font-size:14px;color:var(--ink-soft);margin:0}
+.pit p+p{margin-top:7px}
+.pit .fix{color:var(--ink)}
+.stack{display:grid;gap:12px}
+
+/* callout / do-monday */
+.callout{background:linear-gradient(160deg,var(--accent-tint),var(--surface));border:1px solid var(--border);border-radius:16px;padding:26px 28px}
+.olist{counter-reset:o;list-style:none;margin:6px 0 0;padding:0;display:grid;gap:12px}
+.olist li{counter-increment:o;position:relative;padding-left:44px;font-size:15px;color:var(--ink-soft)}
+.olist li::before{content:counter(o);position:absolute;left:0;top:-2px;width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;font-family:var(--mono);font-weight:600;font-size:14px;display:grid;place-items:center}
+.olist li b{color:var(--ink)}
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap grid">
+  <aside class="rail">
+    <div class="brandmark">
+      <div class="shield">G</div>
+      <div><b>BillGuard</b><span>Launch Dossier</span></div>
+    </div>
+    <nav class="toc">
+      <a href="#read"><b>00</b>Executive read</a>
+      <a href="#today"><b>01</b>What it is today</a>
+      <a href="#gaps"><b>02</b>Product gaps</a>
+      <a href="#verticals"><b>03</b>Vertical markets</a>
+      <a href="#marketing"><b>04</b>Bootstrapped GTM</a>
+      <a href="#walk"><b>05</b>Launch walkthrough</a>
+      <a href="#pitfalls"><b>06</b>Pitfalls</a>
+      <a href="#monday"><b>07</b>Start Monday</a>
+    </nav>
+    <div class="railmeta">Confidential<br>v1 · Sep 2026<br>Founder copy</div>
+  </aside>
+
+  <main>
+    <section id="read">
+      <div class="hero">
+        <div class="eyebrow">Go-to-market &amp; launch plan</div>
+        <h1>Turn a bill scanner into a bill defender.</h1>
+        <p class="lede">BillGuard already reads a medical bill and explains the codes. The business is in what happens next: catching the error, winning the appeal, and telling people they got their money back.</p>
+        <div class="verdict">
+          <span class="chip"><b>Verdict:</b> real problem, unfinished wedge</span>
+          <span class="chip"><b>Model:</b> freemium → outcomes</span>
+          <span class="chip"><b>Path:</b> bootstrap to traction, then raise</span>
+        </div>
+      </div>
+      <p style="margin-top:26px">This document is the primary plan: <strong>publish the app, get it live, and grow it without outside money.</strong> The fundraising case lives in a separate dossier, and the discovery/acquisition tactics in a third. Read this one first — it defines the product and the sequence everything else hangs on.</p>
+      <p>The honest read: the market pain is enormous and durable, but a well-organized filing cabinet for bills is a feature, not a company. People don't pay a subscription to <em>store</em> medical bills — they pay to <strong>stop overpaying</strong> and to make the paperwork end. Every recommendation below pushes BillGuard from "understands your bill" toward "gets you a specific dollar outcome," because that is the only version investors, the App Store, and word-of-mouth reward.</p>
+    </section>
+
+    <section id="today">
+      <div class="sechead"><span class="no">01</span><div><h2>What BillGuard is today</h2><p>Grounding the plan in the actual product, not the ambition.</p></div></div>
+      <p>BillGuard is a SwiftUI app (iOS today, macOS + a browser extension in progress) that scans a paper or PDF medical bill, runs on-device OCR to pull out the provider, patient, insurance and procedure fields, and looks up <em class="term">CPT</em> / <em class="term">HCPCS</em> / <em class="term">ICD-10</em> codes against a bundled database with plain-English explanations and typical price ranges. It organizes bills, claims, insurance policies and payments per patient and syncs through iCloud/CloudKit. The macOS build adds file/PDF import (no camera) and a portal-scraping extension.</p>
+      <div class="cards c3" style="margin-top:18px">
+        <div class="card"><span class="kicker">Strength</span><h3>On-device, private</h3><p>OCR and data stay on the user's devices via CloudKit. In a category defined by distrust, "your bills never hit our servers" is a real selling line.</p></div>
+        <div class="card"><span class="kicker">Strength</span><h3>The code database</h3><p>A structured CPT/HCPCS/ICD dataset with plain-English text and price bands. This is a content moat and an SEO engine most competitors don't have.</p></div>
+        <div class="card"><span class="kicker">Gap</span><h3>No outcome yet</h3><p>It explains and stores. It doesn't yet <em>find</em> the overcharge, reconcile against the EOB, or produce the appeal. That's the value users will pay for.</p></div>
+      </div>
+    </section>
+
+    <section id="gaps">
+      <div class="sechead"><span class="no">02</span><div><h2>What it should, could, and can grow to do</h2><p>Three honest columns: table stakes it's missing, differentiators within reach, and platform bets for later.</p></div></div>
+      <div class="cards c3">
+        <div class="gap-col col-a">
+          <span class="kicker">Should — but doesn't</span>
+          <h3>Table stakes</h3>
+          <ul class="gap-list">
+            <li><b>Error &amp; overcharge detection</b>Flag duplicate lines, unbundled codes, upcoding, quantity errors, out-of-network surprises. The #1 reason to open the app.</li>
+            <li><b>EOB ↔ bill reconciliation</b>Match the provider's bill to the insurer's Explanation of Benefits so "you're billed for what insurance already adjusted" is visible.</li>
+            <li><b>Deductible &amp; out-of-pocket tracker</b>Running total across the plan year — the number every patient actually wants.</li>
+            <li><b>Appeal &amp; dispute letters</b>Templated letters per denial reason, prefilled from the bill.</li>
+            <li><b>Deadlines &amp; reminders</b>Bill due dates and appeal windows (often 180 days) that cost money when missed.</li>
+            <li><b>Export / share</b>Clean PDF summary for an FSA/HSA claim, a spouse, or an accountant.</li>
+          </ul>
+        </div>
+        <div class="gap-col col-b">
+          <span class="kicker">Could — within reach</span>
+          <h3>Differentiators</h3>
+          <ul class="gap-list">
+            <li><b>Real price benchmarking</b>Wire the code DB to hospital price-transparency machine-readable files, CMS rates, and Fair Health so "typical price" becomes "here's the fair price near you."</li>
+            <li><b>Negotiation assistant</b>Scripts, phone-tree cheat sheets, and prewritten offers to settle. Later: success-fee negotiation on the user's behalf.</li>
+            <li><b>"Explain this bill" chat</b>An AI layer over the parsed bill + code DB that answers "why do I owe this?"</li>
+            <li><b>Denial-reason decoder</b>Translate <em class="term">CARC/RARC</em> remittance codes into what to actually do next.</li>
+            <li><b>Financial-assistance finder</b>Match the provider to its charity-care policy and eligibility — many patients qualify and never ask.</li>
+          </ul>
+        </div>
+        <div class="gap-col col-c">
+          <span class="kicker">Can extend to</span>
+          <h3>Platform bets</h3>
+          <ul class="gap-list">
+            <li><b>Web app + extension</b>Already started — capture portal bills where they actually live, and reach non-Apple users.</li>
+            <li><b>B2B2C white-label</b>Same engine inside an employer benefits hub, a health plan member app, or a TPA.</li>
+            <li><b>Data / API product</b>License the code-explanation + price-benchmark API to other builders.</li>
+            <li><b>Medical-debt credit dispute</b>Help remove paid/erroneous medical collections from credit reports.</li>
+            <li><b>Adjacent billing worlds</b>Dental and <b>veterinary</b> bills — same parsing pain, far less regulation, real willingness to pay.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="verticals">
+      <div class="sechead"><span class="no">03</span><div><h2>Vertical market opportunities</h2><p>Where the same core engine finds a paying buyer. Ranked by how soon it's reachable.</p></div></div>
+      <div class="scroll">
+      <table class="vtable">
+        <thead><tr><th>Vertical</th><th>Why they bite</th><th>How you sell</th><th class="fit">Horizon</th></tr></thead>
+        <tbody>
+          <tr><td><b>Individuals &amp; families</b></td><td>The obvious wedge: chaos of bills, fear of overpaying, No Surprises Act awareness.</td><td>App Store, content, community</td><td><span class="tag t-now">Now</span></td></tr>
+          <tr><td><b>Chronic-illness communities</b></td><td>Cancer, dialysis, transplant, NICU families face relentless, high-dollar billing.</td><td>Advocacy orgs, patient FB groups</td><td><span class="tag t-now">Now</span></td></tr>
+          <tr><td><b>Medicare / seniors &amp; caregivers</b></td><td>Highest bill volume; adult children manage parents' paperwork.</td><td>Caregiver channels, AARP-adjacent</td><td><span class="tag t-now">Now</span></td></tr>
+          <tr><td><b>Billing advocates &amp; consultants</b></td><td>Pros who fight bills for a living need a faster tool — a "pro" tier.</td><td>Direct, LinkedIn, their associations</td><td><span class="tag t-mid">6–12 mo</span></td></tr>
+          <tr><td><b>FSA/HSA &amp; tax prep</b></td><td>Reimbursement packaging and receipts are a recurring chore.</td><td>Integrations, advisor partnerships</td><td><span class="tag t-mid">6–12 mo</span></td></tr>
+          <tr><td><b>Self-insured employers</b></td><td>They pay claims directly; a member tool that cuts spend is a benefit <em>and</em> a saving.</td><td>Benefits brokers, HR platforms</td><td><span class="tag t-mid">6–12 mo</span></td></tr>
+          <tr><td><b>Health plans / TPAs</b></td><td>Member-facing bill clarity reduces call-center load and improves NPS.</td><td>White-label / API, long sales cycle</td><td><span class="tag t-far">12+ mo</span></td></tr>
+          <tr><td><b>Veterinary &amp; dental</b></td><td>Parallel billing pain, weaker incumbents, cash-pay buyers.</td><td>New consumer wedge, same engine</td><td><span class="tag t-far">12+ mo</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="marketing">
+      <div class="sechead"><span class="no">04</span><div><h2>Bootstrapped go-to-market</h2><p>How to grow with sweat, not spend. Ranked by return on a founder's hours.</p></div></div>
+      <p>With no ad budget, your unfair advantage is the code database and a founder who can ship. Turn both into a content machine and let high-intent search and desperate-at-2am forum readers find you. The full tactical playbook is a separate document — this is the strategy.</p>
+      <div class="chan">
+        <div class="row"><div><h3>Programmatic SEO</h3></div><p>Generate a page for every code and every "what is CPT 99213 / why am I billed for this" query straight from your database. Thousands of pages, each answering a real Google search, each funneling to the app. This is the single highest-leverage move you have.</p><div class="cost">$ · highest ROI</div></div>
+        <div class="row"><div><h3>Community presence</h3></div><p>Be genuinely helpful in r/personalfinance, r/MedicalBills, r/HealthInsurance, and patient Facebook groups. Answer bills, don't spam. Founder credibility compounds.</p><div class="cost">$ · time-heavy</div></div>
+        <div class="row"><div><h3>Short-form video</h3></div><p>"I fought a $4,200 ER bill down to $600 — here's exactly how." TikTok / Reels / Shorts. The medical-bill-win genre already performs; be the tool in the story.</p><div class="cost">$ · compounding</div></div>
+        <div class="row"><div><h3>App Store Optimization</h3></div><p>Title, subtitle, keyword field, screenshots that show an <em>outcome</em>, and a preview video. Free, high-intent traffic. Covered in depth in the growth playbook.</p><div class="cost">$ · essential</div></div>
+        <div class="row"><div><h3>PR on the debt angle</h3></div><p>Publish a small original data report from your price DB ("the 20 most-overpriced common procedures"). Journalists cover medical debt constantly and need data.</p><div class="cost">$ · spiky</div></div>
+        <div class="row"><div><h3>Advocate partnerships</h3></div><p>Patient advocates and nonprofits have the exact audience and no good tool. Offer them the pro tier free in exchange for referrals.</p><div class="cost">$ · relationship</div></div>
+        <div class="row"><div><h3>Product Hunt + launch beats</h3></div><p>A coordinated launch day for reach and backlinks, then a steady drumbeat of feature launches to stay visible.</p><div class="cost">$ · one-off</div></div>
+      </div>
+      <p style="margin-top:16px;color:var(--muted);font-size:14px">Deliberately excluded while bootstrapping: paid user acquisition beyond a small Apple Search Ads test. Don't buy traffic until a free user reliably becomes a paying one.</p>
+    </section>
+
+    <section id="walk">
+      <div class="sechead"><span class="no">05</span><div><h2>App → live: the chronological walkthrough</h2><p>Eight phases in order. Don't start a phase until the one before it clears its gate.</p></div></div>
+      <div class="timeline">
+        <div class="phase"><div class="marker"><div class="num">0</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 0–2 · Foundation</div><h3>Stand up the business &amp; the name</h3>
+          <ul class="checks">
+            <li><b>Resolve the name first.</b> "BillGuard" was a well-known bill-monitoring app acquired by Prosper — clear the trademark or pick a clean brand (Guardia?) before you spend a dollar on it.</li>
+            <li>Form the entity (LLC), register the domain, set up email and a password manager for founder credentials.</li>
+            <li>Draft a privacy policy, terms, and a prominent <b>medical/financial disclaimer</b> ("not medical, legal, or financial advice").</li>
+            <li>Decide your HIPAA posture: a consumer app used by the patient is generally <em>not</em> a covered entity — but the moment you sell to providers/plans, HIPAA + BAAs apply.</li>
+          </ul>
+          <span class="gate">Gate: legal name cleared, policies drafted, entity live.</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">1</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 2–8 · Product</div><h3>Cut v1 scope to one delightful outcome</h3>
+          <ul class="checks">
+            <li>Pick <b>one</b> hero outcome for v1 — realistically "scan a bill, understand every line, and flag the obvious problems." Ship that flawlessly instead of everything half-done.</li>
+            <li>Polish onboarding, empty states, and error copy. Make OCR failure graceful.</li>
+            <li>Build the paywall now: <b>StoreKit 2</b>, freemium with a subscription for the outcome features. Decide price.</li>
+            <li>Instrument a privacy-respecting analytics funnel: scan → understand → save → (later) act.</li>
+          </ul>
+          <span class="gate">Gate: crash-free build, one outcome that makes a stranger say "oh, useful."</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">2</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 6–9 · Compliance</div><h3>Get store-ready</h3>
+          <ul class="checks">
+            <li>Enrol in the Apple Developer Program; set up App Store Connect.</li>
+            <li>Complete <b>App Privacy</b> labels honestly; health data has strict rules — never use it for ads or share it.</li>
+            <li>Add the medical disclaimer in-app and in the listing; review App Review guidelines for health &amp; subscriptions.</li>
+            <li>Set the real CloudKit container and production environment (today's is a placeholder).</li>
+          </ul>
+          <span class="gate">Gate: privacy labels done, disclaimers in place, production CloudKit live.</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">3</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 8–12 · Beta</div><h3>TestFlight with real bills</h3>
+          <ul class="checks">
+            <li>Internal TestFlight, then external — recruit 50–200 testers from the communities you'll later market to.</li>
+            <li>Watch them scan <em>their own</em> messy bills; OCR/parse breaks on real layouts, not clean samples.</li>
+            <li>Fix the top failure modes; confirm the funnel and the paywall convert.</li>
+          </ul>
+          <span class="gate">Gate: testers succeed on their own bills; a few unprompted "I'd pay for this."</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">4</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 10–14 · Pre-launch</div><h3>Build the runway before you open the doors</h3>
+          <ul class="checks">
+            <li>Ship the landing page + waitlist and start the programmatic-SEO pages indexing (they take time to rank).</li>
+            <li>Produce ASO assets: icon, outcome-led screenshots, a 15–30s preview, keyword research.</li>
+            <li>Assemble a press kit and the original data report. Line up advocate partners and Product Hunt.</li>
+            <li>Seed 6–8 weeks of community answers and short videos so launch day isn't from zero.</li>
+          </ul>
+          <span class="gate">Gate: waitlist growing, SEO pages indexing, launch assets done.</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">5</div><div class="line"></div></div><div class="body">
+          <div class="when">Launch week</div><h3>Soft launch, then go loud</h3>
+          <ul class="checks">
+            <li>Soft-launch in one English market first to shake out crashes and store metrics.</li>
+            <li>Then coordinate: Product Hunt, the PR report, community posts, waitlist email, creator posts — same 48 hours.</li>
+            <li>Submit a featuring pitch to Apple (they love privacy-first, timely, well-designed apps).</li>
+          </ul>
+          <span class="gate">Gate: stable at volume, reviews &gt; 4.5, first organic installs from SEO/PR.</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">6</div><div class="line"></div></div><div class="body">
+          <div class="when">Weeks 1–8 post-launch</div><h3>Stabilize &amp; retain</h3>
+          <ul class="checks">
+            <li>Triage reviews and crashes daily; ship fast fixes. Early ratings set your ceiling.</li>
+            <li>Close the loop: prompt happy users for reviews right after a "win."</li>
+            <li>Double down on whichever acquisition channel actually moved installs; kill the rest.</li>
+          </ul>
+          <span class="gate">Gate: D30 retention and free→paid conversion you can state with a straight face.</span>
+        </div></div>
+
+        <div class="phase"><div class="marker"><div class="num">7</div><div class="line"></div></div><div class="body">
+          <div class="when">Month 3+ · Scale</div><h3>Prove the loop, then decide on capital</h3>
+          <ul class="checks">
+            <li>Test a small paid-UA budget only once free→paid is reliable.</li>
+            <li>Ship the web app + extension to widen the market beyond Apple.</li>
+            <li>With traction in hand, open the fundraising conversation — from strength, not need. (See the investor dossier.)</li>
+          </ul>
+          <span class="gate">Gate: repeatable acquisition + monetization → you're raising to accelerate, not to survive.</span>
+        </div></div>
+      </div>
+    </section>
+
+    <section id="pitfalls">
+      <div class="sechead"><span class="no">06</span><div><h2>What to watch out for</h2><p>The mistakes that sink health-money apps specifically — and how to route around each.</p></div></div>
+      <div class="stack">
+        <div class="pit crit"><span class="kicker">Legal / brand</span><h3>The "BillGuard" name is already taken history</h3><p>A prominent bill-monitoring app called BillGuard existed and was acquired by Prosper Marketplace. Shipping under that exact name invites a trademark problem and SEO confusion.</p><p class="fix"><b>Route around it:</b> run a trademark search now; strongly consider launching as Guardia (or another clean mark) before you build brand equity you'd have to throw away.</p></div>
+        <div class="pit crit"><span class="kicker">Compliance</span><h3>Health-data rules &amp; App Review</h3><p>Apple treats health data strictly: it can't be used for advertising or sold, and mishandling it gets apps pulled. Health claims and subscription mechanics are common rejection reasons.</p><p class="fix"><b>Route around it:</b> honest privacy labels, no ad use of health data, clear disclaimers, and conservative claims. Never promise a specific dollar of savings.</p></div>
+        <div class="pit warn"><span class="kicker">Positioning</span><h3>"Filing cabinet" won't sell a subscription</h3><p>Organizing bills is nice-to-have; people churn off nice-to-haves. Willingness to pay lives in <em>outcomes</em> — caught errors, won appeals, money back.</p><p class="fix"><b>Route around it:</b> make v1's paywall gate an outcome, not storage. Measure "dollars flagged / saved," not "bills stored."</p></div>
+        <div class="pit warn"><span class="kicker">Liability</span><h3>Accuracy of prices &amp; error flags</h3><p>Price benchmarks and "this looks like an overcharge" carry liability if presented as fact or advice.</p><p class="fix"><b>Route around it:</b> frame everything as "typical / worth questioning," cite sources, and keep the human in the loop. You surface questions; the user decides.</p></div>
+        <div class="pit warn"><span class="kicker">Platform risk</span><h3>Apple-only caps your market</h3><p>CloudKit-only means no Android and no true web parity — a real ceiling for a mass-market money-saving tool, and a question every investor asks.</p><p class="fix"><b>Route around it:</b> keep the parser/logic in the shared package (already the plan) so a web/Android path stays open; ship the web app early.</p></div>
+        <div class="pit warn"><span class="kicker">Trust &amp; support</span><h3>You're an indie holding sensitive data</h3><p>One breach or a wave of "it charged me and did nothing" reviews can end a health-finance app. Support load is heavy in this category.</p><p class="fix"><b>Route around it:</b> lead with on-device privacy, set up real support from day one, and keep OCR expectations honest so reviews stay kind.</p></div>
+      </div>
+    </section>
+
+    <section id="monday">
+      <div class="sechead"><span class="no">07</span><div><h2>What to do Monday</h2><p>If you only act on one section, act on this one.</p></div></div>
+      <div class="callout">
+        <ol class="olist">
+          <li><b>Run the trademark search</b> on "BillGuard" and shortlist a clean name. Everything downstream depends on this.</li>
+          <li><b>Pick v1's single outcome</b> and write it on a sticky note. Cut every feature that isn't in service of it.</li>
+          <li><b>Build one error-detection rule</b> — duplicate line items is the easiest and most convincing. Ship the first "we found something."</li>
+          <li><b>Stand up 25 programmatic code pages</b> from your database as a proof of concept and submit a sitemap. Start the SEO clock now.</li>
+          <li><b>Recruit 20 beta testers</b> from one patient community and watch them scan real bills.</li>
+        </ol>
+      </div>
+    </section>
+
+    <footer>
+      <span>BillGuard · Launch Dossier</span>
+      <span>Document 1 of 3 — Investor Plan &amp; Growth Playbook follow</span>
+    </footer>
+  </main>
+</div>
