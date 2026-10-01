@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import UserNotifications
 import Combine
+import MapKit
 
 // MARK: - Location Reminder Service
 
@@ -56,7 +57,35 @@ final class LocationReminderService: NSObject, ObservableObject {
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.allowsBackgroundLocationUpdates = false
         locationManager = manager
+        // Phase 2 (opt-in): detect arrival at *any* health facility, not just
+        // saved providers, via the OS visit-monitoring API.
+        if isGenericDetectionEnabled {
+            manager.startMonitoringVisits()
+        }
     }
+
+    // MARK: - Generic facility detection (opt-in)
+
+    private let genericDetectionKey = "genericFacilityDetectionEnabled"
+
+    /// When on, BillGuard also coaches on arrival at unsaved hospitals/pharmacies
+    /// (OS visit monitoring + MapKit POI lookup). Off by default — coarser and
+    /// more battery-hungry than the saved-provider geofences.
+    var isGenericDetectionEnabled: Bool {
+        UserDefaults.standard.bool(forKey: genericDetectionKey)
+    }
+
+    func setGenericFacilityDetection(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: genericDetectionKey)
+        if enabled {
+            locationManager?.startMonitoringVisits()
+        } else {
+            locationManager?.stopMonitoringVisits()
+        }
+    }
+
+    /// De-dupes repeat visit callbacks for the same spot within a session.
+    private var coachedVisitKeys: Set<String> = []
     
     // MARK: - Authorization
     
@@ -451,9 +480,19 @@ extension LocationReminderService: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         guard let circularRegion = region as? CLCircularRegion else { return }
         let identifier = String(circularRegion.identifier)
-        
+
         Task { @MainActor [weak self] in
             self?.handleRegionExit(identifier: identifier)
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
+        // Only coach on arrival (still at the place): a live visit has no
+        // departure date yet.
+        guard visit.departureDate == Date.distantFuture else { return }
+        let coordinate = visit.coordinate
+        Task { @MainActor [weak self] in
+            self?.handleVisit(at: coordinate)
         }
     }
     
@@ -483,9 +522,13 @@ extension LocationReminderService {
 
     private func handleRegionEntry(identifier: String) {
         guard let provider = monitoredProviders[identifier] else { return }
-        
+
         sendArrivalNotification(for: provider)
-        
+        // In-app "balloon" coaching: shows now if the app is open, or as soon as
+        // the user opens it after tapping the arrival notification.
+        ArrivalCoach.shared.present(facilityName: provider.name,
+                                    settings: provider.reminderSettings)
+
         // Update visit count
         var updatedProvider = provider
         updatedProvider.visitCount += 1
@@ -500,6 +543,51 @@ extension LocationReminderService {
     private func handleRegionExit(identifier: String) {
         guard let provider = monitoredProviders[identifier] else { return }
         sendDepartureNotification(for: provider)
+    }
+
+    // MARK: - Generic facility visit handling (opt-in)
+
+    private func handleVisit(at coordinate: CLLocationCoordinate2D) {
+        guard isGenericDetectionEnabled else { return }
+        guard CLLocationCoordinate2DIsValid(coordinate) else { return }
+        let key = String(format: "%.4f,%.4f", coordinate.latitude, coordinate.longitude)
+        guard !coachedVisitKeys.contains(key) else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // Look for a hospital/pharmacy POI essentially on top of the visit.
+            let request = MKLocalPointsOfInterestRequest(center: coordinate, radius: 150)
+            request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.hospital, .pharmacy])
+            guard let response = try? await MKLocalSearch(request: request).start() else { return }
+
+            let here = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            let nearest = response.mapItems.compactMap { item -> (String, CLLocationDistance)? in
+                guard let loc = item.placemark.location else { return nil }
+                return (item.name ?? "a health facility", loc.distance(from: here))
+            }.min(by: { $0.1 < $1.1 })
+
+            guard let nearest, nearest.1 < 120 else { return }
+            self.coachedVisitKeys.insert(key)
+            // Skip if a saved-provider geofence already covers this spot.
+            guard !self.monitoredProviders.values.contains(where: { $0.name == nearest.0 }) else { return }
+            self.sendGenericArrivalNotification(facilityName: nearest.0)
+            ArrivalCoach.shared.present(facilityName: nearest.0, settings: nil)
+        }
+    }
+
+    private func sendGenericArrivalNotification(facilityName: String) {
+        guard canSendNotifications else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "📍 At \(facilityName)?"
+        content.subtitle = "Medical Visit Reminder"
+        content.body = "Tap for the questions to ask at the front desk."
+        content.sound = .default
+        content.categoryIdentifier = "PROVIDER_ARRIVAL"
+        content.userInfo = ["facilityName": facilityName, "type": "genericArrival"]
+        let request = UNNotificationRequest(
+            identifier: "genericArrival_\(Date().timeIntervalSince1970)",
+            content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
     }
 }
 
@@ -521,4 +609,78 @@ struct VisitChecklistItem: Identifiable, Codable {
         VisitChecklistItem(title: "Get provider contact info", icon: "phone.fill"),
         VisitChecklistItem(title: "Confirm insurance was billed", icon: "creditcard.fill")
     ]
+}
+
+// MARK: - Arrival Coaching (balloon prompts)
+
+/// Drives the in-app "balloon" that coaches the user on what to ask at the
+/// front desk when they arrive at a health facility. Observed by
+/// `BalloonCoachOverlay`. Mirrors MapMe's announcement-service pattern.
+@MainActor
+final class ArrivalCoach: ObservableObject {
+    static let shared = ArrivalCoach()
+    private init() {}
+
+    @Published var prompt: ArrivalPrompt?
+
+    /// Geofence/visit entries can fire while the app is terminated (iOS wakes it
+    /// in the background). If the user doesn't open the app for a while, the
+    /// prompt is stale — don't pop a balloon hours after the fact.
+    private let maxAge: TimeInterval = 2 * 60 * 60
+
+    func present(facilityName: String, settings: ProviderReminderSettings?) {
+        prompt = ArrivalPrompt(facilityName: facilityName,
+                               questions: ArrivalPrompt.frontDeskQuestions(for: settings))
+    }
+
+    func dismiss() { prompt = nil }
+
+    /// Call when the overlay appears / app foregrounds to drop stale prompts.
+    func expireIfStale() {
+        if let p = prompt, Date().timeIntervalSince(p.createdAt) > maxAge {
+            prompt = nil
+        }
+    }
+}
+
+struct ArrivalPrompt: Identifiable {
+    let id = UUID()
+    let facilityName: String
+    let createdAt = Date()
+    var questions: [CoachQuestion]
+
+    /// The front-desk question script. Honors the saved provider's reminder
+    /// toggles when present; otherwise shows the full default script.
+    static func frontDeskQuestions(for settings: ProviderReminderSettings?) -> [CoachQuestion] {
+        var q: [CoachQuestion] = []
+        q.append(CoachQuestion(icon: "doc.text.magnifyingglass",
+                               text: "Ask for an itemized bill with CPT codes",
+                               detail: "The line-by-line statement — not just the summary."))
+        if settings?.remindForDiagnosisCodes ?? true {
+            q.append(CoachQuestion(icon: "stethoscope",
+                                   text: "Get today's diagnosis (ICD-10) codes",
+                                   detail: "They rarely show on the bill — ask them to note them."))
+        }
+        q.append(CoachQuestion(icon: "checkmark.shield",
+                               text: "Confirm this provider is in-network",
+                               detail: "Have them verify against your plan before service."))
+        q.append(CoachQuestion(icon: "dollarsign.circle",
+                               text: "If self-pay: request a Good Faith Estimate",
+                               detail: "Your right before scheduled care (No Surprises Act)."))
+        if settings?.remindToPhotograph ?? true {
+            q.append(CoachQuestion(icon: "camera",
+                                   text: "Photograph every form you sign"))
+        }
+        q.append(CoachQuestion(icon: "phone",
+                               text: "Get the billing department's direct number",
+                               detail: "For itemized-bill and records requests later."))
+        return q
+    }
+}
+
+struct CoachQuestion: Identifiable {
+    let id = UUID()
+    let icon: String
+    let text: String
+    var detail: String? = nil
 }

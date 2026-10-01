@@ -128,6 +128,115 @@ struct MainTabView: View {
                 favoritesCount: appState.favoritesManager.count
             )
         }
+        // Front-desk coaching "balloon" that appears when you arrive at a
+        // health facility (saved provider geofence, or an opt-in nearby match).
+        .overlay { BalloonCoachOverlay() }
+    }
+}
+
+// MARK: - Arrival Coaching Balloon
+
+/// Interactive "balloon" that drops from the top when the user arrives at a
+/// health facility, coaching them on what to ask at the front desk. Styled
+/// after MapMe's GuardianBalloonOverlay (thin material, spring-in) but
+/// interactive so the user can tick questions off while they stand in line.
+struct BalloonCoachOverlay: View {
+    @ObservedObject private var coach = ArrivalCoach.shared
+    @State private var checked: Set<UUID> = []
+
+    var body: some View {
+        if let prompt = coach.prompt {
+            ZStack(alignment: .top) {
+                Color.black.opacity(0.28).ignoresSafeArea()
+                    .transition(.opacity)
+                    .onTapGesture { dismiss() }
+                card(prompt)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 54)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: coach.prompt?.id)
+            .onAppear { coach.expireIfStale() }
+        }
+    }
+
+    private func card(_ prompt: ArrivalPrompt) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "mappin.circle.fill")
+                    .font(.title2).foregroundStyle(.teal)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("You've arrived at").font(.caption).foregroundStyle(.secondary)
+                    Text(prompt.facilityName).font(.headline)
+                }
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3).foregroundStyle(.secondary)
+                }.buttonStyle(.plain)
+            }
+
+            Text("Ask at the front desk")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.teal)
+                .textCase(.uppercase)
+
+            VStack(spacing: 8) {
+                ForEach(prompt.questions) { q in
+                    questionRow(q)
+                }
+            }
+
+            Button {
+                dismiss()
+            } label: {
+                Text("Got it")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.teal, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.white)
+            }.buttonStyle(.plain)
+        }
+        .padding(18)
+        .frame(maxWidth: 460)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+    }
+
+    private func questionRow(_ q: CoachQuestion) -> some View {
+        let isOn = checked.contains(q.id)
+        return Button {
+            if isOn { checked.remove(q.id) } else { checked.insert(q.id) }
+        } label: {
+            HStack(alignment: .top, spacing: 11) {
+                Image(systemName: isOn ? "checkmark.circle.fill" : q.icon)
+                    .font(.body)
+                    .foregroundStyle(isOn ? Color.green : Color.teal)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(q.text)
+                        .font(.subheadline.weight(.medium))
+                        .strikethrough(isOn, color: .secondary)
+                        .foregroundStyle(isOn ? .secondary : .primary)
+                    if let detail = q.detail {
+                        Text(detail).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func dismiss() {
+        withAnimation(.easeInOut(duration: 0.2)) { coach.dismiss() }
+        checked.removeAll()
     }
 }
 
@@ -3558,7 +3667,8 @@ struct SettingsView: View {
     @State private var enableNotifications: Bool = true
     @State private var enableBiometric: Bool = false
     @State private var showPriceEstimates: Bool = true
-    
+    @State private var detectNearbyFacilities: Bool = LocationReminderService.shared.isGenericDetectionEnabled
+
     var body: some View {
         Form {
             Section("Notifications") {
@@ -3567,7 +3677,16 @@ struct SettingsView: View {
                         updatePreference(\.enableNotifications, value: newValue)
                     }
             }
-            
+
+            Section(header: Text("Front-Desk Coaching"),
+                    footer: Text("When you arrive at a saved provider, BillGuard pops the questions to ask at the front desk. Turn this on to also detect nearby hospitals and pharmacies you haven't saved (uses more battery and may occasionally misfire).")) {
+                Toggle("Detect nearby facilities", isOn: $detectNearbyFacilities)
+                    .onChange(of: detectNearbyFacilities) { _, newValue in
+                        LocationReminderService.shared.setGenericFacilityDetection(newValue)
+                        if newValue { LocationReminderService.shared.requestAlwaysAuthorization() }
+                    }
+            }
+
             Section("Security") {
                 Toggle("Face ID / Touch ID", isOn: $enableBiometric)
                     .onChange(of: enableBiometric) { _, newValue in
