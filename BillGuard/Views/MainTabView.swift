@@ -166,7 +166,8 @@ struct BalloonCoachOverlay: View {
                 Image(systemName: "mappin.circle.fill")
                     .font(.title2).foregroundStyle(.teal)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("You've arrived at").font(.caption).foregroundStyle(.secondary)
+                    Text(prompt.mode == .arrival ? "You've arrived at" : "You're leaving")
+                        .font(.caption).foregroundStyle(.secondary)
                     Text(prompt.facilityName).font(.headline)
                 }
                 Spacer()
@@ -176,10 +177,12 @@ struct BalloonCoachOverlay: View {
                 }.buttonStyle(.plain)
             }
 
-            Text("Ask at the front desk")
+            Text(prompt.mode == .arrival
+                 ? "Ask at the front desk"
+                 : "Check what you got — we'll remind you about the rest")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.teal)
-                .textCase(.uppercase)
+                .textCase(prompt.mode == .arrival ? .uppercase : nil)
 
             VStack(spacing: 8) {
                 ForEach(prompt.questions) { q in
@@ -187,16 +190,17 @@ struct BalloonCoachOverlay: View {
                 }
             }
 
-            Button {
-                dismiss()
-            } label: {
-                Text("Got it")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.teal, in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(.white)
-            }.buttonStyle(.plain)
+            if prompt.mode == .arrival {
+                primaryButton("Got it") { dismiss() }
+            } else {
+                primaryButton("Remind me about the rest") { finishDeparture(prompt) }
+                Button { dismiss() } label: {
+                    Text("All set — nothing to follow up")
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(.secondary)
+                }.buttonStyle(.plain)
+            }
         }
         .padding(18)
         .frame(maxWidth: 460)
@@ -232,6 +236,30 @@ struct BalloonCoachOverlay: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.teal, in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(.white)
+        }.buttonStyle(.plain)
+    }
+
+    /// Departure: every question the user did NOT check (= didn't get) that maps
+    /// to a follow-up kind becomes a tracked task.
+    private func finishDeparture(_ prompt: ArrivalPrompt) {
+        for q in prompt.questions where !checked.contains(q.id) {
+            if let kind = q.kind {
+                FollowUpStore.shared.addUnique(kind: kind,
+                                               providerName: prompt.facilityName,
+                                               providerId: prompt.providerId)
+            }
+        }
+        dismiss()
     }
 
     private func dismiss() {
@@ -560,9 +588,11 @@ struct ProfileMenuButton: View {
 
 struct HomeViewWithProfile: View {
     @EnvironmentObject var appState: AppState
+    @StateObject private var followUps = FollowUpStore.shared
     @State private var selectedCode: MedicalCode?
     @State private var showingScanner = false
-    
+    @State private var showingFollowUps = false
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -597,6 +627,34 @@ struct HomeViewWithProfile: View {
                     // Default mode: camera → filters → popular codes
                     ScrollView {
                         VStack(spacing: 20) {
+                            // Follow-ups banner — the open task count, if any
+                            if followUps.openCount > 0 {
+                                Button { showingFollowUps = true } label: {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle().fill(Color("BrandCyan").opacity(0.18))
+                                                .frame(width: 38, height: 38)
+                                            Image(systemName: "checklist")
+                                                .foregroundColor(Color("BrandCyan"))
+                                        }
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text("\(followUps.openCount) follow-up\(followUps.openCount == 1 ? "" : "s")")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundColor(.primary)
+                                            Text("Bills, codes and estimates to chase")
+                                                .font(.caption).foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right").foregroundColor(.secondary)
+                                    }
+                                    .padding(14)
+                                    .background(Color("BrandNavy").opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color("BrandCyan").opacity(0.25)))
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 8)
+                            }
+
                             // Camera scan button — centered and prominent
                             Button {
                                 showingScanner = true
@@ -664,6 +722,9 @@ struct HomeViewWithProfile: View {
             .sheet(isPresented: $showingScanner) {
                 ScannerView(addToDBMode: true)
                     .environmentObject(appState)
+            }
+            .sheet(isPresented: $showingFollowUps) {
+                FollowUpsListView()
             }
             .refreshable {
                 appState.searchViewModel.loadPopularCodes()
@@ -4303,4 +4364,104 @@ struct InfoRow: View {
         .environmentObject(AppState())
         .environmentObject(PatientDataService.shared)
         .environmentObject(UserManager.shared)
+}
+
+// MARK: - Follow-ups List
+
+/// The tasks surfaced on Home. Shows outstanding follow-ups (bills, codes,
+/// estimates) created from the departure balloon, with due dates and one-tap
+/// completion. The engine lives in FollowUpStore (LocationReminderService.swift).
+struct FollowUpsListView: View {
+    @StateObject private var store = FollowUpStore.shared
+    @Environment(\.dismiss) private var dismiss
+
+    private var completed: [FollowUpTask] { store.tasks.filter { $0.isCompleted } }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if store.openTasks.isEmpty && completed.isEmpty {
+                    ContentUnavailableView(
+                        "No Follow-ups",
+                        systemImage: "checkmark.circle",
+                        description: Text("When you leave a provider, anything you still need to chase — an itemized bill, your codes — shows up here."))
+                } else {
+                    List {
+                        if !store.openTasks.isEmpty {
+                            Section("To do") {
+                                ForEach(store.openTasks) { task in
+                                    row(task)
+                                }
+                            }
+                        }
+                        if !completed.isEmpty {
+                            Section("Done") {
+                                ForEach(completed) { task in
+                                    row(task)
+                                }
+                                Button("Clear completed", role: .destructive) {
+                                    store.clearCompleted()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Follow-ups")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func row(_ task: FollowUpTask) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Button {
+                withAnimation {
+                    task.isCompleted ? store.remove(task.id) : store.complete(task.id)
+                }
+            } label: {
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundColor(task.isCompleted ? .green : Color("BrandCyan"))
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task.title)
+                    .font(.subheadline.weight(.medium))
+                    .strikethrough(task.isCompleted, color: .secondary)
+                    .foregroundColor(task.isCompleted ? .secondary : .primary)
+                HStack(spacing: 6) {
+                    if let provider = task.providerName {
+                        Text(provider)
+                    }
+                    if let due = task.dueDate, !task.isCompleted {
+                        Text("· due \(due.formatted(date: .abbreviated, time: .omitted))")
+                            .foregroundColor(task.isOverdue ? .red : .secondary)
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: task.kind.icon)
+                .foregroundColor(.secondary)
+                .font(.footnote)
+        }
+        .padding(.vertical, 2)
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) { store.remove(task.id) } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            if !task.isCompleted {
+                Button { store.complete(task.id) } label: {
+                    Label("Done", systemImage: "checkmark")
+                }.tint(.green)
+            }
+        }
+    }
 }

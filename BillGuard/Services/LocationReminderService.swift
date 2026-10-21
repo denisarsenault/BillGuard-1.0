@@ -526,23 +526,28 @@ extension LocationReminderService {
         sendArrivalNotification(for: provider)
         // In-app "balloon" coaching: shows now if the app is open, or as soon as
         // the user opens it after tapping the arrival notification.
-        ArrivalCoach.shared.present(facilityName: provider.name,
-                                    settings: provider.reminderSettings)
+        ArrivalCoach.shared.present(facilityName: provider.name, providerId: provider.id,
+                                    mode: .arrival, settings: provider.reminderSettings)
 
         // Update visit count
         var updatedProvider = provider
         updatedProvider.visitCount += 1
         updatedProvider.lastVisitDate = Date()
         monitoredProviders[identifier] = updatedProvider
-        
-        // Schedule follow-up reminder
-        scheduleFollowUpReminder(for: provider, visitDate: Date())
+
+        // NOTE: the old fire-and-forget next-day reminder is retired. Follow-up
+        // is now tracked as tasks created from the departure confirmation
+        // balloon (see handleRegionExit → FollowUpStore).
     }
-    
+
 
     private func handleRegionExit(identifier: String) {
         guard let provider = monitoredProviders[identifier] else { return }
         sendDepartureNotification(for: provider)
+        // Departure "balloon": confirm what they got; anything left becomes a
+        // tracked follow-up task.
+        ArrivalCoach.shared.present(facilityName: provider.name, providerId: provider.id,
+                                    mode: .departure, settings: provider.reminderSettings)
     }
 
     // MARK: - Generic facility visit handling (opt-in)
@@ -613,8 +618,11 @@ struct VisitChecklistItem: Identifiable, Codable {
 
 // MARK: - Arrival Coaching (balloon prompts)
 
-/// Drives the in-app "balloon" that coaches the user on what to ask at the
-/// front desk when they arrive at a health facility. Observed by
+enum CoachMode { case arrival, departure }
+
+/// Drives the in-app "balloon" that coaches the user at a health facility.
+/// On arrival it lists what to ask; on departure it confirms what they got and
+/// turns anything still outstanding into follow-up tasks. Observed by
 /// `BalloonCoachOverlay`. Mirrors MapMe's announcement-service pattern.
 @MainActor
 final class ArrivalCoach: ObservableObject {
@@ -628,8 +636,9 @@ final class ArrivalCoach: ObservableObject {
     /// prompt is stale — don't pop a balloon hours after the fact.
     private let maxAge: TimeInterval = 2 * 60 * 60
 
-    func present(facilityName: String, settings: ProviderReminderSettings?) {
-        prompt = ArrivalPrompt(facilityName: facilityName,
+    func present(facilityName: String, providerId: String? = nil,
+                 mode: CoachMode = .arrival, settings: ProviderReminderSettings?) {
+        prompt = ArrivalPrompt(facilityName: facilityName, providerId: providerId, mode: mode,
                                questions: ArrivalPrompt.frontDeskQuestions(for: settings))
     }
 
@@ -646,6 +655,8 @@ final class ArrivalCoach: ObservableObject {
 struct ArrivalPrompt: Identifiable {
     let id = UUID()
     let facilityName: String
+    var providerId: String? = nil
+    var mode: CoachMode = .arrival
     let createdAt = Date()
     var questions: [CoachQuestion]
 
@@ -655,25 +666,31 @@ struct ArrivalPrompt: Identifiable {
         var q: [CoachQuestion] = []
         q.append(CoachQuestion(icon: "doc.text.magnifyingglass",
                                text: "Ask for an itemized bill with CPT codes",
-                               detail: "The line-by-line statement — not just the summary."))
+                               detail: "The line-by-line statement — not just the summary.",
+                               kind: .itemizedBill))
         if settings?.remindForDiagnosisCodes ?? true {
             q.append(CoachQuestion(icon: "stethoscope",
                                    text: "Get today's diagnosis (ICD-10) codes",
-                                   detail: "They rarely show on the bill — ask them to note them."))
+                                   detail: "They rarely show on the bill — ask them to note them.",
+                                   kind: .diagnosisCodes))
         }
         q.append(CoachQuestion(icon: "checkmark.shield",
                                text: "Confirm this provider is in-network",
-                               detail: "Have them verify against your plan before service."))
+                               detail: "Have them verify against your plan before service.",
+                               kind: .inNetwork))
         q.append(CoachQuestion(icon: "dollarsign.circle",
                                text: "If self-pay: request a Good Faith Estimate",
-                               detail: "Your right before scheduled care (No Surprises Act)."))
+                               detail: "Your right before scheduled care (No Surprises Act).",
+                               kind: .goodFaithEstimate))
         if settings?.remindToPhotograph ?? true {
             q.append(CoachQuestion(icon: "camera",
-                                   text: "Photograph every form you sign"))
+                                   text: "Photograph every form you sign",
+                                   kind: .documents))
         }
         q.append(CoachQuestion(icon: "phone",
                                text: "Get the billing department's direct number",
-                               detail: "For itemized-bill and records requests later."))
+                               detail: "For itemized-bill and records requests later.",
+                               kind: .billingContact))
         return q
     }
 }
@@ -683,4 +700,160 @@ struct CoachQuestion: Identifiable {
     let icon: String
     let text: String
     var detail: String? = nil
+    var kind: FollowUpKind? = nil
+}
+
+// MARK: - Follow-up Task Engine
+
+/// The kinds of follow-up BillGuard tracks after a visit. Each carries its own
+/// icon and a default due window — several of which are real legal clocks.
+enum FollowUpKind: String, Codable, CaseIterable {
+    case itemizedBill, procedureCodes, diagnosisCodes, inNetwork
+    case goodFaithEstimate, documents, billingContact, custom
+
+    var title: String {
+        switch self {
+        case .itemizedBill:     return "Request an itemized bill"
+        case .procedureCodes:   return "Get the procedure (CPT) codes"
+        case .diagnosisCodes:   return "Get the diagnosis (ICD-10) codes"
+        case .inNetwork:        return "Confirm the provider was in-network"
+        case .goodFaithEstimate:return "Request a Good Faith Estimate"
+        case .documents:        return "Save the visit documents"
+        case .billingContact:   return "Get the billing department's number"
+        case .custom:           return "Follow up"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .itemizedBill:     return "doc.text.magnifyingglass"
+        case .procedureCodes:   return "list.bullet.rectangle"
+        case .diagnosisCodes:   return "stethoscope"
+        case .inNetwork:        return "checkmark.shield"
+        case .goodFaithEstimate:return "dollarsign.circle"
+        case .documents:        return "camera"
+        case .billingContact:   return "phone"
+        case .custom:           return "flag"
+        }
+    }
+    /// Days from creation the follow-up should be nudged. Itemized bill /
+    /// records track toward the ~30-day HIPAA response window; most others get
+    /// a gentle two-week nudge.
+    var defaultDueDays: Int {
+        switch self {
+        case .itemizedBill, .diagnosisCodes, .procedureCodes: return 14
+        case .goodFaithEstimate: return 3
+        case .inNetwork, .billingContact, .documents, .custom: return 7
+        }
+    }
+}
+
+struct FollowUpTask: Identifiable, Codable, Hashable {
+    var id: String = UUID().uuidString
+    var kind: FollowUpKind
+    var title: String
+    var providerName: String?
+    var providerId: String?
+    var createdAt: Date = Date()
+    var dueDate: Date?
+    var isCompleted: Bool = false
+    var completedAt: Date?
+    var note: String?
+
+    var isOverdue: Bool {
+        guard !isCompleted, let dueDate else { return false }
+        return dueDate < Date()
+    }
+}
+
+/// Persisted, observable store of follow-up tasks. UserDefaults-backed today
+/// (matches PatientDataService's local cache); CloudKit sync is a later step.
+/// Each task with a due date also schedules a single escalating local
+/// notification, cancelled when the task is completed or removed — this
+/// replaces the old fire-and-forget next-day reminder.
+@MainActor
+final class FollowUpStore: ObservableObject {
+    static let shared = FollowUpStore()
+
+    @Published private(set) var tasks: [FollowUpTask] = []
+
+    private let storageKey = "followUpTasks"
+
+    private init() { load() }
+
+    var openTasks: [FollowUpTask] {
+        tasks.filter { !$0.isCompleted }
+            .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
+    }
+    var openCount: Int { tasks.lazy.filter { !$0.isCompleted }.count }
+
+    /// Create a task, skipping if an identical open one already exists for the
+    /// same provider + kind (no duplicate nags).
+    @discardableResult
+    func addUnique(kind: FollowUpKind, providerName: String?, providerId: String?,
+                   title: String? = nil, note: String? = nil) -> FollowUpTask? {
+        let exists = tasks.contains { !$0.isCompleted && $0.kind == kind
+            && $0.providerName == providerName && $0.providerId == providerId }
+        guard !exists else { return nil }
+        var task = FollowUpTask(kind: kind, title: title ?? kind.title,
+                                providerName: providerName, providerId: providerId, note: note)
+        task.dueDate = Calendar.current.date(byAdding: .day, value: kind.defaultDueDays, to: Date())
+        tasks.append(task)
+        scheduleReminder(for: task)
+        save()
+        return task
+    }
+
+    func complete(_ id: String) {
+        guard let i = tasks.firstIndex(where: { $0.id == id }) else { return }
+        tasks[i].isCompleted = true
+        tasks[i].completedAt = Date()
+        cancelReminder(id: id)
+        save()
+    }
+
+    func remove(_ id: String) {
+        tasks.removeAll { $0.id == id }
+        cancelReminder(id: id)
+        save()
+    }
+
+    func clearCompleted() {
+        tasks.removeAll { $0.isCompleted }
+        save()
+    }
+
+    // MARK: Reminders
+
+    private func scheduleReminder(for task: FollowUpTask) {
+        guard let due = task.dueDate else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "📋 Follow-up"
+        content.body = [task.title, task.providerName].compactMap { $0 }.joined(separator: " — ")
+        content.sound = .default
+        content.userInfo = ["taskId": task.id, "type": "followupTask"]
+
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: due)
+        comps.hour = 9
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        let request = UNNotificationRequest(identifier: "task_\(task.id)", content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private func cancelReminder(id: String) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["task_\(id)"])
+    }
+
+    // MARK: Persistence
+
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([FollowUpTask].self, from: data) else { return }
+        tasks = decoded
+    }
+    private func save() {
+        if let data = try? JSONEncoder().encode(tasks) {
+            UserDefaults.standard.set(data, forKey: storageKey)
+        }
+    }
 }
