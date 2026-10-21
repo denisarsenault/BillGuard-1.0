@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Vision
+import UIKit
 
 // MARK: - Brand Navigation Title
 
@@ -71,7 +72,8 @@ struct MainTabView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var patientDataService: PatientDataService
     @EnvironmentObject var userManager: UserManager
-    
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var showingProfileMenu = false
     
     // Tab definitions
@@ -131,6 +133,12 @@ struct MainTabView: View {
         // Front-desk coaching "balloon" that appears when you arrive at a
         // health facility (saved provider geofence, or an opt-in nearby match).
         .overlay { BalloonCoachOverlay() }
+        .onAppear { FollowUpStore.shared.reconcilePendingVisits(claims: patientDataService.claims) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                FollowUpStore.shared.reconcilePendingVisits(claims: patientDataService.claims)
+            }
+        }
     }
 }
 
@@ -4390,14 +4398,27 @@ struct FollowUpsListView: View {
                         if !store.openTasks.isEmpty {
                             Section("To do") {
                                 ForEach(store.openTasks) { task in
-                                    row(task)
+                                    NavigationLink { FollowUpDetailView(task: task) } label: { row(task) }
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) { store.remove(task.id) } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                            Button { store.complete(task.id) } label: {
+                                                Label("Done", systemImage: "checkmark")
+                                            }.tint(.green)
+                                        }
                                 }
                             }
                         }
                         if !completed.isEmpty {
                             Section("Done") {
                                 ForEach(completed) { task in
-                                    row(task)
+                                    NavigationLink { FollowUpDetailView(task: task) } label: { row(task) }
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) { store.remove(task.id) } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                 }
                                 Button("Clear completed", role: .destructive) {
                                     store.clearCompleted()
@@ -4419,17 +4440,10 @@ struct FollowUpsListView: View {
     @ViewBuilder
     private func row(_ task: FollowUpTask) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Button {
-                withAnimation {
-                    task.isCompleted ? store.remove(task.id) : store.complete(task.id)
-                }
-            } label: {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundColor(task.isCompleted ? .green : Color("BrandCyan"))
-            }
-            .buttonStyle(.plain)
-
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : task.kind.icon)
+                .font(.title3)
+                .foregroundColor(task.isCompleted ? .green : Color("BrandCyan"))
+                .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
                     .font(.subheadline.weight(.medium))
@@ -4447,21 +4461,119 @@ struct FollowUpsListView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             }
-            Spacer(minLength: 0)
-            Image(systemName: task.kind.icon)
-                .foregroundColor(.secondary)
-                .font(.footnote)
         }
         .padding(.vertical, 2)
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { store.remove(task.id) } label: {
-                Label("Delete", systemImage: "trash")
+    }
+}
+
+// MARK: - Follow-up Detail (task → action)
+
+/// A tapped follow-up opens here. For bill/records/code tasks it generates a
+/// ready-to-send request letter (copy or share) built from the task, realizing
+/// the "Request My Codes" flow — plus one-tap completion.
+struct FollowUpDetailView: View {
+    let task: FollowUpTask
+    @StateObject private var store = FollowUpStore.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var copied = false
+
+    private var hasLetter: Bool {
+        switch task.kind {
+        case .itemizedBill, .procedureCodes, .diagnosisCodes, .billingContact, .goodFaithEstimate:
+            return true
+        default: return false
+        }
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Label(task.title, systemImage: task.kind.icon)
+                    .font(.headline)
+                if let provider = task.providerName {
+                    LabeledContent("Provider", value: provider)
+                }
+                if let due = task.dueDate {
+                    LabeledContent("Due") {
+                        Text(due.formatted(date: .abbreviated, time: .omitted))
+                            .foregroundColor(task.isOverdue && !task.isCompleted ? .red : .secondary)
+                    }
+                }
+                if let note = task.note {
+                    Text(note).font(.caption).foregroundColor(.secondary)
+                }
             }
-            if !task.isCompleted {
-                Button { store.complete(task.id) } label: {
-                    Label("Done", systemImage: "checkmark")
-                }.tint(.green)
+
+            if hasLetter {
+                Section(header: Text("Request letter"),
+                        footer: Text("Send to the provider's billing or medical-records department. This is general information, not legal advice.")) {
+                    Text(letter)
+                        .font(.callout)
+                        .textSelection(.enabled)
+                    Button {
+                        UIPasteboard.general.string = letter
+                        copied = true
+                    } label: {
+                        Label(copied ? "Copied" : "Copy letter", systemImage: copied ? "checkmark" : "doc.on.doc")
+                    }
+                    ShareLink(item: letter) { Label("Share", systemImage: "square.and.arrow.up") }
+                }
             }
+
+            Section {
+                if task.isCompleted {
+                    Button(role: .destructive) { store.remove(task.id); dismiss() } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } else {
+                    Button { store.complete(task.id); dismiss() } label: {
+                        Label("Mark done", systemImage: "checkmark.circle")
+                    }
+                }
+            }
+        }
+        .navigationTitle("Follow-up")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var letter: String {
+        let provider = task.providerName ?? "[Provider name]"
+        let header = "To the Billing / Medical Records Department\(task.providerName.map { ", \($0)" } ?? ""):\n\n"
+        switch task.kind {
+        case .goodFaithEstimate:
+            return header + """
+            Re: Request for a Good Faith Estimate
+
+            I am a self-pay/uninsured patient and am requesting a Good Faith \
+            Estimate of expected charges for my upcoming care, including the \
+            expected service (CPT/HCPCS) and diagnosis codes, as provided for \
+            under the No Surprises Act.
+
+            Please send this to me in writing before my scheduled service. You \
+            can reach me at [your phone/email].
+
+            Thank you,
+            [Your name]
+            """
+        default:
+            return header + """
+            Re: Request for an itemized bill and billing records
+
+            Please provide a fully itemized statement for my recent visit to \
+            \(provider), including each service with its CPT/HCPCS procedure \
+            code, revenue codes, units, dates of service and charges, along with \
+            the diagnosis (ICD-10) codes associated with my care.
+
+            Under my right of access (HIPAA, 45 CFR §164.524), please also \
+            provide a copy of the claim(s) submitted to my insurer (CMS-1500 / \
+            UB-04). I would prefer electronic copies, understand a reasonable \
+            cost-based fee may apply, and that you must respond within 30 days.
+
+            You can reach me at [your phone/email].
+
+            Thank you,
+            [Your name]
+            """
         }
     }
 }

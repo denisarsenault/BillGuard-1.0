@@ -535,9 +535,13 @@ extension LocationReminderService {
         updatedProvider.lastVisitDate = Date()
         monitoredProviders[identifier] = updatedProvider
 
+        // Record the visit for the inference path: if no bill is captured within
+        // the grace period, this becomes an "itemized bill" follow-up.
+        FollowUpStore.shared.recordVisit(providerName: provider.name, providerId: provider.id)
+
         // NOTE: the old fire-and-forget next-day reminder is retired. Follow-up
         // is now tracked as tasks created from the departure confirmation
-        // balloon (see handleRegionExit → FollowUpStore).
+        // balloon and the inference path above.
     }
 
 
@@ -775,8 +779,14 @@ final class FollowUpStore: ObservableObject {
     static let shared = FollowUpStore()
 
     @Published private(set) var tasks: [FollowUpTask] = []
+    /// Visits recorded on arrival but not yet reconciled against a scanned bill.
+    /// Drives the inference path (no bill in N days → auto-create a task).
+    @Published private(set) var pendingVisits: [PendingVisit] = []
 
     private let storageKey = "followUpTasks"
+    private let pendingKey = "followUpPendingVisits"
+    /// Grace period before a visit with no captured bill becomes a task.
+    private let inferenceGraceDays = 3
 
     private init() { load() }
 
@@ -822,6 +832,85 @@ final class FollowUpStore: ObservableObject {
         save()
     }
 
+    // MARK: Auto-complete on scan (loop closer)
+
+    /// A saved bill closes out the matching open tasks for that provider, and
+    /// clears any pending visit awaiting a bill.
+    func onBillSaved(providerName: String?, hasProcedureCodes: Bool, hasDiagnosisCodes: Bool) {
+        var didChange = false
+        for i in tasks.indices where !tasks[i].isCompleted
+            && Self.nameMatches(tasks[i].providerName, providerName) {
+            switch tasks[i].kind {
+            case .itemizedBill, .documents, .billingContact:
+                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
+                cancelReminder(id: tasks[i].id); didChange = true
+            case .procedureCodes where hasProcedureCodes:
+                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
+                cancelReminder(id: tasks[i].id); didChange = true
+            case .diagnosisCodes where hasDiagnosisCodes:
+                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
+                cancelReminder(id: tasks[i].id); didChange = true
+            default: break
+            }
+        }
+        let before = pendingVisits.count
+        pendingVisits.removeAll { Self.nameMatches($0.providerName, providerName) }
+        if didChange || pendingVisits.count != before { save() }
+    }
+
+    // MARK: Inference (no bill captured → task)
+
+    /// Record a visit on arrival so it can later be reconciled against a bill.
+    func recordVisit(providerName: String, providerId: String?) {
+        let cal = Calendar.current
+        let dupe = pendingVisits.contains {
+            Self.nameMatches($0.providerName, providerName) && cal.isDateInToday($0.date)
+        }
+        guard !dupe else { return }
+        pendingVisits.append(PendingVisit(providerName: providerName, providerId: providerId))
+        save()
+    }
+
+    /// Called on foreground: any visit older than the grace period with no
+    /// captured bill becomes an "itemized bill" follow-up. Resolved visits and
+    /// very old ones are pruned.
+    func reconcilePendingVisits(claims: [Claim]) {
+        guard !pendingVisits.isEmpty else { return }
+        let now = Date()
+        let cal = Calendar.current
+        var remaining: [PendingVisit] = []
+
+        for visit in pendingVisits {
+            // A bill for this provider on/after the visit → satisfied.
+            let hasBill = claims.contains { claim in
+                Self.nameMatches(claim.providerName, visit.providerName)
+                    && claim.serviceDate >= cal.date(byAdding: .day, value: -1, to: visit.date)!
+            }
+            if hasBill { continue }  // drop; loop closed
+
+            let ageDays = cal.dateComponents([.day], from: visit.date, to: now).day ?? 0
+            if ageDays >= inferenceGraceDays {
+                addUnique(kind: .itemizedBill, providerName: visit.providerName,
+                          providerId: visit.providerId,
+                          note: "No bill captured since your visit on \(visit.date.formatted(date: .abbreviated, time: .omitted)).")
+                // created (or already existed) → stop tracking this visit
+            } else if ageDays < 60 {
+                remaining.append(visit)  // still within grace, keep watching
+            }
+        }
+        if remaining.count != pendingVisits.count {
+            pendingVisits = remaining
+            save()
+        }
+    }
+
+    static func nameMatches(_ a: String?, _ b: String?) -> Bool {
+        guard let a = a?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !a.isEmpty,
+              let b = b?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !b.isEmpty
+        else { return false }
+        return a == b
+    }
+
     // MARK: Reminders
 
     private func scheduleReminder(for task: FollowUpTask) {
@@ -847,13 +936,28 @@ final class FollowUpStore: ObservableObject {
     // MARK: Persistence
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([FollowUpTask].self, from: data) else { return }
-        tasks = decoded
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let decoded = try? JSONDecoder().decode([FollowUpTask].self, from: data) {
+            tasks = decoded
+        }
+        if let data = UserDefaults.standard.data(forKey: pendingKey),
+           let decoded = try? JSONDecoder().decode([PendingVisit].self, from: data) {
+            pendingVisits = decoded
+        }
     }
     private func save() {
         if let data = try? JSONEncoder().encode(tasks) {
             UserDefaults.standard.set(data, forKey: storageKey)
         }
+        if let data = try? JSONEncoder().encode(pendingVisits) {
+            UserDefaults.standard.set(data, forKey: pendingKey)
+        }
     }
+}
+
+struct PendingVisit: Identifiable, Codable, Hashable {
+    var id: String = UUID().uuidString
+    var providerName: String
+    var providerId: String?
+    var date: Date = Date()
 }

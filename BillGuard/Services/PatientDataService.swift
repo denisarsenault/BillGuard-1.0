@@ -416,6 +416,11 @@ class PatientDataService: ObservableObject {
             claims[index] = updatedClaim
         } else {
             claims.append(updatedClaim)
+            // Close the loop: a saved bill auto-completes matching follow-up tasks.
+            FollowUpStore.shared.onBillSaved(
+                providerName: updatedClaim.providerName,
+                hasProcedureCodes: !(updatedClaim.procedureCodes?.isEmpty ?? true),
+                hasDiagnosisCodes: !(updatedClaim.diagnosisCodes?.isEmpty ?? true))
         }
         saveClaims()
     }
