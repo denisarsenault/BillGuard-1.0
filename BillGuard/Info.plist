@@ -2,14 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UISupportedInterfaceOrientations</key>
+	<key>UIBackgroundModes</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>location</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>
@@ -20,19 +15,5 @@
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<true/>
 	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>BillGuard needs camera access to scan medical bills and procedure codes.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>BillGuard needs photo library access to import bill images.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>BillGuard uses your location to show nearby healthcare providers on the map.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>BillGuard uses your location to remind you to collect procedure codes and documentation when you visit healthcare providers.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>BillGuard uses your location to remind you to collect procedure codes and documentation when you visit healthcare providers.</string>
 </dict>
 </plist>

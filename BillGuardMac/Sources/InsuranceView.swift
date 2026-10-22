@@ -61,3 +61,8 @@ struct InsuranceView: View {
         .navigationTitle("Insurance")
     }
 }
+
+// Ensure this macro is present:
+#Preview {
+    InsuranceView()
+}

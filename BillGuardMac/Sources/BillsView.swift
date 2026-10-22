@@ -93,3 +93,8 @@ private struct BillSheet: View {
         .background(Color.brandScreen)
     }
 }
+
+// Ensure this macro is present:
+#Preview {
+    BillsView()
+}

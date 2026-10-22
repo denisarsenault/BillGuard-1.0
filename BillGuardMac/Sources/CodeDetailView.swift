@@ -128,3 +128,7 @@ struct FlowChips: View {
         }
     }
 }
+
+#Preview {
+    CodeDetailView(code: MedicalCode.sample)
+}

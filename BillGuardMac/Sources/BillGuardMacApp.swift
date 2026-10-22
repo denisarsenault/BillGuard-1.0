@@ -37,3 +37,8 @@ struct BillGuardMacApp: App {
 extension Notification.Name {
     static let scanDocumentRequested = Notification.Name("BillGuardMac.scanDocumentRequested")
 }
+
+// Ensure this macro is present:
+#Preview {
+    ContentView()
+}
