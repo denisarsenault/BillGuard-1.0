@@ -1043,15 +1043,11 @@ final class FollowUpStore: ObservableObject {
     }
 
     private func cloudPush(_ task: FollowUpTask) {
-        let record = Self.ckRecord(from: task, recordType: ckRecordType)
-        let db = ckDatabase
-        Task { try? await db.save(record) }
+        CloudKitSync.save(Self.ckRecord(from: task, recordType: ckRecordType))
     }
 
     private func cloudDelete(_ id: String) {
-        let db = ckDatabase
-        let recordID = CKRecord.ID(recordName: id)
-        Task { try? await db.deleteRecord(withID: recordID) }
+        CloudKitSync.delete(recordName: id)
     }
 
     private static func ckRecord(from task: FollowUpTask, recordType: String) -> CKRecord {

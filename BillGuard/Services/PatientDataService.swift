@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CloudKit
 
 @MainActor
 class PatientDataService: ObservableObject {
@@ -106,6 +107,8 @@ class PatientDataService: ObservableObject {
         
         let total = CFAbsoluteTimeGetCurrent() - t0
         print("⏱️ [PDS] TOTAL: \(Int(total*1000))ms")
+
+        refreshFromCloud()   // pull patients & claims from iCloud (best-effort)
     }
     
     private static func guessProviderTypeStatic(from name: String) -> ProviderType {
@@ -255,19 +258,24 @@ class PatientDataService: ObservableObject {
             patients.append(updatedPatient)
         }
         savePatients()
+        cloudPush(updatedPatient)
     }
-    
+
     func deletePatient(_ patient: Patient) {
         patients.removeAll { $0.id == patient.id }
         // Also remove related data
         insurancePolicies.removeAll { $0.patientId == patient.id }
         visits.removeAll { $0.patientId == patient.id }
+        let removedClaimIds = claims.filter { $0.patientId == patient.id }.map { $0.id }
         claims.removeAll { $0.patientId == patient.id }
-        
+
         savePatients()
         savePolicies()
         saveVisits()
         saveClaims()
+
+        CloudKitSync.delete(recordName: PatientDataService.patientRecordPrefix + patient.id)
+        removedClaimIds.forEach { CloudKitSync.delete(recordName: PatientDataService.claimRecordPrefix + $0) }
     }
     
     private func savePatients() {
@@ -423,11 +431,13 @@ class PatientDataService: ObservableObject {
                 hasDiagnosisCodes: !(updatedClaim.diagnosisCodes?.isEmpty ?? true))
         }
         saveClaims()
+        cloudPush(updatedClaim)
     }
-    
+
     func deleteClaim(_ claim: Claim) {
         claims.removeAll { $0.id == claim.id }
         saveClaims()
+        CloudKitSync.delete(recordName: PatientDataService.claimRecordPrefix + claim.id)
     }
     
     private func saveClaims() {
@@ -575,6 +585,10 @@ class PatientDataService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: StorageKeys.claims)
         UserDefaults.standard.removeObject(forKey: StorageKeys.documents)
         
+        // Also wipe synced records so the next cloud refresh doesn't restore them.
+        CloudKitSync.deleteAll(recordType: PatientDataService.patientRecordType)
+        CloudKitSync.deleteAll(recordType: PatientDataService.claimRecordType)
+
         // Reload common carriers
         for carrier in InsuranceCarrier.commonCarriers {
             if !insuranceCarriers.contains(where: { $0.name == carrier.name }) {
@@ -582,5 +596,148 @@ class PatientDataService: ObservableObject {
             }
         }
         isLoading = false
+    }
+
+    // MARK: - CloudKit sync (patients & claims, private database)
+    //
+    // Patients and claims sync through the user's *private* iCloud database as
+    // JSON-blob records (the models are Codable), with last-write-wins by their
+    // `updatedAt`. Best-effort: no-ops cleanly without an iCloud account, so the
+    // app always works from its UserDefaults cache. This mirrors the follow-up
+    // task sync and is the template for the remaining collections.
+    //
+    // NOTE: the Patient and Claim record types need `recordName` marked
+    // Queryable in the CloudKit Dashboard for the pull to return records.
+
+    static let patientRecordType = "Patient"
+    static let claimRecordType = "Claim"
+    static let patientRecordPrefix = "patient_"
+    static let claimRecordPrefix = "claim_"
+
+    /// Pull patients & claims from iCloud and merge into local. Safe anytime.
+    func refreshFromCloud() {
+        Task { await syncFromCloud() }
+    }
+
+    private func cloudPush(_ patient: Patient) {
+        if let r = CloudKitSync.blobRecord(patient, recordName: Self.patientRecordPrefix + patient.id,
+                                           updatedAt: patient.updatedAt, recordType: Self.patientRecordType) {
+            CloudKitSync.save(r)
+        }
+    }
+
+    private func cloudPush(_ claim: Claim) {
+        if let r = CloudKitSync.blobRecord(claim, recordName: Self.claimRecordPrefix + claim.id,
+                                           updatedAt: claim.updatedAt, recordType: Self.claimRecordType) {
+            CloudKitSync.save(r)
+        }
+    }
+
+    private func syncFromCloud() async {
+        guard await CloudKitSync.accountAvailable() else { return }
+
+        let remotePatients: [Patient] = await CloudKitSync.pullBlobs(Patient.self, recordType: Self.patientRecordType)
+        let remoteClaims: [Claim] = await CloudKitSync.pullBlobs(Claim.self, recordType: Self.claimRecordType)
+
+        patients = Self.merge(local: patients, remote: remotePatients,
+                              updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        claims = Self.merge(local: claims, remote: remoteClaims,
+                            updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        savePatients()
+        saveClaims()
+    }
+
+    /// Last-write-wins merge: remote wins when newer, local wins (and is pushed)
+    /// when newer, remote-only items are added, local-only items are pushed up.
+    private static func merge<T: Identifiable>(local: [T], remote: [T],
+                                               updatedAt: (T) -> Date,
+                                               push: (T) -> Void) -> [T] where T.ID == String {
+        var byId = Dictionary(local.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let remoteIds = Set(remote.map { $0.id })
+        for r in remote {
+            if let l = byId[r.id] {
+                if updatedAt(l) > updatedAt(r) { push(l) }   // local newer → keep & push
+                else { byId[r.id] = r }                      // remote newer/equal → take remote
+            } else {
+                byId[r.id] = r                               // new from another device
+            }
+        }
+        for l in local where !remoteIds.contains(l.id) { push(l) }   // offline-created
+        return Array(byId.values)
+    }
+}
+
+// MARK: - Shared CloudKit helper (private database)
+
+/// Thin best-effort wrapper over the user's private CloudKit database, shared by
+/// the follow-up task sync and the patient/claim sync.
+enum CloudKitSync {
+    static let containerID = "iCloud.com.billguard.BillGuard"
+    static var container: CKContainer { CKContainer(identifier: containerID) }
+    static var database: CKDatabase { container.privateCloudDatabase }
+
+    static func accountAvailable() async -> Bool {
+        (try? await container.accountStatus()) == .available
+    }
+
+    /// Force-overwrite save (last-write-wins): `.allKeys` ignores the server
+    /// change-tag so a freshly-built record updates an existing one instead of
+    /// failing with a conflict. Fire-and-forget.
+    static func save(_ record: CKRecord) {
+        let op = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
+        op.savePolicy = .allKeys
+        op.qualityOfService = .utility
+        database.add(op)
+    }
+
+    static func delete(recordName: String) {
+        let op = CKModifyRecordsOperation(recordsToSave: nil,
+                                          recordIDsToDelete: [CKRecord.ID(recordName: recordName)])
+        op.qualityOfService = .utility
+        database.add(op)
+    }
+
+    /// Delete every record of a type (best-effort; used by reset-all).
+    static func deleteAll(recordType: String) {
+        Task {
+            guard await accountAvailable() else { return }
+            do {
+                let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+                let (results, _) = try await database.records(matching: query)
+                let ids = results.compactMap { id, result -> CKRecord.ID? in
+                    if case .success = result { return id }
+                    return nil
+                }
+                guard !ids.isEmpty else { return }
+                let op = CKModifyRecordsOperation(recordsToSave: nil, recordIDsToDelete: ids)
+                op.qualityOfService = .utility
+                database.add(op)
+            } catch { }
+        }
+    }
+
+    /// Pull & decode JSON-blob records. Empty when iCloud is unavailable or the
+    /// record type doesn't exist yet.
+    static func pullBlobs<T: Decodable>(_ type: T.Type, recordType: String) async -> [T] {
+        do {
+            let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+            let (results, _) = try await database.records(matching: query)
+            return results.compactMap { _, result -> T? in
+                guard case .success(let record) = result,
+                      let data = record["payload"] as? Data else { return nil }
+                return try? JSONDecoder().decode(T.self, from: data)
+            }
+        } catch { return [] }
+    }
+
+    /// Build a JSON-blob record: the whole Codable value under `payload`, plus
+    /// `updatedAt` for conflict resolution.
+    static func blobRecord<T: Encodable>(_ item: T, recordName: String, updatedAt: Date,
+                                         recordType: String) -> CKRecord? {
+        guard let data = try? JSONEncoder().encode(item) else { return nil }
+        let record = CKRecord(recordType: recordType, recordID: CKRecord.ID(recordName: recordName))
+        record["payload"] = data
+        record["updatedAt"] = updatedAt
+        return record
     }
 }
