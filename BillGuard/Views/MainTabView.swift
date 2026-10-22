@@ -137,6 +137,7 @@ struct MainTabView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 FollowUpStore.shared.reconcilePendingVisits(claims: patientDataService.claims)
+                FollowUpStore.shared.refreshFromCloud()
             }
         }
     }

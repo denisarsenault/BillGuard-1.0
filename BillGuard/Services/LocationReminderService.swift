@@ -11,6 +11,7 @@ import CoreLocation
 import UserNotifications
 import Combine
 import MapKit
+import CloudKit
 
 // MARK: - Location Reminder Service
 
@@ -788,7 +789,10 @@ final class FollowUpStore: ObservableObject {
     /// Grace period before a visit with no captured bill becomes a task.
     private let inferenceGraceDays = 3
 
-    private init() { load() }
+    private init() {
+        load()
+        refreshFromCloud()   // pull any tasks created on other devices
+    }
 
     var openTasks: [FollowUpTask] {
         tasks.filter { !$0.isCompleted }
@@ -810,6 +814,7 @@ final class FollowUpStore: ObservableObject {
         tasks.append(task)
         scheduleReminder(for: task)
         save()
+        cloudPush(task)
         return task
     }
 
@@ -819,17 +824,21 @@ final class FollowUpStore: ObservableObject {
         tasks[i].completedAt = Date()
         cancelReminder(id: id)
         save()
+        cloudPush(tasks[i])
     }
 
     func remove(_ id: String) {
         tasks.removeAll { $0.id == id }
         cancelReminder(id: id)
         save()
+        cloudDelete(id)
     }
 
     func clearCompleted() {
+        let completedIds = tasks.filter { $0.isCompleted }.map { $0.id }
         tasks.removeAll { $0.isCompleted }
         save()
+        completedIds.forEach { cloudDelete($0) }
     }
 
     // MARK: Auto-complete on scan (loop closer)
@@ -837,25 +846,26 @@ final class FollowUpStore: ObservableObject {
     /// A saved bill closes out the matching open tasks for that provider, and
     /// clears any pending visit awaiting a bill.
     func onBillSaved(providerName: String?, hasProcedureCodes: Bool, hasDiagnosisCodes: Bool) {
-        var didChange = false
+        var changedIds: [String] = []
         for i in tasks.indices where !tasks[i].isCompleted
             && Self.nameMatches(tasks[i].providerName, providerName) {
+            func complete() {
+                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
+                cancelReminder(id: tasks[i].id); changedIds.append(tasks[i].id)
+            }
             switch tasks[i].kind {
-            case .itemizedBill, .documents, .billingContact:
-                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
-                cancelReminder(id: tasks[i].id); didChange = true
-            case .procedureCodes where hasProcedureCodes:
-                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
-                cancelReminder(id: tasks[i].id); didChange = true
-            case .diagnosisCodes where hasDiagnosisCodes:
-                tasks[i].isCompleted = true; tasks[i].completedAt = Date()
-                cancelReminder(id: tasks[i].id); didChange = true
+            case .itemizedBill, .documents, .billingContact: complete()
+            case .procedureCodes where hasProcedureCodes: complete()
+            case .diagnosisCodes where hasDiagnosisCodes: complete()
             default: break
             }
         }
         let before = pendingVisits.count
         pendingVisits.removeAll { Self.nameMatches($0.providerName, providerName) }
-        if didChange || pendingVisits.count != before { save() }
+        if !changedIds.isEmpty || pendingVisits.count != before { save() }
+        for id in changedIds {
+            if let t = tasks.first(where: { $0.id == id }) { cloudPush(t) }
+        }
     }
 
     // MARK: Inference (no bill captured → task)
@@ -966,6 +976,114 @@ final class FollowUpStore: ObservableObject {
     private func cancelReminder(id: String) {
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ["task_\(id)"])
+    }
+
+    // MARK: - CloudKit sync (private database)
+    //
+    // Tasks sync through the user's *private* iCloud database so follow-ups
+    // follow them across their devices. Best-effort: every path no-ops cleanly
+    // when the user isn't signed into iCloud, so the app always works from its
+    // UserDefaults cache. (UserDefaults stays the offline source of truth.)
+    //
+    // NOTE: the FollowUpTask record type must have its `recordName` marked
+    // Queryable in the CloudKit Dashboard for the pull query to return records.
+
+    private let ckRecordType = "FollowUpTask"
+    private lazy var ckDatabase: CKDatabase =
+        CKContainer(identifier: "iCloud.com.billguard.BillGuard").privateCloudDatabase
+
+    /// Pull tasks from iCloud in the background. Safe to call on launch/foreground.
+    func refreshFromCloud() {
+        Task { await syncFromCloud() }
+    }
+
+    private func syncFromCloud() async {
+        let container = CKContainer(identifier: "iCloud.com.billguard.BillGuard")
+        guard let status = try? await container.accountStatus(), status == .available else { return }
+
+        var remote: [FollowUpTask] = []
+        do {
+            let query = CKQuery(recordType: ckRecordType, predicate: NSPredicate(value: true))
+            let (results, _) = try await ckDatabase.records(matching: query)
+            for (_, result) in results {
+                if case .success(let record) = result, let t = Self.task(from: record) {
+                    remote.append(t)
+                }
+            }
+        } catch {
+            // First run: the record type doesn't exist yet. Seed it from local.
+            for t in tasks { cloudPush(t) }
+            return
+        }
+        merge(remote: remote)
+    }
+
+    private func merge(remote: [FollowUpTask]) {
+        var byId = Dictionary(tasks.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let remoteIds = Set(remote.map { $0.id })
+
+        for r in remote {
+            if let local = byId[r.id] {
+                // Completion is sticky: a local completion beats a stale remote.
+                if local.isCompleted && !r.isCompleted {
+                    cloudPush(local)
+                } else {
+                    byId[r.id] = r
+                }
+            } else {
+                byId[r.id] = r   // created on another device
+            }
+        }
+        // Push up anything created offline before this sync.
+        for local in tasks where !remoteIds.contains(local.id) { cloudPush(local) }
+
+        tasks = Array(byId.values).sorted { $0.createdAt < $1.createdAt }
+        for t in tasks where !t.isCompleted { scheduleReminder(for: t) }
+        save()
+    }
+
+    private func cloudPush(_ task: FollowUpTask) {
+        let record = Self.ckRecord(from: task, recordType: ckRecordType)
+        let db = ckDatabase
+        Task { try? await db.save(record) }
+    }
+
+    private func cloudDelete(_ id: String) {
+        let db = ckDatabase
+        let recordID = CKRecord.ID(recordName: id)
+        Task { try? await db.deleteRecord(withID: recordID) }
+    }
+
+    private static func ckRecord(from task: FollowUpTask, recordType: String) -> CKRecord {
+        let record = CKRecord(recordType: recordType,
+                              recordID: CKRecord.ID(recordName: task.id))
+        record["kind"] = task.kind.rawValue
+        record["title"] = task.title
+        record["providerName"] = task.providerName
+        record["providerId"] = task.providerId
+        record["createdAt"] = task.createdAt
+        record["dueDate"] = task.dueDate
+        record["isCompleted"] = task.isCompleted ? 1 : 0
+        record["completedAt"] = task.completedAt
+        record["note"] = task.note
+        return record
+    }
+
+    private static func task(from record: CKRecord) -> FollowUpTask? {
+        guard let kindRaw = record["kind"] as? String,
+              let kind = FollowUpKind(rawValue: kindRaw),
+              let title = record["title"] as? String,
+              let createdAt = record["createdAt"] as? Date else { return nil }
+        var t = FollowUpTask(kind: kind, title: title,
+                             providerName: record["providerName"] as? String,
+                             providerId: record["providerId"] as? String,
+                             note: record["note"] as? String)
+        t.id = record.recordID.recordName
+        t.createdAt = createdAt
+        t.dueDate = record["dueDate"] as? Date
+        t.isCompleted = (record["isCompleted"] as? Int ?? 0) == 1
+        t.completedAt = record["completedAt"] as? Date
+        return t
     }
 
     // MARK: Persistence
