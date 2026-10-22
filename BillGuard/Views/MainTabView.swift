@@ -4545,6 +4545,17 @@ struct FollowUpDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// The signer's name — auto-filled from the signed-in user, else a placeholder.
+    private var userName: String {
+        let n = UserManager.shared.currentUser?.displayName ?? ""
+        return n.isEmpty ? "[Your name]" : n
+    }
+    /// Contact line — the user's email, else a placeholder.
+    private var userContact: String {
+        let e = UserManager.shared.currentUser?.email ?? ""
+        return e.isEmpty ? "[your phone/email]" : e
+    }
+
     private var letter: String {
         let provider = task.providerName ?? "[Provider name]"
         let header = "To the Billing / Medical Records Department\(task.providerName.map { ", \($0)" } ?? ""):\n\n"
@@ -4559,10 +4570,10 @@ struct FollowUpDetailView: View {
             under the No Surprises Act.
 
             Please send this to me in writing before my scheduled service. You \
-            can reach me at [your phone/email].
+            can reach me at \(userContact).
 
             Thank you,
-            [Your name]
+            \(userName)
             """
         default:
             return header + """
@@ -4578,10 +4589,10 @@ struct FollowUpDetailView: View {
             UB-04). I would prefer electronic copies, understand a reasonable \
             cost-based fee may apply, and that you must respond within 30 days.
 
-            You can reach me at [your phone/email].
+            You can reach me at \(userContact).
 
             Thank you,
-            [Your name]
+            \(userName)
             """
         }
     }

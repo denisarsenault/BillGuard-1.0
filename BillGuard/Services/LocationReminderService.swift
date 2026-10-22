@@ -904,11 +904,46 @@ final class FollowUpStore: ObservableObject {
         }
     }
 
+    /// Fuzzy provider-name match so OCR/name variance ("St. Mary's" vs
+    /// "Saint Mary Medical Center", "Dr. Lee" vs "Lee Family Clinic") still
+    /// closes the loop. Normalizes, expands common abbreviations, drops generic
+    /// org words, then compares the distinctive tokens.
     static func nameMatches(_ a: String?, _ b: String?) -> Bool {
-        guard let a = a?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !a.isEmpty,
-              let b = b?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !b.isEmpty
-        else { return false }
-        return a == b
+        let na = normalizedName(a), nb = normalizedName(b)
+        guard !na.isEmpty, !nb.isEmpty else { return false }
+        if na == nb { return true }
+        let ta = coreTokens(na), tb = coreTokens(nb)
+        guard !ta.isEmpty, !tb.isEmpty else { return false }
+        if ta.isSubset(of: tb) || tb.isSubset(of: ta) { return true }
+        let inter = ta.intersection(tb).count
+        let union = ta.union(tb).count
+        return union > 0 && Double(inter) / Double(union) >= 0.6
+    }
+
+    private static let nameStopwords: Set<String> = [
+        "the", "of", "and", "at", "for", "to",
+        "doctor", "hospital", "clinic", "center", "centre", "medical", "medicine",
+        "associates", "associate", "assoc", "group", "health", "healthcare", "care",
+        "pa", "pc", "llc", "llp", "inc", "md", "do", "services", "service", "family",
+        "physicians", "physician", "practice", "department", "dept", "office"
+    ]
+
+    private static func normalizedName(_ s: String?) -> String {
+        guard var t = s?.lowercased() else { return "" }
+        t = t.replacingOccurrences(of: "'s", with: "").replacingOccurrences(of: "\u{2019}s", with: "")
+        t = " " + t + " "
+        for (k, v) in [(" st ", " saint "), (" st. ", " saint "),
+                       (" dr ", " doctor "), (" dr. ", " doctor "),
+                       (" & ", " and "), (" ctr ", " center ")] {
+            t = t.replacingOccurrences(of: k, with: v)
+        }
+        t = t.replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
+        return t.trimmingCharacters(in: .whitespaces)
+    }
+
+    private static func coreTokens(_ normalized: String) -> Set<String> {
+        Set(normalized.split(separator: " ").map(String.init)
+            .filter { $0.count > 1 && !nameStopwords.contains($0) })
     }
 
     // MARK: Reminders
