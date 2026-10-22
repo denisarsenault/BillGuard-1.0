@@ -598,6 +598,7 @@ struct ProfileMenuButton: View {
 
 struct HomeViewWithProfile: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var patientDataService: PatientDataService
     @StateObject private var followUps = FollowUpStore.shared
     @State private var selectedCode: MedicalCode?
     @State private var showingScanner = false
@@ -735,6 +736,8 @@ struct HomeViewWithProfile: View {
             }
             .sheet(isPresented: $showingFollowUps) {
                 FollowUpsListView()
+                    .environmentObject(appState)
+                    .environmentObject(patientDataService)
             }
             .refreshable {
                 appState.searchViewModel.loadPopularCodes()
@@ -4476,13 +4479,24 @@ struct FollowUpsListView: View {
 struct FollowUpDetailView: View {
     let task: FollowUpTask
     @StateObject private var store = FollowUpStore.shared
+    @EnvironmentObject var patientDataService: PatientDataService
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var copied = false
+    @State private var showingScanner = false
 
     private var hasLetter: Bool {
         switch task.kind {
         case .itemizedBill, .procedureCodes, .diagnosisCodes, .billingContact, .goodFaithEstimate:
             return true
+        default: return false
+        }
+    }
+
+    /// Scanning the bill satisfies these tasks (and auto-completes them).
+    private var canScan: Bool {
+        switch task.kind {
+        case .itemizedBill, .procedureCodes, .diagnosisCodes, .documents: return true
         default: return false
         }
     }
@@ -4503,6 +4517,17 @@ struct FollowUpDetailView: View {
                 }
                 if let note = task.note {
                     Text(note).font(.caption).foregroundColor(.secondary)
+                }
+            }
+
+            if canScan && !task.isCompleted {
+                Section(footer: Text("Scanning the itemized bill saves it and checks this follow-up off automatically.")) {
+                    Button {
+                        showingScanner = true
+                    } label: {
+                        Label("Scan the bill", systemImage: "doc.viewfinder")
+                            .font(.headline)
+                    }
                 }
             }
 
@@ -4536,6 +4561,11 @@ struct FollowUpDetailView: View {
         }
         .navigationTitle("Follow-up")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingScanner) {
+            BillScannerView()
+                .environmentObject(patientDataService)
+                .environmentObject(appState)
+        }
     }
 
     /// The signer's name — auto-filled from the signed-in user, else a placeholder.
