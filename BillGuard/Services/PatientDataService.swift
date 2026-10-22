@@ -263,10 +263,12 @@ class PatientDataService: ObservableObject {
 
     func deletePatient(_ patient: Patient) {
         patients.removeAll { $0.id == patient.id }
-        // Also remove related data
+        // Also remove related data (capture ids first for the cloud cascade)
+        let removedPolicyIds = insurancePolicies.filter { $0.patientId == patient.id }.map { $0.id }
+        let removedVisitIds = visits.filter { $0.patientId == patient.id }.map { $0.id }
+        let removedClaimIds = claims.filter { $0.patientId == patient.id }.map { $0.id }
         insurancePolicies.removeAll { $0.patientId == patient.id }
         visits.removeAll { $0.patientId == patient.id }
-        let removedClaimIds = claims.filter { $0.patientId == patient.id }.map { $0.id }
         claims.removeAll { $0.patientId == patient.id }
 
         savePatients()
@@ -274,8 +276,10 @@ class PatientDataService: ObservableObject {
         saveVisits()
         saveClaims()
 
-        CloudKitSync.delete(recordName: PatientDataService.patientRecordPrefix + patient.id)
-        removedClaimIds.forEach { CloudKitSync.delete(recordName: PatientDataService.claimRecordPrefix + $0) }
+        CloudKitSync.delete(recordName: Self.patientRecordPrefix + patient.id)
+        removedClaimIds.forEach { CloudKitSync.delete(recordName: Self.claimRecordPrefix + $0) }
+        removedPolicyIds.forEach { CloudKitSync.delete(recordName: Self.policyRecordPrefix + $0) }
+        removedVisitIds.forEach { CloudKitSync.delete(recordName: Self.visitRecordPrefix + $0) }
     }
     
     private func savePatients() {
@@ -299,11 +303,13 @@ class PatientDataService: ObservableObject {
             insurancePolicies.append(updatedPolicy)
         }
         savePolicies()
+        cloudPush(updatedPolicy)
     }
-    
+
     func deletePolicy(_ policy: InsurancePolicy) {
         insurancePolicies.removeAll { $0.id == policy.id }
         savePolicies()
+        CloudKitSync.delete(recordName: Self.policyRecordPrefix + policy.id)
     }
     
     private func savePolicies() {
@@ -326,11 +332,13 @@ class PatientDataService: ObservableObject {
             insuranceCarriers.append(updatedCarrier)
         }
         saveCarriers()
+        cloudPush(updatedCarrier)
     }
-    
+
     func deleteCarrier(_ carrier: InsuranceCarrier) {
         insuranceCarriers.removeAll { $0.id == carrier.id }
         saveCarriers()
+        CloudKitSync.delete(recordName: Self.carrierRecordPrefix + carrier.id)
     }
     
     private func saveCarriers() {
@@ -349,11 +357,13 @@ class PatientDataService: ObservableObject {
             paymentMethods.append(updatedMethod)
         }
         savePaymentMethods()
+        cloudPush(updatedMethod)
     }
-    
+
     func deletePaymentMethod(_ method: PaymentMethod) {
         paymentMethods.removeAll { $0.id == method.id }
         savePaymentMethods()
+        CloudKitSync.delete(recordName: Self.paymentRecordPrefix + method.id)
     }
     
     private func savePaymentMethods() {
@@ -376,11 +386,13 @@ class PatientDataService: ObservableObject {
             providers.append(updatedProvider)
         }
         saveProviders()
+        cloudPush(updatedProvider)
     }
-    
+
     func deleteProvider(_ provider: Provider) {
         providers.removeAll { $0.id == provider.id }
         saveProviders()
+        CloudKitSync.delete(recordName: Self.providerRecordPrefix + provider.id)
     }
     
     private func saveProviders() {
@@ -399,11 +411,13 @@ class PatientDataService: ObservableObject {
             visits.append(updatedVisit)
         }
         saveVisits()
+        cloudPush(updatedVisit)
     }
-    
+
     func deleteVisit(_ visit: Visit) {
         visits.removeAll { $0.id == visit.id }
         saveVisits()
+        CloudKitSync.delete(recordName: Self.visitRecordPrefix + visit.id)
     }
     
     private func saveVisits() {
@@ -460,11 +474,13 @@ class PatientDataService: ObservableObject {
             scannedDocuments.append(updatedDocument)
         }
         saveDocuments()
+        cloudPush(updatedDocument)
     }
-    
+
     func deleteDocument(_ document: ScannedDocument) {
         scannedDocuments.removeAll { $0.id == document.id }
         saveDocuments()
+        CloudKitSync.delete(recordName: Self.documentRecordPrefix + document.id)
     }
     
     private func saveDocuments() {
@@ -586,8 +602,11 @@ class PatientDataService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: StorageKeys.documents)
         
         // Also wipe synced records so the next cloud refresh doesn't restore them.
-        CloudKitSync.deleteAll(recordType: PatientDataService.patientRecordType)
-        CloudKitSync.deleteAll(recordType: PatientDataService.claimRecordType)
+        for type in [Self.patientRecordType, Self.claimRecordType, Self.policyRecordType,
+                     Self.carrierRecordType, Self.paymentRecordType, Self.providerRecordType,
+                     Self.visitRecordType, Self.documentRecordType] {
+            CloudKitSync.deleteAll(recordType: type)
+        }
 
         // Reload common carriers
         for carrier in InsuranceCarrier.commonCarriers {
@@ -598,53 +617,73 @@ class PatientDataService: ObservableObject {
         isLoading = false
     }
 
-    // MARK: - CloudKit sync (patients & claims, private database)
+    // MARK: - CloudKit sync (all collections, private database)
     //
-    // Patients and claims sync through the user's *private* iCloud database as
+    // Every collection syncs through the user's *private* iCloud database as
     // JSON-blob records (the models are Codable), with last-write-wins by their
     // `updatedAt`. Best-effort: no-ops cleanly without an iCloud account, so the
-    // app always works from its UserDefaults cache. This mirrors the follow-up
-    // task sync and is the template for the remaining collections.
+    // app always works from its UserDefaults cache.
     //
-    // NOTE: the Patient and Claim record types need `recordName` marked
-    // Queryable in the CloudKit Dashboard for the pull to return records.
+    // NOTE: each record type below needs `recordName` marked Queryable in the
+    // CloudKit Dashboard for the pull to return records.
 
-    static let patientRecordType = "Patient"
-    static let claimRecordType = "Claim"
-    static let patientRecordPrefix = "patient_"
-    static let claimRecordPrefix = "claim_"
+    static let patientRecordType  = "Patient";       static let patientRecordPrefix  = "patient_"
+    static let claimRecordType    = "Claim";         static let claimRecordPrefix    = "claim_"
+    static let policyRecordType   = "InsurancePolicy"; static let policyRecordPrefix = "policy_"
+    static let carrierRecordType  = "InsuranceCarrier"; static let carrierRecordPrefix = "carrier_"
+    static let paymentRecordType  = "PaymentMethod";  static let paymentRecordPrefix  = "payment_"
+    static let providerRecordType = "Provider";      static let providerRecordPrefix = "provider_"
+    static let visitRecordType    = "Visit";         static let visitRecordPrefix    = "visit_"
+    static let documentRecordType = "ScannedDocument"; static let documentRecordPrefix = "document_"
 
-    /// Pull patients & claims from iCloud and merge into local. Safe anytime.
+    /// Pull every collection from iCloud and merge into local. Safe anytime.
     func refreshFromCloud() {
         Task { await syncFromCloud() }
     }
 
-    private func cloudPush(_ patient: Patient) {
-        if let r = CloudKitSync.blobRecord(patient, recordName: Self.patientRecordPrefix + patient.id,
-                                           updatedAt: patient.updatedAt, recordType: Self.patientRecordType) {
+    private func cloudPush<T: Encodable & Identifiable>(_ item: T, updatedAt: Date,
+                                                        prefix: String, recordType: String) where T.ID == String {
+        if let r = CloudKitSync.blobRecord(item, recordName: prefix + item.id,
+                                           updatedAt: updatedAt, recordType: recordType) {
             CloudKitSync.save(r)
         }
     }
 
-    private func cloudPush(_ claim: Claim) {
-        if let r = CloudKitSync.blobRecord(claim, recordName: Self.claimRecordPrefix + claim.id,
-                                           updatedAt: claim.updatedAt, recordType: Self.claimRecordType) {
-            CloudKitSync.save(r)
-        }
-    }
+    private func cloudPush(_ x: Patient)          { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.patientRecordPrefix,  recordType: Self.patientRecordType) }
+    private func cloudPush(_ x: Claim)            { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.claimRecordPrefix,    recordType: Self.claimRecordType) }
+    private func cloudPush(_ x: InsurancePolicy)  { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.policyRecordPrefix,   recordType: Self.policyRecordType) }
+    private func cloudPush(_ x: InsuranceCarrier) { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.carrierRecordPrefix,  recordType: Self.carrierRecordType) }
+    private func cloudPush(_ x: PaymentMethod)    { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.paymentRecordPrefix,  recordType: Self.paymentRecordType) }
+    private func cloudPush(_ x: Provider)         { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.providerRecordPrefix, recordType: Self.providerRecordType) }
+    private func cloudPush(_ x: Visit)            { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.visitRecordPrefix,    recordType: Self.visitRecordType) }
+    private func cloudPush(_ x: ScannedDocument)  { cloudPush(x, updatedAt: x.updatedAt, prefix: Self.documentRecordPrefix, recordType: Self.documentRecordType) }
 
     private func syncFromCloud() async {
         guard await CloudKitSync.accountAvailable() else { return }
 
-        let remotePatients: [Patient] = await CloudKitSync.pullBlobs(Patient.self, recordType: Self.patientRecordType)
-        let remoteClaims: [Claim] = await CloudKitSync.pullBlobs(Claim.self, recordType: Self.claimRecordType)
+        async let rPatients: [Patient]           = CloudKitSync.pullBlobs(Patient.self,          recordType: Self.patientRecordType)
+        async let rClaims: [Claim]               = CloudKitSync.pullBlobs(Claim.self,            recordType: Self.claimRecordType)
+        async let rPolicies: [InsurancePolicy]   = CloudKitSync.pullBlobs(InsurancePolicy.self,  recordType: Self.policyRecordType)
+        async let rCarriers: [InsuranceCarrier]  = CloudKitSync.pullBlobs(InsuranceCarrier.self, recordType: Self.carrierRecordType)
+        async let rPayments: [PaymentMethod]     = CloudKitSync.pullBlobs(PaymentMethod.self,    recordType: Self.paymentRecordType)
+        async let rProviders: [Provider]         = CloudKitSync.pullBlobs(Provider.self,         recordType: Self.providerRecordType)
+        async let rVisits: [Visit]               = CloudKitSync.pullBlobs(Visit.self,            recordType: Self.visitRecordType)
+        async let rDocuments: [ScannedDocument]  = CloudKitSync.pullBlobs(ScannedDocument.self,  recordType: Self.documentRecordType)
 
-        patients = Self.merge(local: patients, remote: remotePatients,
-                              updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
-        claims = Self.merge(local: claims, remote: remoteClaims,
-                            updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
-        savePatients()
-        saveClaims()
+        let (remPatients, remClaims, remPolicies, remCarriers, remPayments, remProviders, remVisits, remDocuments)
+            = await (rPatients, rClaims, rPolicies, rCarriers, rPayments, rProviders, rVisits, rDocuments)
+
+        patients          = Self.merge(local: patients,          remote: remPatients,  updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        claims            = Self.merge(local: claims,            remote: remClaims,    updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        insurancePolicies = Self.merge(local: insurancePolicies, remote: remPolicies,  updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        insuranceCarriers = Self.merge(local: insuranceCarriers, remote: remCarriers,  updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        paymentMethods    = Self.merge(local: paymentMethods,    remote: remPayments,  updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        providers         = Self.merge(local: providers,         remote: remProviders, updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        visits            = Self.merge(local: visits,            remote: remVisits,    updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+        scannedDocuments  = Self.merge(local: scannedDocuments,  remote: remDocuments, updatedAt: \.updatedAt, push: { [weak self] in self?.cloudPush($0) })
+
+        savePatients(); saveClaims(); savePolicies(); saveCarriers()
+        savePaymentMethods(); saveProviders(); saveVisits(); saveDocuments()
     }
 
     /// Last-write-wins merge: remote wins when newer, local wins (and is pushed)
