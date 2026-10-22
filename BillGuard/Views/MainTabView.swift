@@ -3785,6 +3785,13 @@ struct SettingsView: View {
                     FollowUpStore.shared.addUnique(kind: .diagnosisCodes, providerName: "Dr. Lee Family Clinic", providerId: "demo")
                     FollowUpStore.shared.addUnique(kind: .goodFaithEstimate, providerName: "Summit Imaging Center", providerId: "demo2")
                 }
+                Button("🧾 Simulate scanned bill (\u{201C}Lee Family Clinic\u{201D})") {
+                    // Fuzzy match: "Lee Family Clinic" should close the
+                    // "Dr. Lee Family Clinic" tasks, leaving Summit Imaging alone.
+                    FollowUpStore.shared.onBillSaved(providerName: "Lee Family Clinic",
+                                                     hasProcedureCodes: true,
+                                                     hasDiagnosisCodes: true)
+                }
                 Button("Reset App (Show Onboarding)") {
                     UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
                     UserDefaults.standard.removeObject(forKey: "isLoggedIn")
