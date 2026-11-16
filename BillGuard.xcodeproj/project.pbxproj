@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0797324ADF1739CA217E6D75 /* BillGuardShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		171BADFD2262CB73EA3D921F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C5EA34CD789A7D75F2740D /* Foundation.framework */; };
+		252D41084268FD0A1F4F7DC2 /* MedicalBillModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */; };
+		413E455761BBE0E91C7A35D9 /* ShareScanModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74EA38BABD96291EB4FE46C9 /* ShareScanModel.swift */; };
+		56D62C4CB0D4152ADEE6B6C4 /* SharedInputLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79B29B9A1BCE4BE0D090D5 /* SharedInputLoader.swift */; };
+		6275186E8A6A16D4215678EF /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71C0E662BD1A72382A2DA65 /* ShareViewController.swift */; };
+		9747CB45B6F0ECD09326157E /* medical_codes.json in Resources */ = {isa = PBXBuildFile; fileRef = A100003B /* medical_codes.json */; };
+		98C7DDD8F84C59B0C4E2825F /* ExtensionContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB701D65EA3FC6F8CF800F07 /* ExtensionContentView.swift */; };
 		A1000001 /* BillGuardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* BillGuardApp.swift */; };
 		A1000003 /* MedicalCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* MedicalCode.swift */; };
 		A1000005 /* RecentSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006 /* RecentSearch.swift */; };
@@ -52,9 +60,47 @@
 		A2000001 /* InsuranceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* InsuranceViews.swift */; };
 		A2000003 /* VisitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* VisitViews.swift */; };
 		A2000005 /* PaymentMethodViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* PaymentMethodViews.swift */; };
+		A20148A5E2D6396934948C14 /* KnownProcedureCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */; };
+		B3AB5A29C20C4CFD86522F4D /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */; };
+		BC32C83D3C23B27679D7EBD8 /* BillCodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */; };
+		C8D2C4840B548C286C98A107 /* PageOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70585203A43F3BC451018120 /* PageOCR.swift */; };
+		D962CE98F83090C0B2EFD026 /* PendingBillStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */; };
+		DD7EE194285083820F9651D4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100001C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		059739508A84663122FEC52D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A100002D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1C0F238C27B463F270A3EF41;
+			remoteInfo = BillGuardShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FDA31DB3D613BAB8358DB508 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0797324ADF1739CA217E6D75 /* BillGuardShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KnownProcedureCodes.swift; sourceTree = "<group>"; };
+		3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MedicalBillModels.swift; sourceTree = "<group>"; };
+		42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BillGuardShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		53FF185F60E180E112EA0BFD /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillCodeAnalyzer.swift; sourceTree = "<group>"; };
+		6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
+		70585203A43F3BC451018120 /* PageOCR.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PageOCR.swift; sourceTree = "<group>"; };
+		74EA38BABD96291EB4FE46C9 /* ShareScanModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareScanModel.swift; sourceTree = "<group>"; };
 		A1000002 /* BillGuardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillGuardApp.swift; sourceTree = "<group>"; };
 		A1000004 /* MedicalCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalCode.swift; sourceTree = "<group>"; };
 		A1000006 /* RecentSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearch.swift; sourceTree = "<group>"; };
@@ -100,12 +146,26 @@
 		A10000A3 /* ProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderViews.swift; sourceTree = "<group>"; };
 		A10000A5 /* ContactInfoScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactInfoScanner.swift; sourceTree = "<group>"; };
 		A10000A7 /* DocumentClassifierScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentClassifierScanner.swift; sourceTree = "<group>"; };
+		A1C5EA34CD789A7D75F2740D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		A2000002 /* InsuranceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceViews.swift; sourceTree = "<group>"; };
 		A2000004 /* VisitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViews.swift; sourceTree = "<group>"; };
 		A2000006 /* PaymentMethodViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodViews.swift; sourceTree = "<group>"; };
+		AB701D65EA3FC6F8CF800F07 /* ExtensionContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExtensionContentView.swift; sourceTree = "<group>"; };
+		CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingBillStore.swift; sourceTree = "<group>"; };
+		ED79B29B9A1BCE4BE0D090D5 /* SharedInputLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedInputLoader.swift; sourceTree = "<group>"; };
+		F23491A1EDBF24378271A656 /* BillGuardShare.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = BillGuardShare.entitlements; sourceTree = "<group>"; };
+		F71C0E662BD1A72382A2DA65 /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5DACF132FA1704D5D323C2BB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				171BADFD2262CB73EA3D921F /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A100001F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -116,11 +176,33 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		24BF6E65066360F9BE948CF2 /* BillGuardShare */ = {
+			isa = PBXGroup;
+			children = (
+				6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */,
+				6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */,
+				AB701D65EA3FC6F8CF800F07 /* ExtensionContentView.swift */,
+				3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */,
+				70585203A43F3BC451018120 /* PageOCR.swift */,
+				CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */,
+				74EA38BABD96291EB4FE46C9 /* ShareScanModel.swift */,
+				F71C0E662BD1A72382A2DA65 /* ShareViewController.swift */,
+				ED79B29B9A1BCE4BE0D090D5 /* SharedInputLoader.swift */,
+				53FF185F60E180E112EA0BFD /* Info.plist */,
+				F23491A1EDBF24378271A656 /* BillGuardShare.entitlements */,
+				1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */,
+			);
+			name = BillGuardShare;
+			path = BillGuardShare;
+			sourceTree = "<group>";
+		};
 		A1000020 = {
 			isa = PBXGroup;
 			children = (
 				A1000021 /* BillGuard */,
 				A1000022 /* Products */,
+				D670DAEC873D32627F9C78C5 /* Frameworks */,
+				24BF6E65066360F9BE948CF2 /* BillGuardShare */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,6 +226,7 @@
 			isa = PBXGroup;
 			children = (
 				A100001E /* BillGuard.app */,
+				42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -250,9 +333,42 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
+		AA2AF67F121CF524E3DA9799 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				A1C5EA34CD789A7D75F2740D /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		D670DAEC873D32627F9C78C5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA2AF67F121CF524E3DA9799 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		1C0F238C27B463F270A3EF41 /* BillGuardShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFBF50BCF940CD58FD25542F /* Build configuration list for PBXNativeTarget "BillGuardShare" */;
+			buildPhases = (
+				D7B777D0B758746F42CCD5B8 /* Sources */,
+				5DACF132FA1704D5D323C2BB /* Frameworks */,
+				E379D16C35BD9BED5287C84D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BillGuardShare;
+			productName = BillGuardShare;
+			productReference = 42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A1000029 /* BillGuard */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A100002A /* Build configuration list for PBXNativeTarget "BillGuard" */;
@@ -260,10 +376,12 @@
 				A100002B /* Sources */,
 				A100001F /* Frameworks */,
 				A100002C /* Resources */,
+				FDA31DB3D613BAB8358DB508 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				47C6DCCE664EDFDB0F4C369C /* PBXTargetDependency */,
 			);
 			name = BillGuard;
 			productName = BillGuard;
@@ -299,6 +417,7 @@
 			projectRoot = "";
 			targets = (
 				A1000029 /* BillGuard */,
+				1C0F238C27B463F270A3EF41 /* BillGuardShare */,
 			);
 		};
 /* End PBXProject section */
@@ -310,6 +429,15 @@
 			files = (
 				A100001B /* Assets.xcassets in Resources */,
 				A100003A /* medical_codes.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E379D16C35BD9BED5287C84D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DD7EE194285083820F9651D4 /* Assets.xcassets in Resources */,
+				9747CB45B6F0ECD09326157E /* medical_codes.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,9 +494,65 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D7B777D0B758746F42CCD5B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC32C83D3C23B27679D7EBD8 /* BillCodeAnalyzer.swift in Sources */,
+				B3AB5A29C20C4CFD86522F4D /* CloudKitManager.swift in Sources */,
+				98C7DDD8F84C59B0C4E2825F /* ExtensionContentView.swift in Sources */,
+				252D41084268FD0A1F4F7DC2 /* MedicalBillModels.swift in Sources */,
+				C8D2C4840B548C286C98A107 /* PageOCR.swift in Sources */,
+				D962CE98F83090C0B2EFD026 /* PendingBillStore.swift in Sources */,
+				413E455761BBE0E91C7A35D9 /* ShareScanModel.swift in Sources */,
+				6275186E8A6A16D4215678EF /* ShareViewController.swift in Sources */,
+				56D62C4CB0D4152ADEE6B6C4 /* SharedInputLoader.swift in Sources */,
+				A20148A5E2D6396934948C14 /* KnownProcedureCodes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		47C6DCCE664EDFDB0F4C369C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BillGuardShare;
+			target = 1C0F238C27B463F270A3EF41 /* BillGuardShare */;
+			targetProxy = 059739508A84663122FEC52D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		28819685EA04225719C44D6A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = BillGuardShare/BillGuardShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuardShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BillGuard;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard.Share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		A100002F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -524,7 +708,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -562,9 +746,38 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
+		};
+		BDE1441B9B51F47F69218D48 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = BillGuardShare/BillGuardShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuardShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BillGuard;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard.Share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -583,6 +796,15 @@
 			buildConfigurations = (
 				A100002F /* Debug */,
 				A1000030 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AFBF50BCF940CD58FD25542F /* Build configuration list for PBXNativeTarget "BillGuardShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28819685EA04225719C44D6A /* Release */,
+				BDE1441B9B51F47F69218D48 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
