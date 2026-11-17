@@ -18,6 +18,9 @@
 >   counts when it is in the bundled code database, is labelled as a code, or
 >   sits on a line with a charge. ZIP codes, labelled identifiers (account,
 >   receipt, claim…), parts of hyphenated IDs and money amounts are dropped.
+> - **HCPCS codes are matched too** (2026-11-16): one letter and four digits,
+>   e.g. `J1885`, under the same keep/drop rules, and never straight after a
+>   diagnosis label. They go in `identifiedProcedureCodes` with the CPT codes.
 > - **The extension matches the main app's look** (2026-11-16): dark only, the
 >   app's asset catalog (brand colours and shield logo), cyan tint. The bar shows
 >   the shield and "BillGuard" instead of the section 6 title, which did not fit.

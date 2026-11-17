@@ -12,6 +12,10 @@ enum BillCodeAnalyzer {
 
     static let icd10Pattern = #"\b[A-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?\b"#
     static let cptPattern = #"\b[0-9]{5}\b"#
+    /// HCPCS Level II: one letter (the ranges in use) and four digits, e.g. J1885.
+    static let hcpcsPattern = #"\b[ABCDEGHJKLMPQRSTUV][0-9]{4}\b"#
+    /// Either kind of procedure code, so matches come back in reading order.
+    private static let procedurePattern = #"\b(?:[0-9]{5}|[ABCDEGHJKLMPQRSTUV][0-9]{4})\b"#
 
     /// A code conflict that spans more than one captured page.
     struct Anomaly: Equatable, Sendable, Identifiable {
@@ -37,23 +41,29 @@ enum BillCodeAnalyzer {
         }
     }
 
-    // Context used to tell a billed procedure code from any other 5-digit number.
+    // Context used to tell a billed procedure code from any other look-alike token.
     private static let amountPattern = #"\$\s?\d|\b\d{1,3}(?:,\d{3})*\.\d{2}\b"#
+    /// A diagnosis label, optionally followed by earlier codes in the same list
+    /// ("DX: E1165, "). What follows is a diagnosis, even when an undotted
+    /// ICD-10 code happens to be shaped like an HCPCS code.
+    private static let diagnosisLabelPattern =
+        #"(?i)\b(?:dx|diag\w*|icd(?:-?\s?10)?(?:-cm)?)\b\s*(?:codes?)?\s*[.:#]*\s*(?:[A-Z][0-9][0-9A-Z.]*[,;\s]+)*$"#
     private static let zipPrefixPattern =
         #"\b(?:AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)[.,]?\s+$"#
     private static let identifierLabelPattern =
-        #"(?i)\b(?:account|acct|receipt|invoice|statement|claim|mrn|member|policy|group|subscriber|reference|ref|confirmation|check|zip|box|suite|ste|apt|unit|ext|npi|tin|id)\b\s*(?:number|num|no|code)?\s*[.:#]*\s*$"#
+        #"(?i)\b(?:account|acct|receipt|invoice|statement|claim|mrn|member|policy|group|subscriber|reference|ref|confirmation|check|zip|box|suite|ste|apt|unit|room|rm|bed|lot|ext|npi|tin|id)\b\s*(?:number|num|no|code)?\s*[.:#]*\s*$"#
     private static let codeLabelPattern =
         #"(?i)\b(?:cpt|hcpcs|procedures?|proc|codes?)\b\s*(?:codes?)?\s*[.:#]*\s*$"#
 
-    /// Procedure codes in `text`, in order, repeats included. The spec's CPT
-    /// pattern finds the candidates; a candidate is kept only when it reads as a
-    /// billed code: it is a known code, it is labelled as one, or its line
+    /// Procedure codes (CPT and HCPCS) in `text`, in order, repeats included.
+    /// The patterns find the candidates; a candidate is kept only when it reads
+    /// as a billed code: it is a known code, it is labelled as one, or its line
     /// carries a charge. ZIP codes, labelled identifiers (account, receipt,
-    /// claim…), pieces of hyphenated IDs and money amounts are dropped, since
-    /// those repeat in page headers and would raise false cross-page conflicts.
+    /// claim…), diagnoses, pieces of hyphenated IDs and money amounts are
+    /// dropped, since those repeat in page headers and would raise false
+    /// cross-page conflicts.
     static func procedureCodes(in text: String, knownCodes: Set<String>) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: cptPattern) else { return [] }
+        guard let regex = try? NSRegularExpression(pattern: procedurePattern) else { return [] }
         var codes: [String] = []
         for line in text.components(separatedBy: .newlines) {
             let nsLine = line as NSString
@@ -69,6 +79,7 @@ enum BillCodeAnalyzer {
                 if isPartOfNumberOrID { continue }
                 if before.range(of: zipPrefixPattern, options: .regularExpression) != nil { continue }
                 if before.range(of: identifierLabelPattern, options: .regularExpression) != nil { continue }
+                if before.range(of: diagnosisLabelPattern, options: .regularExpression) != nil { continue }
 
                 let isLabelled = before.range(of: codeLabelPattern, options: .regularExpression) != nil
                 if knownCodes.contains(code) || isLabelled || lineHasCharge {

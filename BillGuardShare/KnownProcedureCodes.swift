@@ -2,9 +2,9 @@
 //  KnownProcedureCodes.swift
 //  BillGuardShare
 //
-//  The 5-digit procedure codes in BillGuard's bundled code database. Used only
-//  as a positive signal: the database is small, so a code missing from it is
-//  not evidence that a number isn't a procedure code.
+//  The CPT and HCPCS codes in BillGuard's bundled code database. Used only as a
+//  positive signal: the database is small, so a code missing from it is not
+//  evidence that a token isn't a procedure code.
 //
 
 import Foundation
@@ -20,8 +20,9 @@ enum KnownProcedureCodes {
         guard let url, let data = try? Data(contentsOf: url),
               let entries = try? JSONDecoder().decode([Entry].self, from: data)
         else { return [] }
-        return Set(entries.map(\.code).filter { code in
-            code.count == 5 && code.allSatisfy { $0.isASCII && $0.isNumber }
+        let shape = "^(?:\(BillCodeAnalyzer.cptPattern)|\(BillCodeAnalyzer.hcpcsPattern))$"
+        return Set(entries.map(\.code).filter {
+            $0.range(of: shape, options: .regularExpression) != nil
         })
     }
 }
