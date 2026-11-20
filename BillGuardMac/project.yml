@@ -17,6 +17,12 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - path: Sources
+      # Saved share-extension scans ("Web Captures"): the screen is shared with
+      # the iOS app, the models with the share extension.
+      - path: ../BillGuard/Views/SharedScansView.swift
+      - path: ../BillGuardShare/MedicalBillModels.swift
+      - path: ../BillGuardShare/BillCodeAnalyzer.swift
+      - path: ../BillGuardShare/KnownProcedureCodes.swift
     dependencies:
       - package: BillGuardCore
       - target: BillGuardShareMac

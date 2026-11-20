@@ -89,9 +89,9 @@ struct ContentView: View {
         case .visits:    VisitsView()
         case .payments:  PaymentsView()
         case .scan:      ScanDocumentView()
-        case .captures:  PlaceholderView(
-            title: "Web Captures", systemImage: "globe",
-            message: "Bills captured from patient/insurance portals by the BillGuard browser extension appear here for review.")
+        case .captures:  SharedScansView(
+            title: "Web Captures",
+            describe: { MedicalCodeDatabase.lookup($0)?.shortDescription })
         case .settings:  SettingsView()
         }
     }

@@ -30,6 +30,7 @@ All live in the **private** database.
 | `Provider` | JSON blob | `provider_<id>` |
 | `Visit` | JSON blob | `visit_<id>` |
 | `ScannedDocument` | JSON blob | `document_<id>` |
+| `MedicalBillScan` | field-based (sourceURL, scannedAt, status, anomalyCount, pageStructureJSON), written by the share extension and read by the apps' Shared Scans / Web Captures screen (`BillGuard/Views/SharedScansView.swift`) | auto-generated |
 
 The schema auto-creates in the **Development** environment the first time each
 record type is saved. Conflict resolution is last-write-wins by `updatedAt`
@@ -41,7 +42,7 @@ record type is saved. Conflict resolution is last-write-wins by `updatedAt`
 In the [CloudKit Dashboard](https://icloud.developer.apple.com/) for the
 container:
 
-1. **Mark `recordName` Queryable** on **every** record type above (all 9). The
+1. **Mark `recordName` Queryable** on **every** record type above (all 10). The
    pull uses a `TRUEPREDICATE` query (`NSPredicate(value: true)`), which fails
    until the system `recordName` field is indexed as Queryable. Without this,
    records save but never come back down to other devices.

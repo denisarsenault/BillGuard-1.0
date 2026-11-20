@@ -41,6 +41,13 @@
 >   the extension's own Application Support folder, not an App Group, so pages
 >   captured on the Mac and on the iPhone only meet once saved to CloudKit.
 >
+> - **Saved scans are shown in the apps** (2026-11-20), read-only: "Shared
+>   Scans" on iPhone (profile menu, plus a Home banner and a Bills row when
+>   there are any) and "Web Captures" in the Mac sidebar. One screen for both,
+>   `BillGuard/Views/SharedScansView.swift`, reading `MedicalBillScan` records
+>   straight from iCloud. `recordName` must be Queryable on that record type
+>   (see `docs/CLOUDKIT_SETUP.md`).
+>
 > Implementation lives in `BillGuardShare/`. Overlap rules as implemented:
 > a page's `overlappingCodes` are procedure codes billed more than once on that
 > page; a cross-page anomaly is a procedure code on more than one page, or a

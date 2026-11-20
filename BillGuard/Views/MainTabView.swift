@@ -139,6 +139,7 @@ struct MainTabView: View {
                 FollowUpStore.shared.reconcilePendingVisits(claims: patientDataService.claims)
                 FollowUpStore.shared.refreshFromCloud()
                 patientDataService.refreshFromCloud()
+                Task { await SharedScanStore.shared.refresh() }
             }
         }
     }
@@ -485,6 +486,7 @@ struct ProfileMenuButton: View {
     @State private var showingProfile = false
     @State private var showingSettings = false
     @State private var showingAbout = false
+    @State private var showingSharedScans = false
     
     var body: some View {
         Menu {
@@ -522,6 +524,12 @@ struct ProfileMenuButton: View {
                 showingProfile = true
             } label: {
                 Label("My Profile", systemImage: "person.circle")
+            }
+            
+            Button {
+                showingSharedScans = true
+            } label: {
+                Label("Shared Scans", systemImage: "doc.text.viewfinder")
             }
             
             Button {
@@ -571,6 +579,11 @@ struct ProfileMenuButton: View {
         .sheet(isPresented: $showingAbout) {
             InfoView()
         }
+        .sheet(isPresented: $showingSharedScans) {
+            SharedScansView(
+                describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
+                onDone: { showingSharedScans = false })
+        }
     }
     
     private var profileAvatar: some View {
@@ -600,9 +613,11 @@ struct HomeViewWithProfile: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var patientDataService: PatientDataService
     @StateObject private var followUps = FollowUpStore.shared
+    @ObservedObject private var sharedScans = SharedScanStore.shared
     @State private var selectedCode: MedicalCode?
     @State private var showingScanner = false
     @State private var showingFollowUps = false
+    @State private var showingSharedScans = false
 
     var body: some View {
         NavigationStack {
@@ -664,6 +679,34 @@ struct HomeViewWithProfile: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.top, 8)
+                            }
+
+                            // Shared scans banner — bills saved from the share extension
+                            if !sharedScans.scans.isEmpty {
+                                Button { showingSharedScans = true } label: {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle().fill(Color("BrandCyan").opacity(0.18))
+                                                .frame(width: 38, height: 38)
+                                            Image(systemName: "doc.text.viewfinder")
+                                                .foregroundColor(Color("BrandCyan"))
+                                        }
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text("\(sharedScans.scans.count) shared scan\(sharedScans.scans.count == 1 ? "" : "s")")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundColor(.primary)
+                                            Text("Bills saved from the share menu")
+                                                .font(.caption).foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right").foregroundColor(.secondary)
+                                    }
+                                    .padding(14)
+                                    .background(Color("BrandNavy").opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color("BrandCyan").opacity(0.25)))
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, followUps.openCount > 0 ? 0 : 8)
                             }
 
                             // Camera scan button — centered and prominent
@@ -738,6 +781,11 @@ struct HomeViewWithProfile: View {
                 FollowUpsListView()
                     .environmentObject(appState)
                     .environmentObject(patientDataService)
+            }
+            .sheet(isPresented: $showingSharedScans) {
+                SharedScansView(
+                    describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
+                    onDone: { showingSharedScans = false })
             }
             .refreshable {
                 appState.searchViewModel.loadPopularCodes()
@@ -1578,6 +1626,8 @@ struct BillsListViewContent: View {
     @State private var selectedStatusFilter: BillStatus? = nil
     @State private var expandedPatients: Set<String> = []
     @State private var isPlusBlinking = false
+    @State private var showingSharedScans = false
+    @ObservedObject private var sharedScans = SharedScanStore.shared
     
     // Group claims by patient, then by status
     private var claimsByPatientAndStatus: [(patient: Patient, statusGroups: [(status: BillStatus, claims: [Claim])])] {
@@ -1717,6 +1767,11 @@ struct BillsListViewContent: View {
                 .environmentObject(patientDataService)
                 .environmentObject(appState)
         }
+        .sheet(isPresented: $showingSharedScans) {
+            SharedScansView(
+                describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
+                onDone: { showingSharedScans = false })
+        }
     }
     
     private var billsListContent: some View {
@@ -1727,6 +1782,24 @@ struct BillsListViewContent: View {
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+
+            // Bills saved from the share extension, waiting for review
+            if !sharedScans.scans.isEmpty {
+                Section {
+                    Button { showingSharedScans = true } label: {
+                        HStack {
+                            Label("Shared Scans", systemImage: "doc.text.viewfinder")
+                            Spacer()
+                            Text("\(sharedScans.scans.count)")
+                                .foregroundColor(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .foregroundColor(.primary)
+                }
+            }
             
             // Summary Section
             if !allClaims.isEmpty {
