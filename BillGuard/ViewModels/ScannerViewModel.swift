@@ -59,7 +59,7 @@ class ScannerViewModel: ObservableObject {
     // MARK: - Regex Patterns
     
     // CPT: 5 digits (00100-99499)
-    private let cptPattern = "\\b([0-9]{5})\\b"
+    private let cptPattern = "\\b([0-9]{5})" + ProcedureCodeEnding.cpt
     
     // ICD-10-CM (Diagnosis): Letter + 2 digits + optional (. + 1-4 alphanumeric)
     private let icd10Pattern = "\\b([A-TV-Z][0-9]{2}(?:\\.[0-9A-Z]{1,4})?)\\b"
@@ -68,7 +68,7 @@ class ScannerViewModel: ObservableObject {
     private let icd10pcsPattern = "\\b([0-9B-HX-Y][0-9A-HJ-NP-Z]{6})\\b"
     
     // HCPCS: Letter + 4 digits
-    private let hcpcsPattern = "\\b([A-V][0-9]{4})\\b"
+    private let hcpcsPattern = "\\b([A-V][0-9]{4})" + ProcedureCodeEnding.hcpcs
     
     // MARK: - Initialization
     
@@ -88,10 +88,18 @@ class ScannerViewModel: ObservableObject {
         var foundCodes: [ScannedCode] = []
         
         // Check for ICD-10-PCS codes first (7 chars, more specific)
-        foundCodes.append(contentsOf: extractCodes(from: normalizedText, originalText: text, pattern: icd10pcsPattern, type: .icd10pcs))
+        let cptCodes = extractCodes(from: normalizedText, originalText: text, pattern: cptPattern, type: .cpt)
+        var pcsCodes = extractCodes(from: normalizedText, originalText: text, pattern: icd10pcsPattern, type: .icd10pcs)
+        // A CPT code with its modifier printed straight after it ("93976TC") is
+        // seven characters too. Read it as the CPT code, unless the database
+        // knows the whole token as an ICD-10-PCS code.
+        pcsCodes.removeAll { pcs in
+            cptCodes.contains(where: { pcs.detectedCode.hasPrefix($0.detectedCode) })
+                && cloudKitService.lookupCode(pcs.detectedCode) == nil
+        }
+        foundCodes.append(contentsOf: pcsCodes)
         
         // Check for CPT codes (only if not already found as ICD-10-PCS)
-        let cptCodes = extractCodes(from: normalizedText, originalText: text, pattern: cptPattern, type: .cpt)
         for code in cptCodes {
             // Avoid adding CPT codes that are part of ICD-10-PCS codes
             if !foundCodes.contains(where: { $0.detectedCode.contains(code.detectedCode) }) {
@@ -266,4 +274,18 @@ class ScannerViewModel: ObservableObject {
             scannedCodes[index].lookupFailed = scannedCodes[index].matchedMedicalCode == nil
         }
     }
+}
+
+// MARK: - Procedure Code Endings
+
+/// How a CPT or HCPCS pattern ends. Used in place of a closing `\b` so a code
+/// still matches when its billing modifier is printed straight after it with no
+/// space ("93976TC", "J1885JW"). Each is a lookahead, so the match itself stays
+/// the bare code. Only modifiers containing a letter count: seven digits in a
+/// row is an account number, not a code plus a numeric modifier.
+enum ProcedureCodeEnding {
+    static let cpt = #"(?=(?:[A-Z]{2}|[A-Z][0-9])?\b)"#
+    /// As `cpt`, except that a letter-first code followed by XA, XD or XS is an
+    /// undotted ICD-10 code with its 7th character ("T8111XA"), not HCPCS + modifier.
+    static let hcpcs = #"(?=(?:(?!X[ADS])[A-Z]{2}|[A-Z][0-9])?\b)"#
 }

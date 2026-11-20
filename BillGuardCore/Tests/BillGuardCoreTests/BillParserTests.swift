@@ -75,4 +75,39 @@ final class BillParserTests: XCTestCase {
         XCTAssertTrue(result.lineItems.allSatisfy { $0.kind == .charge },
                       "standard bill should have no payment/credit rows")
     }
+
+    /// A billing modifier printed straight after the code, with no space
+    /// ("93976TC"), must not hide the code or end up inside it.
+    func testCodesWithGluedModifiers() {
+        let procedureText = """
+        Date  Code  Description  Qty  Amount
+        10/10/24  93976TC  Duplex Scan Limited  1  $412.00
+        10/10/24  J1885JW  Ketorolac Injection 15mg  1  $42.00
+        10/10/24  73630RT  X-Ray Foot  1  $88.00
+        10/10/24  99214  Office Visit  1  $185.00
+        Total Charges:  $727.00
+        """
+        let result = BillParser(procedureText: procedureText).parse()
+        let charges = result.lineItems.filter { $0.kind == .charge }
+        XCTAssertEqual(charges.first(where: { $0.code == "93976" })?.amount, 412.00)
+        XCTAssertEqual(charges.first(where: { $0.code == "J1885" })?.amount, 42.00)
+        XCTAssertEqual(charges.first(where: { $0.code == "73630" })?.amount, 88.00)
+        XCTAssertEqual(charges.first(where: { $0.code == "99214" })?.amount, 185.00)
+        XCTAssertEqual(charges.count, 4, "codes found: \(result.lineItems.map(\.code))")
+    }
+
+    /// Seven digits in a row is an ID, and a letter-first code followed by XA
+    /// is an undotted ICD-10 code; neither is a code plus a modifier.
+    func testLookAlikesAreNotCodesWithModifiers() {
+        let procedureText = """
+        Date  Code  Description  Qty  Amount
+        10/10/24  99214  Office Visit  1  $185.00
+        Reference 9397626  T8111XA
+        Total Charges:  $185.00
+        """
+        let result = BillParser(procedureText: procedureText).parse()
+        XCTAssertFalse(result.lineItems.contains { $0.code == "93976" || $0.code == "T8111" },
+                       "codes found: \(result.lineItems.map(\.code))")
+        XCTAssertTrue(result.lineItems.contains { $0.code == "99214" })
+    }
 }

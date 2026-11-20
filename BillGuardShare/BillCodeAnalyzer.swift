@@ -19,9 +19,10 @@ enum BillCodeAnalyzer {
     /// with no space ("93976TC", "J1885JW"); it is matched but not captured, so
     /// the base code is what gets recorded. Only modifiers containing a letter
     /// are accepted glued on: seven digits in a row is an ID, not a code plus a
-    /// numeric modifier.
+    /// numeric modifier. A letter-first code followed by XA, XD or XS is an
+    /// undotted ICD-10 code with its 7th character ("T8111XA"), not HCPCS.
     private static let procedurePattern =
-        #"\b([0-9]{5}|[ABCDEGHJKLMPQRSTUV][0-9]{4})(?:[A-Z]{2}|[A-Z][0-9])?\b"#
+        #"\b([0-9]{5}|[ABCDEGHJKLMPQRSTUV][0-9]{4}(?!X[ADS]\b))(?:[A-Z]{2}|[A-Z][0-9])?\b"#
 
     /// A code conflict that spans more than one captured page.
     struct Anomaly: Equatable, Sendable, Identifiable {

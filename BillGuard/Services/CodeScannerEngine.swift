@@ -84,12 +84,12 @@ struct CodeScannerEngine {
         if looksLikeIdentifierCell(u) { return (.text, "") }
         
         // CPT (5-digit)
-        if let r = u.range(of: #"\b\d{5}\b"#, options: .regularExpression) {
+        if let r = u.range(of: #"\b\d{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression) {
             let code = String(u[r])
             if isValidCPT(code) && isIsolatedCode(u, matchRange: r) { return (.code, code) }
         }
         // HCPCS
-        if let r = u.range(of: #"\b[A-V]\d{4}\b"#, options: .regularExpression) {
+        if let r = u.range(of: #"\b[A-V]\d{4}"# + ProcedureCodeEnding.hcpcs, options: .regularExpression) {
             if isIsolatedCode(u, matchRange: r) { return (.code, String(u[r])) }
         }
         // ICD-10
@@ -184,10 +184,10 @@ struct CodeScannerEngine {
     
     static func findInlineCode(_ text: String) -> InlineMatch? {
         let u = text.uppercased()
-        if let r = u.range(of: #"\b\d{5}\b"#, options: .regularExpression), isValidCPT(String(u[r])), isIsolatedCode(u, matchRange: r) {
+        if let r = u.range(of: #"\b\d{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression), isValidCPT(String(u[r])), isIsolatedCode(u, matchRange: r) {
             return InlineMatch(code: String(u[r]), type: .cpt)
         }
-        if let r = u.range(of: #"\b[A-V]\d{4}\b"#, options: .regularExpression), isIsolatedCode(u, matchRange: r) {
+        if let r = u.range(of: #"\b[A-V]\d{4}"# + ProcedureCodeEnding.hcpcs, options: .regularExpression), isIsolatedCode(u, matchRange: r) {
             return InlineMatch(code: String(u[r]), type: .hcpcs)
         }
         if let r = u.range(of: #"\b[A-TV-Z]\d{2}\.?\d{0,4}\b"#, options: .regularExpression), String(u[r]).count >= 3, isIsolatedCode(u, matchRange: r) {

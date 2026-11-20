@@ -1289,8 +1289,8 @@ struct ProcedureCodeScannerView: View {
         var procedures: [ExtractedProcedureLine] = []
         let lines = text.components(separatedBy: .newlines)
         
-        let cptPattern = #"\b\d{5}\b"#
-        let hcpcsPattern = #"\b[A-Z]\d{4}\b"#
+        let cptPattern = #"\b\d{5}"# + ProcedureCodeEnding.cpt
+        let hcpcsPattern = #"\b[A-Z]\d{4}"# + ProcedureCodeEnding.hcpcs
         let icd10Pattern = #"\b[A-Z]\d{2}\.?\d{0,4}\b"#
         let amountPattern = #"\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?"#
         

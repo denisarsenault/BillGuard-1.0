@@ -712,9 +712,9 @@ struct BillDocumentScanner: View {
         
         // Code patterns - more comprehensive
         // CPT: 5 digits (e.g., 99213)
-        let cptPattern = #"\b(\d{5})\b"#
+        let cptPattern = #"\b(\d{5})"# + ProcedureCodeEnding.cpt
         // HCPCS: Letter + 4 digits (e.g., J1234, G0101)
-        let hcpcsPattern = #"\b([A-Z]\d{4})\b"#
+        let hcpcsPattern = #"\b([A-Z]\d{4})"# + ProcedureCodeEnding.hcpcs
         // ICD-10: Letter + digits, optionally with decimal (e.g., Z00.00, M54.5, E11.9)
         let icd10Pattern = #"\b([A-TV-Z]\d{2,3}(?:\.\d{1,4})?)\b"#
         // ICD-10-PCS: 7 alphanumeric (e.g., 0BJ08ZZ) - procedure codes
@@ -785,6 +785,9 @@ struct BillDocumentScanner: View {
                 for match in regex.matches(in: line, options: [], range: nsRange) {
                     if let range = Range(match.range(at: 1), in: line) {
                         let code = String(line[range])
+                        // "93976TC" is a CPT code with a modifier glued on, already
+                        // found above, not a seven-character ICD-10-PCS code.
+                        if codesFound.contains(where: { $0.type == .cpt && code.hasPrefix($0.code) }) { continue }
                         codesFound.append((code, .icd10pcs, range))
                     }
                 }
@@ -887,7 +890,7 @@ struct BillDocumentScanner: View {
         // Also look for codes embedded in parentheses within descriptions
         // e.g., "Office Visit (99213) - $150.00"
         for line in lines {
-            let embeddedPattern = #"\((\d{5}|[A-Z]\d{4})\)"#
+            let embeddedPattern = #"\((\d{5}|[A-Z]\d{4})(?:[A-Z]{2}|[A-Z]\d)?\)"#
             if let regex = try? NSRegularExpression(pattern: embeddedPattern, options: []) {
                 let nsRange = NSRange(line.startIndex..., in: line)
                 for match in regex.matches(in: line, options: [], range: nsRange) {

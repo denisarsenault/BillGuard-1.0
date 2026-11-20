@@ -1895,8 +1895,8 @@ struct ProcedureScannerSheet: View {
         let lines = text.components(separatedBy: .newlines)
         
         // Patterns for different code types
-        let cptPattern = #"\b\d{5}\b"#  // 5-digit CPT codes
-        let hcpcsPattern = #"\b[A-Z]\d{4}\b"#  // HCPCS codes like A1234
+        let cptPattern = #"\b\d{5}"# + ProcedureCodeEnding.cpt  // 5-digit CPT codes
+        let hcpcsPattern = #"\b[A-Z]\d{4}"# + ProcedureCodeEnding.hcpcs  // HCPCS codes like A1234
         let icd10Pattern = #"\b[A-Z]\d{2}\.?\d{0,4}\b"#  // ICD-10 codes like A00.0
         let amountPattern = #"\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?"#
         
@@ -2617,8 +2617,8 @@ struct BillOCRScanner: View {
         var procedures: [ExtractedProcedureLine] = []
         let lines = text.components(separatedBy: .newlines)
         
-        let cptPattern = #"\b\d{5}\b"#
-        let hcpcsPattern = #"\b[A-Z]\d{4}\b"#
+        let cptPattern = #"\b\d{5}"# + ProcedureCodeEnding.cpt
+        let hcpcsPattern = #"\b[A-Z]\d{4}"# + ProcedureCodeEnding.hcpcs
         let icd10Pattern = #"\b[A-Z]\d{2}\.?\d{0,4}\b"#
         let amountPattern = #"\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?"#
         

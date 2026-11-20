@@ -2791,7 +2791,7 @@ struct BillReviewView: View {
             // BUT keep a row where OCR merged the "Voucher:" header onto an actual
             // procedure line (it still has a 5-digit CPT + charge), e.g.
             // "Voucher:  07/11/11  99214  2607480  Office/outpatient Visit  131.00  0.00"
-            let hasCPTCode = line.range(of: #"\b\d{5}\b"#, options: .regularExpression) != nil
+            let hasCPTCode = line.range(of: #"\b\d{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression) != nil
             if (lower.hasPrefix("voucher") && !hasCPTCode)
                 || lower.contains("visit total") || lower.contains("---- ") { continue }
             // Skip "Patient:" label lines inside procedure area
@@ -3136,11 +3136,11 @@ struct BillReviewView: View {
 
         // First valid CPT (5-digit in range) or HCPCS code on a line.
         func firstCPT(in line: String) -> String? {
-            if let r = line.range(of: #"\b\d{5}\b"#, options: .regularExpression) {
+            if let r = line.range(of: #"\b\d{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression) {
                 let c = String(line[r])
                 if let n = Int(c), n >= 10000 && n <= 99499 { return c }
             }
-            if let r = line.range(of: #"\b[A-Z]\d{4}\b"#, options: .regularExpression) {
+            if let r = line.range(of: #"\b[A-Z]\d{4}"# + ProcedureCodeEnding.hcpcs, options: .regularExpression) {
                 return String(line[r])
             }
             return nil
@@ -3281,12 +3281,12 @@ struct BillReviewView: View {
     /// Extracts the first 5-digit CPT code or HCPCS code from a statement line.
     private func extractFirstMedicalCode(from line: String) -> String {
         // 5-digit CPT: 10000–99499
-        if let range = line.range(of: #"\b[0-9]{5}\b"#, options: .regularExpression) {
+        if let range = line.range(of: #"\b[0-9]{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression) {
             let candidate = String(line[range])
             if let n = Int(candidate), n >= 10000 && n <= 99499 { return candidate }
         }
         // HCPCS: letter + 4 digits (e.g. J2175)
-        if let range = line.range(of: #"\b[A-Z][0-9]{4}\b"#, options: .regularExpression) {
+        if let range = line.range(of: #"\b[A-Z][0-9]{4}"# + ProcedureCodeEnding.hcpcs, options: .regularExpression) {
             return String(line[range])
         }
         return ""
@@ -3366,8 +3366,8 @@ struct BillReviewView: View {
         
         // Regex patterns from ScannerViewModel
         let patterns: [(String, MedicalCodeType)] = [
-            (#"\b([A-V]\d{4})\b"#, .hcpcs),
-            (#"\b(\d{5})\b"#, .cpt),
+            (#"\b([A-V]\d{4})"# + ProcedureCodeEnding.hcpcs, .hcpcs),
+            (#"\b(\d{5})"# + ProcedureCodeEnding.cpt, .cpt),
             (#"\b([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b"#, .icd10)
         ]
         
@@ -3692,9 +3692,9 @@ struct BillReviewView: View {
         // Starts with a service date or date range: 10/10/24, 10/10/2024, 10/11-16
         if s.range(of: #"^\d{1,2}/\d{1,2}(/\d{2,4}|-\d{1,2})"#, options: .regularExpression) != nil { return true }
         // Contains a standalone 5-digit CPT code
-        if s.range(of: #"\b\d{5}\b"#, options: .regularExpression) != nil { return true }
+        if s.range(of: #"\b\d{5}"# + ProcedureCodeEnding.cpt, options: .regularExpression) != nil { return true }
         // Contains a HCPCS code (letter + 4 digits, e.g. J2175)
-        if s.range(of: #"\b[A-Z]\d{4}\b"#, options: .regularExpression) != nil { return true }
+        if s.range(of: #"\b[A-Z]\d{4}"# + ProcedureCodeEnding.hcpcs, options: .regularExpression) != nil { return true }
         // Contains a dollar amount (charge column)
         if s.range(of: #"\$\s?\d"#, options: .regularExpression) != nil { return true }
         return false
@@ -3706,8 +3706,8 @@ struct BillReviewView: View {
         // Revenue codes: 4 digits (0121, 0112, etc.) — hospital UB-04 billing
         // ICD-10: letter + 2-4 digits with optional dot (A01.1, M54.5)
         let patterns = [
-            #"\b([A-Z]\d{4})\b"#,          // HCPCS: J2175
-            #"\b(\d{5})\b"#,                // CPT: 99284
+            #"\b([A-Z]\d{4})"# + ProcedureCodeEnding.hcpcs,          // HCPCS: J2175
+            #"\b(\d{5})"# + ProcedureCodeEnding.cpt,                // CPT: 99284
             #"\b(0\d{3})\b"#,               // Revenue code: 0121 (starts with 0, 4 digits)
             #"\b([A-Z]\d{2,4}\.?\d{0,2})\b"# // ICD-10: M54.5
         ]

@@ -258,7 +258,7 @@ class DocumentScannerService: ObservableObject {
         }
         
         // CPT codes (5 digits, sometimes with modifiers)
-        if matchesPattern(trimmed, pattern: #"^\d{5}(-\d{2})?$"#) {
+        if matchesPattern(trimmed, pattern: #"^\d{5}(-\d{2}|-?[A-Z]{2}|-?[A-Z]\d)?$"#) {
             return .cptCode
         }
         

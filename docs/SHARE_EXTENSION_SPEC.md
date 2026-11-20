@@ -26,6 +26,9 @@
 >   not stored, so the same code billed with different modifiers on two pages
 >   (say `TC` and `26`) still shows as a cross-page duplicate. Only modifiers
 >   containing a letter count when glued on; seven digits in a row is an ID.
+>   A letter-first code followed by `XA`, `XD` or `XS` (`T8111XA`) is an
+>   undotted ICD-10 code, not HCPCS plus a modifier. The main app's scanners
+>   follow the same rules (`ProcedureCodeEnding` in `ScannerViewModel.swift`).
 > - **The extension matches the main app's look** (2026-11-16): dark only, the
 >   app's asset catalog (brand colours and shield logo), cyan tint. The bar shows
 >   the shield and "BillGuard" instead of the section 6 title, which did not fit.
