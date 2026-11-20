@@ -21,6 +21,11 @@
 > - **HCPCS codes are matched too** (2026-11-16): one letter and four digits,
 >   e.g. `J1885`, under the same keep/drop rules, and never straight after a
 >   diagnosis label. They go in `identifiedProcedureCodes` with the CPT codes.
+> - **A modifier printed straight after a code is accepted** (2026-11-19):
+>   `93976TC` and `J1885JW` are read as `93976` and `J1885`. The modifier is
+>   not stored, so the same code billed with different modifiers on two pages
+>   (say `TC` and `26`) still shows as a cross-page duplicate. Only modifiers
+>   containing a letter count when glued on; seven digits in a row is an ID.
 > - **The extension matches the main app's look** (2026-11-16): dark only, the
 >   app's asset catalog (brand colours and shield logo), cyan tint. The bar shows
 >   the shield and "BillGuard" instead of the section 6 title, which did not fit.

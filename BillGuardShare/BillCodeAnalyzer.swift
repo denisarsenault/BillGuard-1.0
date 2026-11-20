@@ -14,8 +14,14 @@ enum BillCodeAnalyzer {
     static let cptPattern = #"\b[0-9]{5}\b"#
     /// HCPCS Level II: one letter (the ranges in use) and four digits, e.g. J1885.
     static let hcpcsPattern = #"\b[ABCDEGHJKLMPQRSTUV][0-9]{4}\b"#
-    /// Either kind of procedure code, so matches come back in reading order.
-    private static let procedurePattern = #"\b(?:[0-9]{5}|[ABCDEGHJKLMPQRSTUV][0-9]{4})\b"#
+    /// Either kind of procedure code (capture group 1), so matches come back in
+    /// reading order. A billing modifier may be printed straight after the code
+    /// with no space ("93976TC", "J1885JW"); it is matched but not captured, so
+    /// the base code is what gets recorded. Only modifiers containing a letter
+    /// are accepted glued on: seven digits in a row is an ID, not a code plus a
+    /// numeric modifier.
+    private static let procedurePattern =
+        #"\b([0-9]{5}|[ABCDEGHJKLMPQRSTUV][0-9]{4})(?:[A-Z]{2}|[A-Z][0-9])?\b"#
 
     /// A code conflict that spans more than one captured page.
     struct Anomaly: Equatable, Sendable, Identifiable {
@@ -69,7 +75,7 @@ enum BillCodeAnalyzer {
             let nsLine = line as NSString
             let lineHasCharge = line.range(of: amountPattern, options: .regularExpression) != nil
             for match in regex.matches(in: line, range: NSRange(location: 0, length: nsLine.length)) {
-                let code = nsLine.substring(with: match.range)
+                let code = nsLine.substring(with: match.range(at: 1))
                 let before = nsLine.substring(to: match.range.location)
                 let after = nsLine.substring(from: match.range.location + match.range.length)
 
