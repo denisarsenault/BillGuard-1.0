@@ -24,6 +24,14 @@
 > - **The extension matches the main app's look** (2026-11-16): dark only, the
 >   app's asset catalog (brand colours and shield logo), cyan tint. The bar shows
 >   the shield and "BillGuard" instead of the section 6 title, which did not fit.
+> - **There is a macOS build as well as the iOS one** (2026-11-19). The Mac app
+>   embeds `BillGuardShareMac` (bundle `com.mybrightzone.BillGuardMac.Share`),
+>   compiled from the same `BillGuardShare/` sources; only the hosting controller
+>   (`BillGuardMac/ShareExtension/`) differs. Two Mac-only differences: Vision
+>   runs at the `.fast` level on images upscaled to 2400 px (`.accurate` takes
+>   about a minute or hangs in the Mac sandbox), and pending pages are kept in
+>   the extension's own Application Support folder, not an App Group, so pages
+>   captured on the Mac and on the iPhone only meet once saved to CloudKit.
 >
 > Implementation lives in `BillGuardShare/`. Overlap rules as implemented:
 > a page's `overlappingCodes` are procedure codes billed more than once on that

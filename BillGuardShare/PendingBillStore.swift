@@ -20,8 +20,15 @@ struct PendingBillStore {
     /// group is not provisioned (pages still persist between shares either way).
     private var fileURL: URL {
         let fileManager = FileManager.default
+        let ownStorage = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        #if os(macOS)
+        // The Mac extension keeps the pending bill in its own sandbox container:
+        // only the extension reads it, and a Mac App Group needs extra provisioning.
+        let base = ownStorage
+        #else
         let base = fileManager.containerURL(forSecurityApplicationGroupIdentifier: Self.appGroupID)
-            ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            ?? ownStorage
+        #endif
         return base.appendingPathComponent("PendingMedicalBill.json")
     }
 

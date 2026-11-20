@@ -5,7 +5,8 @@
 //  Share-sheet UI from docs/SHARE_EXTENSION_SPEC.md (section 6), adapted to the
 //  share-once-per-page flow: each share appends its page, the sheet shows the
 //  running breakdown and the cross-page warning banner. Styled to match the
-//  main app (dark, navy surfaces, cyan tint) using the same asset catalog.
+//  main app (dark, navy surfaces, cyan tint) using the app's asset catalog.
+//  Shared by the iOS and macOS share extensions.
 //
 
 import SwiftUI
@@ -25,8 +26,71 @@ struct ExtensionContentView: View {
 
     @StateObject private var model = ShareScanModel()
 
+    private static let keepHint = "Pages are kept when you choose Done. Share the next page to add it, then Commit Save when the bill is complete."
+
     var body: some View {
+        chrome
+            .tint(Brand.cyan)
+            .preferredColorScheme(.dark)   // BillGuard is dark-only, like the app
+            .task { await model.start(context: extensionContext) }
+            .onChange(of: model.didSave) { _, saved in
+                if saved { finish() }
+            }
+            .alert("BillGuard", isPresented: Binding(
+                get: { model.errorMessage != nil },
+                set: { if !$0 { model.errorMessage = nil } })) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(model.errorMessage ?? "")
+            }
+    }
+
+    /// The shared content inside each platform's bar: a navigation bar on iOS,
+    /// a plain header row on macOS (a share sheet there has no toolbar).
+    @ViewBuilder private var chrome: some View {
+        #if os(macOS)
+        VStack(spacing: 0) {
+            HStack {
+                Button("Done") { finish() }
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                brandTitle
+                Spacer()
+                Button("Commit Save") { Task { await model.commitSave() } }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(model.billPages.isEmpty || model.isProcessing)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Brand.navy)
+            content
+        }
+        .frame(width: 460, height: 600)
+        #else
         NavigationStack {
+            content
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(Brand.navy, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Done") { finish() }
+                    }
+                    ToolbarItem(placement: .principal) {
+                        brandTitle
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Commit Save") { Task { await model.commitSave() } }
+                            .fontWeight(.semibold)
+                            .disabled(model.billPages.isEmpty || model.isProcessing)
+                    }
+                }
+        }
+        #endif
+    }
+
+    private var content: some View {
             VStack(spacing: 0) {
                 if !model.anomalies.isEmpty {
                     warningBanner
@@ -56,13 +120,21 @@ struct ExtensionContentView: View {
                             ForEach(model.billPages) { page in
                                 pageRow(page)
                             }
+                            #if os(macOS)
+                            // A Mac list footer is clipped to one line, so the hint is a row.
+                            Text(Self.keepHint)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            #endif
                         }
                     } header: {
                         sectionHeader("Captured Breakdown")
                     } footer: {
+                        #if !os(macOS)
                         if !model.billPages.isEmpty {
-                            Text("Pages are kept when you tap Done. Share the next page to add it, then Commit Save when the bill is complete.")
+                            Text(Self.keepHint)
                         }
+                        #endif
                     }
                     .listRowBackground(Brand.navy)
 
@@ -91,36 +163,6 @@ struct ExtensionContentView: View {
             }
             .background(Brand.deepNavy.ignoresSafeArea())
             .animation(.default, value: model.anomalies)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Brand.navy, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { finish() }
-                }
-                ToolbarItem(placement: .principal) {
-                    brandTitle
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Commit Save") { Task { await model.commitSave() } }
-                        .fontWeight(.semibold)
-                        .disabled(model.billPages.isEmpty || model.isProcessing)
-                }
-            }
-        }
-        .tint(Brand.cyan)
-        .preferredColorScheme(.dark)   // BillGuard is dark-only, like the app
-        .task { await model.start(context: extensionContext) }
-        .onChange(of: model.didSave) { _, saved in
-            if saved { finish() }
-        }
-        .alert("BillGuard", isPresented: Binding(
-            get: { model.errorMessage != nil },
-            set: { if !$0 { model.errorMessage = nil } })) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(model.errorMessage ?? "")
-        }
     }
 
     /// Shield logo + gradient wordmark, as in the app's BrandToolbar.

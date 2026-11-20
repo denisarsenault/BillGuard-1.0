@@ -8,48 +8,99 @@
 
 /* Begin PBXBuildFile section */
 		027E204FB96FA64A0544D095 /* CodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28735FD913D94741E636BD7 /* CodeDetailView.swift */; };
+		0402CDF192FB8663D8694121 /* PageOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804AB532955D01DAA7D386F2 /* PageOCR.swift */; };
 		06A402D2253DEE77CC3331DE /* VisitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6600BAAE2D76ED9CB3D174F4 /* VisitsView.swift */; };
+		227AA2F34F1EA5520F7637B3 /* PendingBillStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE9B0A39898F023F92801DE /* PendingBillStore.swift */; };
+		22F16BC8AAEBC23F7A0F2E09 /* medical_codes.json in Resources */ = {isa = PBXBuildFile; fileRef = 623CC910ED730E8640F899DB /* medical_codes.json */; };
 		27AFFA22A9D165F80937EA3F /* PatientDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680B3D649F4392B4DF1D1F69 /* PatientDetailView.swift */; };
+		2B9ACDEA8E99CDB5E7C64C6A /* MedicalBillModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B13CEEB526C39CAC6FAF199 /* MedicalBillModels.swift */; };
 		2DD1F79B7F970E39571F78A9 /* SavedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A9CA91DED3787454706710 /* SavedView.swift */; };
+		3C1518CDCB63F0B41C7A53D4 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A02F3CD380F5FE8DE7330E /* ShareViewController.swift */; };
+		4107B103894C5E730B521F07 /* ExtensionContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F01544EC9FFD53B4154CB8 /* ExtensionContentView.swift */; };
+		449747A317A29F4744771322 /* KnownProcedureCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D70114895AAB63E9353CACE /* KnownProcedureCodes.swift */; };
 		522DDE3D8D7F7FBDD3166A14 /* BillGuardMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0506957F733702338F048847 /* BillGuardMacApp.swift */; };
+		560ED4981A73B6D601ABEFE8 /* BillCodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18ECC698ED1D68873FA9D078 /* BillCodeAnalyzer.swift */; };
+		593BFECE936B2587ADEBEE1A /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D52D110B33BD3E3FBF1B99 /* CloudKitManager.swift */; };
 		61A223189283AC2F35C3CB0F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E839FAA797E063A5F05F117 /* Assets.xcassets */; };
+		719252BC35356A2A49FBD219 /* ShareScanModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174E99F8C25D88E040B4707A /* ShareScanModel.swift */; };
 		720DF6CEC1B2620C0B00D17A /* ScanDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB20250F91C25B5F9566F88 /* ScanDocumentView.swift */; };
 		872FD76E428D1E3BF9294534 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EF91C6CE83007CA29449DB /* Theme.swift */; };
 		A3219A6C34CA2ABEE1B20D63 /* BillsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD9E8062C0F4F767E026411 /* BillsView.swift */; };
 		B22354BAE3EB5D3954BCF850 /* PatientsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAADC3FD3E12653523EC9EAD /* PatientsView.swift */; };
 		B2263A799B464202EF087F24 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D872AB130842D129304F57C /* ContentView.swift */; };
 		B3FE69AB20EFB3BAF4B4E079 /* ScanReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CC1C0D08C9DBFADB0D54E8 /* ScanReviewView.swift */; };
+		BDA49DF68E269BFAC6B95F50 /* BillGuardShareMac.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 68A447170459BE9BB87A6215 /* BillGuardShareMac.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C70745FB3E88AC2E820E159A /* PaymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED6AF3066BDBF1F393B86F8 /* PaymentsView.swift */; };
+		CE54D2CB6F6F61E80BDFB09A /* SharedInputLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B04151C95EECA1EC25004FA /* SharedInputLoader.swift */; };
 		DF05921D9D8A4FE79AB09923 /* ProvidersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27037499944ACC6016DCF6B3 /* ProvidersView.swift */; };
 		E044906DF31AF87011D5EE1D /* InsuranceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5227F66221550EC55629DF /* InsuranceView.swift */; };
 		E1FE2B18C418738373B73CCD /* SearchAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 243F43B7FB15B58D1C177F28 /* SearchAddView.swift */; };
 		E9775A8E21A4C1BB4C568067 /* DocumentLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0D9A4FB8B1400E450278FF /* DocumentLoader.swift */; };
 		F3989A643818B85630A83BF0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DF63909640AB15659EAF7C /* SettingsView.swift */; };
+		F75BE97D35ADF8EB78FD38F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E839FAA797E063A5F05F117 /* Assets.xcassets */; };
 		FFE3013A9AB5DABCAB4A0ED1 /* BillGuardCore in Frameworks */ = {isa = PBXBuildFile; productRef = D594CB971EF93ABC3D7ACF43 /* BillGuardCore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A22B8E148A927FC56E8603B6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F4A0F2295BE0CED9481B4E98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6731C275ED815786F65D240C;
+			remoteInfo = BillGuardShareMac;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C030245D9F33E4CE06652415 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BDA49DF68E269BFAC6B95F50 /* BillGuardShareMac.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0506957F733702338F048847 /* BillGuardMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillGuardMacApp.swift; sourceTree = "<group>"; };
+		0CF6C76C18CF00D7C194A13E /* BillGuardShareMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BillGuardShareMac.entitlements; sourceTree = "<group>"; };
+		16F01544EC9FFD53B4154CB8 /* ExtensionContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionContentView.swift; sourceTree = "<group>"; };
+		174E99F8C25D88E040B4707A /* ShareScanModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareScanModel.swift; sourceTree = "<group>"; };
+		18ECC698ED1D68873FA9D078 /* BillCodeAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillCodeAnalyzer.swift; sourceTree = "<group>"; };
+		1B13CEEB526C39CAC6FAF199 /* MedicalBillModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalBillModels.swift; sourceTree = "<group>"; };
 		1BB20250F91C25B5F9566F88 /* ScanDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanDocumentView.swift; sourceTree = "<group>"; };
 		1D872AB130842D129304F57C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1F5D10607EC017ADF53E97EA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		243F43B7FB15B58D1C177F28 /* SearchAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchAddView.swift; sourceTree = "<group>"; };
 		27037499944ACC6016DCF6B3 /* ProvidersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvidersView.swift; sourceTree = "<group>"; };
+		2AE9B0A39898F023F92801DE /* PendingBillStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingBillStore.swift; sourceTree = "<group>"; };
 		3ED6AF3066BDBF1F393B86F8 /* PaymentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsView.swift; sourceTree = "<group>"; };
 		5A42DF2A8D67A73F8EA33195 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5DD9E8062C0F4F767E026411 /* BillsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillsView.swift; sourceTree = "<group>"; };
+		623CC910ED730E8640F899DB /* medical_codes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = medical_codes.json; sourceTree = "<group>"; };
 		6600BAAE2D76ED9CB3D174F4 /* VisitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitsView.swift; sourceTree = "<group>"; };
 		680B3D649F4392B4DF1D1F69 /* PatientDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientDetailView.swift; sourceTree = "<group>"; };
+		68A447170459BE9BB87A6215 /* BillGuardShareMac.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BillGuardShareMac.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		69D52D110B33BD3E3FBF1B99 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
 		75A9CA91DED3787454706710 /* SavedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedView.swift; sourceTree = "<group>"; };
+		7D70114895AAB63E9353CACE /* KnownProcedureCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownProcedureCodes.swift; sourceTree = "<group>"; };
+		804AB532955D01DAA7D386F2 /* PageOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageOCR.swift; sourceTree = "<group>"; };
 		84CC1C0D08C9DBFADB0D54E8 /* ScanReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanReviewView.swift; sourceTree = "<group>"; };
 		8E839FAA797E063A5F05F117 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9501E22A6092950FCFDCED33 /* BillGuardCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BillGuardCore; path = ../BillGuardCore; sourceTree = SOURCE_ROOT; };
+		9B04151C95EECA1EC25004FA /* SharedInputLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedInputLoader.swift; sourceTree = "<group>"; };
 		A3DF63909640AB15659EAF7C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A842CF327B791F779DE6F958 /* BillGuardMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BillGuardMac.entitlements; sourceTree = "<group>"; };
 		B28735FD913D94741E636BD7 /* CodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeDetailView.swift; sourceTree = "<group>"; };
+		D5A02F3CD380F5FE8DE7330E /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		D8EF91C6CE83007CA29449DB /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		DAADC3FD3E12653523EC9EAD /* PatientsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientsView.swift; sourceTree = "<group>"; };
 		FA5227F66221550EC55629DF /* InsuranceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceView.swift; sourceTree = "<group>"; };
-		FA9D5430A680AFB5CCDFA284 /* BillGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillGuardMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD0D9A4FB8B1400E450278FF /* DocumentLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentLoader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -76,7 +127,8 @@
 		107371484A048DB4175913BD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FA9D5430A680AFB5CCDFA284 /* BillGuard.app */,
+				FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */,
+				68A447170459BE9BB87A6215 /* BillGuardShareMac.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,13 +160,67 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		36D7CD74AA9A17D0DF63796C /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				0CF6C76C18CF00D7C194A13E /* BillGuardShareMac.entitlements */,
+				1F5D10607EC017ADF53E97EA /* Info.plist */,
+				D5A02F3CD380F5FE8DE7330E /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		37C3AF8399B225B9D33CCFAD /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				623CC910ED730E8640F899DB /* medical_codes.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		71F97BD39D217CE35687B92E = {
 			isa = PBXGroup;
 			children = (
+				DC9FF3203869FF8E34746E29 /* BillGuard */,
 				0CDA322E38D2AB6D71F2D9A6 /* Packages */,
+				36D7CD74AA9A17D0DF63796C /* ShareExtension */,
 				11C401F62A6EA28E5187654E /* Sources */,
 				107371484A048DB4175913BD /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7744CEA1CF8E2FB8AB18E6BD /* BillGuardShare */ = {
+			isa = PBXGroup;
+			children = (
+				18ECC698ED1D68873FA9D078 /* BillCodeAnalyzer.swift */,
+				69D52D110B33BD3E3FBF1B99 /* CloudKitManager.swift */,
+				16F01544EC9FFD53B4154CB8 /* ExtensionContentView.swift */,
+				7D70114895AAB63E9353CACE /* KnownProcedureCodes.swift */,
+				1B13CEEB526C39CAC6FAF199 /* MedicalBillModels.swift */,
+				804AB532955D01DAA7D386F2 /* PageOCR.swift */,
+				2AE9B0A39898F023F92801DE /* PendingBillStore.swift */,
+				9B04151C95EECA1EC25004FA /* SharedInputLoader.swift */,
+				174E99F8C25D88E040B4707A /* ShareScanModel.swift */,
+			);
+			path = BillGuardShare;
+			sourceTree = "<group>";
+		};
+		949CC72AF9A3B8F1EF6ADA5C /* BillGuard */ = {
+			isa = PBXGroup;
+			children = (
+				37C3AF8399B225B9D33CCFAD /* Resources */,
+			);
+			path = BillGuard;
+			sourceTree = "<group>";
+		};
+		DC9FF3203869FF8E34746E29 /* BillGuard */ = {
+			isa = PBXGroup;
+			children = (
+				949CC72AF9A3B8F1EF6ADA5C /* BillGuard */,
+				7744CEA1CF8E2FB8AB18E6BD /* BillGuardShare */,
+			);
+			name = BillGuard;
+			path = ..;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -127,18 +233,38 @@
 				A0307A8AFB625D8A977D79BB /* Sources */,
 				3084C036ED03DEC2F44312C4 /* Resources */,
 				5DD53D2D9DD4F23EB49C5B27 /* Frameworks */,
+				C030245D9F33E4CE06652415 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				EC4617791D75D5E7E15F061F /* PBXTargetDependency */,
 			);
 			name = BillGuardMac;
 			packageProductDependencies = (
 				D594CB971EF93ABC3D7ACF43 /* BillGuardCore */,
 			);
 			productName = BillGuardMac;
-			productReference = FA9D5430A680AFB5CCDFA284 /* BillGuard.app */;
+			productReference = FA9D5430A680AFB5CCDFA284 /* BillGuardMac.app */;
 			productType = "com.apple.product-type.application";
+		};
+		6731C275ED815786F65D240C /* BillGuardShareMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B03F927092BE914234BB5D1F /* Build configuration list for PBXNativeTarget "BillGuardShareMac" */;
+			buildPhases = (
+				02F11620B3230164F31C0824 /* Sources */,
+				6AB9F84420D0B27B3C6B4A56 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BillGuardShareMac;
+			packageProductDependencies = (
+			);
+			productName = BillGuardShareMac;
+			productReference = 68A447170459BE9BB87A6215 /* BillGuardShareMac.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -150,6 +276,11 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					6479E16C4B5554D17F16C702 = {
+						DevelopmentTeam = B8P24AZNQT;
+						ProvisioningStyle = Automatic;
+					};
+					6731C275ED815786F65D240C = {
+						DevelopmentTeam = B8P24AZNQT;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -172,6 +303,7 @@
 			projectRoot = "";
 			targets = (
 				6479E16C4B5554D17F16C702 /* BillGuardMac */,
+				6731C275ED815786F65D240C /* BillGuardShareMac */,
 			);
 		};
 /* End PBXProject section */
@@ -185,9 +317,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6AB9F84420D0B27B3C6B4A56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F75BE97D35ADF8EB78FD38F2 /* Assets.xcassets in Resources */,
+				22F16BC8AAEBC23F7A0F2E09 /* medical_codes.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		02F11620B3230164F31C0824 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				560ED4981A73B6D601ABEFE8 /* BillCodeAnalyzer.swift in Sources */,
+				593BFECE936B2587ADEBEE1A /* CloudKitManager.swift in Sources */,
+				4107B103894C5E730B521F07 /* ExtensionContentView.swift in Sources */,
+				449747A317A29F4744771322 /* KnownProcedureCodes.swift in Sources */,
+				2B9ACDEA8E99CDB5E7C64C6A /* MedicalBillModels.swift in Sources */,
+				0402CDF192FB8663D8694121 /* PageOCR.swift in Sources */,
+				227AA2F34F1EA5520F7637B3 /* PendingBillStore.swift in Sources */,
+				719252BC35356A2A49FBD219 /* ShareScanModel.swift in Sources */,
+				3C1518CDCB63F0B41C7A53D4 /* ShareViewController.swift in Sources */,
+				CE54D2CB6F6F61E80BDFB09A /* SharedInputLoader.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A0307A8AFB625D8A977D79BB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -214,6 +372,14 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		EC4617791D75D5E7E15F061F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6731C275ED815786F65D240C /* BillGuardShareMac */;
+			targetProxy = A22B8E148A927FC56E8603B6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		335CE18E43DDA3562A616336 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -223,7 +389,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -239,6 +404,32 @@
 				SWIFT_VERSION = 5.9;
 			};
 			name = Release;
+		};
+		8525CFD085D1DFBFDDF352E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/BillGuardShareMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuardMac.Share;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
 		};
 		97D36C48F9DCC0691089F01E /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -275,6 +466,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -293,6 +485,32 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A0C24D7E03A2DC35CD3ECC92 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/BillGuardShareMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuardMac.Share;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -331,6 +549,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -367,7 +586,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = B8P24AZNQT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -392,6 +610,15 @@
 			buildConfigurations = (
 				D14F07691E21A0C95CF209C3 /* Debug */,
 				97D36C48F9DCC0691089F01E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B03F927092BE914234BB5D1F /* Build configuration list for PBXNativeTarget "BillGuardShareMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8525CFD085D1DFBFDDF352E0 /* Debug */,
+				A0C24D7E03A2DC35CD3ECC92 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

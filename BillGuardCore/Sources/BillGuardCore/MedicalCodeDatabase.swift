@@ -44,9 +44,15 @@ public enum MedicalCodeDatabase {
             if c.keywords.contains(where: { $0.lowercased().contains(q) }) { return 6 }
             return nil
         }
-        return pool.compactMap { c in rank(c).map { (c, $0) } }
-            .sorted { $0.1 != $1.1 ? $0.1 < $1.1 : $0.0.code < $1.0.code }
-            .prefix(limit)
-            .map { $0.0 }
+        // Explicit types and steps: the one-expression form times out the type checker.
+        var ranked: [(code: MedicalCode, rank: Int)] = []
+        for candidate in pool {
+            if let r = rank(candidate) { ranked.append((code: candidate, rank: r)) }
+        }
+        ranked.sort { (a: (code: MedicalCode, rank: Int), b: (code: MedicalCode, rank: Int)) -> Bool in
+            if a.rank != b.rank { return a.rank < b.rank }
+            return a.code.code < b.code.code
+        }
+        return ranked.prefix(limit).map { $0.code }
     }
 }

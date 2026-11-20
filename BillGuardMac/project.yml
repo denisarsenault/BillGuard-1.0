@@ -4,6 +4,9 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: B8P24AZNQT
 packages:
   BillGuardCore:
     path: ../BillGuardCore
@@ -16,6 +19,7 @@ targets:
       - path: Sources
     dependencies:
       - package: BillGuardCore
+      - target: BillGuardShareMac
     info:
       path: Sources/Info.plist
       properties:
@@ -34,3 +38,41 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Sources/BillGuardMac.entitlements
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  # Share extension (Safari, Chrome, Finder, Preview… share menus). Same sources
+  # as the iOS extension in ../BillGuardShare; only the hosting controller differs.
+  BillGuardShareMac:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: ../BillGuardShare
+        excludes:
+          - ShareViewController.swift
+          - Info.plist
+          - "*.entitlements"
+      - path: ShareExtension
+      - path: Sources/Assets.xcassets
+      - path: ../BillGuard/Resources/medical_codes.json
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: BillGuard
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule: 'SUBQUERY(extensionItems, $extensionItem, SUBQUERY($extensionItem.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" OR ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text" OR ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.adobe.pdf" OR ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image").@count > 0).@count > 0'
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mybrightzone.BillGuardMac.Share
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: ShareExtension/BillGuardShareMac.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SKIP_INSTALL: YES
