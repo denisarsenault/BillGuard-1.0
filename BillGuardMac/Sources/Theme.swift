@@ -130,12 +130,37 @@ struct BrandHeader: View {
 }
 
 /// Full-width branded header banner across the top of the app window: the
-/// glowing shield logo + "BillGuard" wordmark on the navy gradient, with a
-/// subtle cyan glow graphic. Leading inset clears the window traffic lights.
+/// sidebar button, the glowing shield logo and the "BillGuard" wordmark on the
+/// navy gradient, with a subtle cyan glow graphic. Leading inset clears the
+/// window traffic lights.
+///
+/// The bar draws its own sidebar button because the system one sits at the
+/// sidebar's trailing edge, on top of the wordmark. With the system button
+/// removed the window has no toolbar, which is what lets clicks reach this
+/// one: screens must not add window toolbar items, or those land on the bar.
 struct WindowBrandBar: View {
+    @Binding var columnVisibility: NavigationSplitViewVisibility
+
+    private var sidebarIsHidden: Bool { columnVisibility == .detailOnly }
+
     var body: some View {
         HStack(spacing: 14) {
-            Image("BrandLogoTransparent")
+            Button {
+                withAnimation { columnVisibility = sidebarIsHidden ? .all : .detailOnly }
+            } label: {
+                Image(systemName: "sidebar.leading")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.brandCyan)
+                    .frame(width: 32, height: 30)
+                    .background(Color.brandCyan.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                    .contentShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .help(sidebarIsHidden ? "Show Sidebar" : "Hide Sidebar")
+            .accessibilityLabel(sidebarIsHidden ? "Show Sidebar" : "Hide Sidebar")
+
+            // The plain shield: its edge is clean, so the glow follows the shape.
+            Image("BrandLogo")
                 .resizable().scaledToFit()
                 .frame(width: 44, height: 44)
                 .shadow(color: .brandCyan.opacity(0.65), radius: 9)
@@ -151,7 +176,7 @@ struct WindowBrandBar: View {
             }
             Spacer()
         }
-        .padding(.leading, 82)   // clear the macOS traffic-light buttons
+        .padding(.leading, 84)   // clear the macOS traffic-light buttons
         .padding(.trailing, 22)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)

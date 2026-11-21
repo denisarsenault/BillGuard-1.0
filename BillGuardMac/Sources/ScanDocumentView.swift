@@ -50,21 +50,6 @@ struct ScanDocumentView: View {
             }
         }
         .navigationTitle("Scan Document")
-        .toolbar {
-            if image != nil {
-                ToolbarItemGroup {
-                    Button("Reset Boxes") { rects = Dictionary(uniqueKeysWithValues: RegionKind.allCases.map { ($0, $0.defaultRect) }) }
-                    Button("New Document") { image = nil; result = nil }
-                    Button {
-                        Task { await extract() }
-                    } label: { Label("Extract Text", systemImage: "text.viewfinder") }
-                    .keyboardShortcut(.return, modifiers: [.command])
-                    .disabled(isExtracting)
-                }
-            } else {
-                ToolbarItem { Button("Choose File…") { isImporting = true } }
-            }
-        }
         .fileImporter(isPresented: $isImporting, allowedContentTypes: DocumentLoader.acceptedTypes) { res in
             if case .success(let url) = res { load(url) }
         }
@@ -110,6 +95,17 @@ struct ScanDocumentView: View {
                     }
                     .toggleStyle(.button).tint(kind.color)
                 }
+                // These are in the screen, not the window toolbar: toolbar
+                // items would sit on top of the brand bar (see WindowBrandBar).
+                Divider().frame(height: 18)
+                Button("Reset Boxes") { rects = Dictionary(uniqueKeysWithValues: RegionKind.allCases.map { ($0, $0.defaultRect) }) }
+                Button("New Document") { image = nil; result = nil }
+                Button {
+                    Task { await extract() }
+                } label: { Label("Extract Text", systemImage: "text.viewfinder") }
+                .keyboardShortcut(.return, modifiers: [.command])
+                .buttonStyle(.borderedProminent)
+                .disabled(isExtracting)
             }
             .padding(8)
 

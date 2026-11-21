@@ -58,18 +58,21 @@ struct ContentView: View {
     ]
 
     @State private var selection: Section? = .search
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @StateObject private var favorites = FavoritesManager.shared
 
     var body: some View {
         VStack(spacing: 0) {
-            WindowBrandBar()
-            NavigationSplitView {
+            WindowBrandBar(columnVisibility: $columnVisibility)
+            NavigationSplitView(columnVisibility: $columnVisibility) {
                 List(selection: $selection) {
                     ForEach(Self.groups) { group in
                         SidebarGroup(group: group, favoritesCount: favorites.count)
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 210, ideal: 230)
+                // The brand bar has its own sidebar button, before the logo.
+                .toolbar(removing: .sidebarToggle)
             } detail: {
                 detail(for: selection ?? .search)
             }
