@@ -580,9 +580,8 @@ struct ProfileMenuButton: View {
             InfoView()
         }
         .sheet(isPresented: $showingSharedScans) {
-            SharedScansView(
-                describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
-                onDone: { showingSharedScans = false })
+            SharedScansView(appState: appState, patientDataService: patientDataService,
+                            onDone: { showingSharedScans = false })
         }
     }
     
@@ -682,7 +681,8 @@ struct HomeViewWithProfile: View {
                             }
 
                             // Shared scans banner — bills saved from the share extension
-                            if !sharedScans.scans.isEmpty {
+                            // that have not been added to Bills yet
+                            if sharedScans.pendingCount > 0 {
                                 Button { showingSharedScans = true } label: {
                                     HStack(spacing: 12) {
                                         ZStack {
@@ -692,10 +692,10 @@ struct HomeViewWithProfile: View {
                                                 .foregroundColor(Color("BrandCyan"))
                                         }
                                         VStack(alignment: .leading, spacing: 1) {
-                                            Text("\(sharedScans.scans.count) shared scan\(sharedScans.scans.count == 1 ? "" : "s")")
+                                            Text("\(sharedScans.pendingCount) shared scan\(sharedScans.pendingCount == 1 ? "" : "s") to review")
                                                 .font(.subheadline.weight(.semibold))
                                                 .foregroundColor(.primary)
-                                            Text("Bills saved from the share menu")
+                                            Text("Saved from the share menu, not yet in Bills")
                                                 .font(.caption).foregroundColor(.secondary)
                                         }
                                         Spacer()
@@ -783,9 +783,8 @@ struct HomeViewWithProfile: View {
                     .environmentObject(patientDataService)
             }
             .sheet(isPresented: $showingSharedScans) {
-                SharedScansView(
-                    describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
-                    onDone: { showingSharedScans = false })
+                SharedScansView(appState: appState, patientDataService: patientDataService,
+                                onDone: { showingSharedScans = false })
             }
             .refreshable {
                 appState.searchViewModel.loadPopularCodes()
@@ -1768,9 +1767,8 @@ struct BillsListViewContent: View {
                 .environmentObject(appState)
         }
         .sheet(isPresented: $showingSharedScans) {
-            SharedScansView(
-                describe: { appState.cloudKitService.lookupCode($0)?.shortDescription },
-                onDone: { showingSharedScans = false })
+            SharedScansView(appState: appState, patientDataService: patientDataService,
+                            onDone: { showingSharedScans = false })
         }
     }
     
@@ -1784,13 +1782,13 @@ struct BillsListViewContent: View {
             .listRowBackground(Color.clear)
 
             // Bills saved from the share extension, waiting for review
-            if !sharedScans.scans.isEmpty {
+            if sharedScans.pendingCount > 0 {
                 Section {
                     Button { showingSharedScans = true } label: {
                         HStack {
                             Label("Shared Scans", systemImage: "doc.text.viewfinder")
                             Spacer()
-                            Text("\(sharedScans.scans.count)")
+                            Text("\(sharedScans.pendingCount)")
                                 .foregroundColor(.secondary)
                             Image(systemName: "chevron.right")
                                 .font(.caption.weight(.semibold))

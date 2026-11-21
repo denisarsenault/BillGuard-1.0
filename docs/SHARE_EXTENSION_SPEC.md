@@ -41,12 +41,22 @@
 >   the extension's own Application Support folder, not an App Group, so pages
 >   captured on the Mac and on the iPhone only meet once saved to CloudKit.
 >
-> - **Saved scans are shown in the apps** (2026-11-20), read-only: "Shared
->   Scans" on iPhone (profile menu, plus a Home banner and a Bills row when
->   there are any) and "Web Captures" in the Mac sidebar. One screen for both,
+> - **Saved scans are shown in the apps** (2026-11-20): "Shared Scans" on
+>   iPhone (profile menu, plus a Home banner and a Bills row while any are
+>   still pending) and "Web Captures" in the Mac sidebar. One screen for both,
 >   `BillGuard/Views/SharedScansView.swift`, reading `MedicalBillScan` records
 >   straight from iCloud. `recordName` must be Queryable on that record type
 >   (see `docs/CLOUDKIT_SETUP.md`).
+> - **A saved scan can be added to Bills or deleted** (2026-11-21). Add to
+>   Bills opens each app's own bill review screen on the scan's text and, once
+>   the bill is saved, sets the record's `status` to `"Imported"` (shown as
+>   "Added to Bills"); the scan is kept until it is deleted. Delete removes the
+>   record from iCloud after a confirmation. A scan is whole-page text, not the
+>   four boxes the bill reader expects, so charges and totals come from the
+>   reader while patient and insurance details are taken only from labelled
+>   lines and the provider only from a letterhead at the top of page 1
+>   (`BillCodeAnalyzer.labelledFields` / `letterhead`); anything else is left
+>   blank. On the Mac the person picks the patient in the sheet.
 >
 > Implementation lives in `BillGuardShare/`. Overlap rules as implemented:
 > a page's `overlappingCodes` are procedure codes billed more than once on that

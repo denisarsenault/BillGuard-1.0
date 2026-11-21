@@ -13,16 +13,21 @@ public enum BillImporter {
 
     /// Save a parsed bill: find-or-create the patient, build the claim (charges +
     /// insurer/patient credits), and persist via PatientDataService. Returns the
-    /// resolved patient id and new claim id.
+    /// resolved patient id and new claim id. Pass `patientId` when the person
+    /// has chosen who the bill is for; otherwise the name on the bill decides.
     @MainActor
     @discardableResult
     public static func saveScannedBill(_ r: BillParseResult,
+                                       forPatientId patientId: String? = nil,
                                        into service: PatientDataService = .shared) -> (patientId: String, claimId: String) {
-        // ── Patient: reuse an existing one by name, else create ──
+        // ── Patient: the chosen one, else reuse an existing one by name, else create ──
         let fullName = r.patientName.trimmingCharacters(in: .whitespacesAndNewlines)
         let patient: Patient
-        if !fullName.isEmpty,
-           let existing = service.patients.first(where: { $0.displayName.lowercased() == fullName.lowercased() }) {
+        if let patientId, let chosen = service.patients.first(where: { $0.id == patientId }) {
+            patient = chosen
+        } else if !fullName.isEmpty,
+           let existing = service.patients.first(where: {
+               $0.displayName.trimmingCharacters(in: .whitespaces).lowercased() == fullName.lowercased() }) {
             patient = existing
         } else {
             let parts = fullName.split(separator: " ").map(String.init)

@@ -94,7 +94,10 @@ struct ContentView: View {
         case .scan:      ScanDocumentView()
         case .captures:  SharedScansView(
             title: "Web Captures",
-            describe: { MedicalCodeDatabase.lookup($0)?.shortDescription })
+            describe: { MedicalCodeDatabase.lookup($0)?.shortDescription },
+            importScreen: { scan, finish in
+                AnyView(SharedScanImportSheet(scan: scan, finish: finish))
+            })
         case .settings:  SettingsView()
         }
     }

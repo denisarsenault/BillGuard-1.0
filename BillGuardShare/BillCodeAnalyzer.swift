@@ -140,3 +140,218 @@ enum BillCodeAnalyzer {
         return codes.filter { seen.insert($0).inserted }
     }
 }
+
+// MARK: - Bill details for import
+
+/// Used by the apps when a saved scan is turned into a bill. A scan is one
+/// block of text per page, not the separate provider / patient / insurance
+/// boxes the apps' bill reader works from, so only what is clearly marked on
+/// the page is taken and the rest is left for the person to fill in.
+extension BillCodeAnalyzer {
+
+    /// Details printed with a label ("Patient: …", "Member ID: …"). Nothing
+    /// here is guessed from unlabelled lines.
+    struct LabelledFields: Equatable, Sendable {
+        var patientName = ""
+        var accountNumber = ""
+        var dateOfBirth = ""
+        var serviceDate: Date?
+        var insuranceCarrier = ""
+        var memberID = ""
+        var groupNumber = ""
+        var policyNumber = ""
+    }
+
+    private enum Field: CaseIterable {
+        case patientName, accountNumber, dateOfBirth, serviceDate
+        case insuranceCarrier, memberID, groupNumber, policyNumber
+
+        /// The label, without the "#", "No." or colon that may follow it.
+        var label: String {
+            switch self {
+            case .patientName:      return #"patient(?:\s+name)?"#
+            case .accountNumber:    return #"acc(?:oun)?t"#
+            case .dateOfBirth:      return #"date\s+of\s+birth|birth\s*date|d\.?o\.?b\.?"#
+            case .serviceDate:      return #"dates?\s+of\s+service|service\s+date|d\.?o\.?s\.?"#
+            case .insuranceCarrier: return #"(?:primary\s+)?insurance(?:\s+(?:carrier|company|name))?|carrier|pay[eo]r"#
+            case .memberID:         return #"(?:member|subscriber)"#
+            case .groupNumber:      return #"group"#
+            case .policyNumber:     return #"policy"#
+            }
+        }
+    }
+
+    private static let labelSuffix = #"\s*(?:number|num|no\.?|id|#)?\s*[:#]\s*"#
+    private static let anyLabelPattern = #"(?i)\b[a-z][a-z .#/]{1,28}:"#
+    private static let numericDatePattern = #"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4}|\d{2})\b"#
+    private static let isoDatePattern = #"\b(\d{4})-(\d{2})-(\d{2})\b"#
+    private static let monthNames = ["jan", "feb", "mar", "apr", "may", "jun",
+                                     "jul", "aug", "sep", "oct", "nov", "dec"]
+    private static let namedDatePattern =
+        #"(?i)\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})\b"#
+
+    static func labelledFields(in text: String) -> LabelledFields {
+        let lines = text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        var fields = LabelledFields()
+
+        for field in Field.allCases {
+            guard let regex = try? NSRegularExpression(
+                pattern: #"(?i)(?<![a-z])(?:"# + field.label + ")" + labelSuffix) else { continue }
+            search: for (index, line) in lines.enumerated() {
+                let nsLine = line as NSString
+                for match in regex.matches(in: line, range: NSRange(location: 0, length: nsLine.length)) {
+                    var value = nsLine.substring(from: match.range.location + match.range.length)
+                    // OCR often puts the value on the line below its label.
+                    if value.isEmpty, index + 1 < lines.count,
+                       lines[index + 1].range(of: anyLabelPattern, options: .regularExpression) == nil {
+                        value = lines[index + 1]
+                    }
+                    if set(field, from: value, in: &fields) { break search }
+                }
+            }
+        }
+        return fields
+    }
+
+    /// Stores a value that looks right for `field`; false when it does not.
+    private static func set(_ field: Field, from raw: String, in fields: inout LabelledFields) -> Bool {
+        // A value ends where the next label on the same line starts, or at a
+        // column gap.
+        var value = raw
+        if let next = value.range(of: anyLabelPattern, options: .regularExpression) {
+            value = String(value[..<next.lowerBound])
+        }
+        if let gap = value.range(of: #"\s{3,}|\t"#, options: .regularExpression) {
+            value = String(value[..<gap.lowerBound])
+        }
+        value = value.trimmingCharacters(in: .whitespaces)
+        guard !value.isEmpty else { return false }
+
+        switch field {
+        case .patientName:
+            let words = value.split(separator: " ")
+            guard (2...5).contains(words.count), value.count <= 40,
+                  value.rangeOfCharacter(from: .decimalDigits) == nil,
+                  words.allSatisfy({ $0.first?.isLetter == true }) else { return false }
+            fields.patientName = value
+        case .accountNumber:
+            guard let token = identifier(in: value) else { return false }
+            fields.accountNumber = token
+        case .memberID:
+            guard let token = identifier(in: value) else { return false }
+            fields.memberID = token
+        case .groupNumber:
+            guard let token = identifier(in: value) else { return false }
+            fields.groupNumber = token
+        case .policyNumber:
+            guard let token = identifier(in: value) else { return false }
+            fields.policyNumber = token
+        case .dateOfBirth:
+            guard let found = firstDate(in: value) else { return false }
+            fields.dateOfBirth = found.text
+        case .serviceDate:
+            guard let found = firstDate(in: value) else { return false }
+            fields.serviceDate = found.date
+        case .insuranceCarrier:
+            guard value.count <= 60, value.contains(where: \.isLetter), !value.contains("$"),
+                  value.range(of: amountPattern, options: .regularExpression) == nil else { return false }
+            fields.insuranceCarrier = value
+        }
+        return true
+    }
+
+    /// The first token that reads as an ID: letters, digits and hyphens, with
+    /// at least one digit ("Group: Riverside" is not a group number).
+    private static func identifier(in value: String) -> String? {
+        guard let range = value.range(of: #"^[A-Za-z0-9][A-Za-z0-9-]{2,24}(?![A-Za-z0-9-])"#,
+                                      options: .regularExpression) else { return nil }
+        let token = String(value[range])
+        return token.contains(where: \.isNumber) ? token : nil
+    }
+
+    /// The first date in `text` (US month-first, ISO, or "Sep 18, 2026").
+    private static func firstDate(in text: String) -> (text: String, date: Date)? {
+        func groups(_ pattern: String) -> (whole: String, parts: [String])? {
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))
+            else { return nil }
+            let ns = text as NSString
+            return (ns.substring(with: match.range),
+                    (1..<match.numberOfRanges).map { ns.substring(with: match.range(at: $0)) })
+        }
+        var whole = ""
+        var components = DateComponents()
+        if let (matched, parts) = groups(numericDatePattern) {
+            whole = matched
+            components.month = Int(parts[0])
+            components.day = Int(parts[1])
+            var year = Int(parts[2]) ?? 0
+            if parts[2].count == 2 {
+                // Two-digit years: this century unless that would be in the future.
+                let thisYear = Calendar.current.component(.year, from: Date())
+                year += 2000
+                if year > thisYear { year -= 100 }
+            }
+            components.year = year
+        } else if let (matched, parts) = groups(isoDatePattern) {
+            whole = matched
+            components.year = Int(parts[0])
+            components.month = Int(parts[1])
+            components.day = Int(parts[2])
+        } else if let (matched, parts) = groups(namedDatePattern),
+                  let month = monthNames.firstIndex(of: parts[0].lowercased()) {
+            whole = matched
+            components.month = month + 1
+            components.day = Int(parts[1])
+            components.year = Int(parts[2])
+        } else {
+            return nil
+        }
+        guard let month = components.month, (1...12).contains(month),
+              let day = components.day, (1...31).contains(day),
+              let year = components.year, (1900...2200).contains(year),
+              let date = Calendar.current.date(from: components) else { return nil }
+        return (whole, date)
+    }
+
+    // The provider's name and address usually head the first page.
+    private static let practicePattern =
+        #"(?i)\b(?:hospitals?|clinics?|medical\s+(?:cent(?:er|re)|group|assoc\w*|practice|services)|health\s*(?:system|cent(?:er|re)|care|services|partners|network)|physicians?|associates|radiology|laborator(?:y|ies)|pathology|surg(?:ery|ical)|urgent\s+care|pediatrics?|orthopa?edics?|cardiology|dermatology|imaging|family\s+(?:medicine|practice|health)|internal\s+medicine|wellness|dental|m\.?d\.?)(?![a-z])"#
+    private static let contactLabelPattern = #"(?i)^(?:phone|tel(?:ephone)?|fax)\b"#
+
+    /// The provider's letterhead: the line near the top of the page that names
+    /// a practice, with the address and phone lines under it. Empty when no
+    /// such line comes before the first labelled value or charge, so a web
+    /// page's menu is not taken for a provider.
+    static func letterhead(in text: String) -> String {
+        let lines = text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        func isContact(_ line: String) -> Bool {
+            line.range(of: contactLabelPattern, options: .regularExpression) != nil
+        }
+        func endsLetterhead(_ line: String) -> Bool {
+            if isContact(line) { return false }
+            return line.range(of: anyLabelPattern, options: .regularExpression) != nil
+                || line.range(of: amountPattern, options: .regularExpression) != nil
+                || line.range(of: #"^(?:[0-9]{5}|[A-Z][0-9]{4})(?:[A-Z]{2}|[A-Z][0-9])?\s"#,
+                              options: .regularExpression) != nil
+        }
+
+        var block: [String] = []
+        for line in lines.prefix(12) {
+            if endsLetterhead(line) { break }
+            if block.isEmpty {
+                if line.range(of: practicePattern, options: .regularExpression) != nil { block.append(line) }
+            } else if block.count < 5, isContact(line) || line.contains(where: \.isNumber) {
+                block.append(line)      // street, city and ZIP, phone
+            } else {
+                break
+            }
+        }
+        return block.joined(separator: "\n")
+    }
+}

@@ -2,8 +2,9 @@
 //  ScanReviewView.swift
 //  BillGuard (macOS)
 //
-//  Read-only review of a parsed bill (BillParseResult) from the shared parser.
-//  Saving to the data layer is wired in a follow-up step.
+//  Read-only review of a parsed bill (BillParseResult) from the shared parser,
+//  saved through BillImporter. Also the sheet that adds a saved share-extension
+//  scan ("Web Captures") to Bills.
 //
 
 import SwiftUI
@@ -12,6 +13,16 @@ import BillGuardCore
 struct ScanReviewView: View {
     let result: BillParseResult
     var onClose: () -> Void
+    var title = "Review Bill"
+    /// Save for this patient, instead of finding or creating one from the
+    /// name on the bill.
+    var patientId: String? = nil
+    var canSave = true
+    /// Shown between the title bar and the bill (the patient picker, when a
+    /// saved scan is being added).
+    var accessory: AnyView? = nil
+    /// Called after the bill is saved, before `onClose`.
+    var onSaved: (() -> Void)? = nil
 
     @State private var isSaved = false
 
@@ -23,19 +34,22 @@ struct ScanReviewView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Review Bill").font(.title2.bold())
+                Text(title).font(.title2.bold())
                 Spacer()
                 Button("Cancel") { onClose() }
                 Button(isSaved ? "Saved ✓" : "Save Bill") {
-                    _ = BillImporter.saveScannedBill(result)
+                    _ = BillImporter.saveScannedBill(result, forPatientId: patientId)
                     isSaved = true
+                    onSaved?()
                     onClose()
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
-                .disabled(isSaved)
+                .disabled(isSaved || !canSave)
             }
             .padding()
+
+            if let accessory { accessory }
 
             Form {
                 if !result.providerName.isEmpty || !result.providerAddress.isEmpty {
@@ -119,5 +133,108 @@ struct ScanReviewView: View {
                     .fontWeight(emphasize ? .bold : .regular)
             }
         }
+    }
+}
+
+// MARK: - Adding a saved scan to Bills
+
+/// Opens a saved share-extension scan as a bill. Charges and totals are read
+/// from the scan's text by the shared parser; patient and insurance details
+/// come from the labelled lines only, and the person picks who the bill is for.
+struct SharedScanImportSheet: View {
+    let scan: SharedScan
+    let finish: (_ saved: Bool) -> Void
+
+    @StateObject private var data = PatientDataService.shared
+    @State private var parsed: BillParseResult
+    /// A patient's id, `newPatient`, or empty until one is picked.
+    @State private var choice: String
+    @State private var newPatientName: String
+
+    private static let newPatient = "__new__"
+
+    init(scan: SharedScan, finish: @escaping (_ saved: Bool) -> Void) {
+        self.scan = scan
+        self.finish = finish
+
+        var result = BillParser(providerText: scan.letterhead,
+                                procedureText: scan.fullText,
+                                lookup: { MedicalCodeDatabase.lookup($0) }).parse()
+        let fields = scan.labelledFields
+        result.patientName = fields.patientName
+        result.accountNumber = fields.accountNumber
+        result.dateOfBirth = fields.dateOfBirth
+        result.insuranceCarrier = fields.insuranceCarrier
+        result.memberId = fields.memberID
+        result.groupNumber = fields.groupNumber
+        result.policyNumber = fields.policyNumber
+        if let date = fields.serviceDate { result.serviceDate = date }
+        _parsed = State(initialValue: result)
+
+        // Preselect the patient named on the bill, or the only patient there is.
+        let patients = PatientDataService.shared.patients
+        let name = fields.patientName.lowercased()
+        let match = patients.first {
+            !name.isEmpty && $0.displayName.trimmingCharacters(in: .whitespaces).lowercased() == name
+        }
+        if let match {
+            _choice = State(initialValue: match.id)
+        } else if !name.isEmpty || patients.isEmpty {
+            _choice = State(initialValue: Self.newPatient)
+        } else if patients.count == 1 {
+            _choice = State(initialValue: patients[0].id)
+        } else {
+            _choice = State(initialValue: "")
+        }
+        _newPatientName = State(initialValue: fields.patientName)
+    }
+
+    private var chosenPatient: Patient? { data.patients.first { $0.id == choice } }
+    private var trimmedNewName: String { newPatientName.trimmingCharacters(in: .whitespaces) }
+    private var canSave: Bool { chosenPatient != nil || (choice == Self.newPatient && !trimmedNewName.isEmpty) }
+
+    /// The bill as it will be saved: under the chosen patient's name.
+    private var result: BillParseResult {
+        var result = parsed
+        result.patientName = chosenPatient?.displayName.trimmingCharacters(in: .whitespaces) ?? trimmedNewName
+        return result
+    }
+
+    var body: some View {
+        ScanReviewView(result: result,
+                       onClose: { finish(false) },
+                       title: "Add to Bills",
+                       patientId: chosenPatient?.id,
+                       canSave: canSave,
+                       accessory: AnyView(patientBar),
+                       onSaved: { finish(true) })
+    }
+
+    private var patientBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Picker("Bill for", selection: $choice) {
+                    if choice.isEmpty { Text("Choose a patient").tag("") }
+                    ForEach(data.patients) { patient in
+                        Text(patient.displayName).tag(patient.id)
+                    }
+                    Divider()
+                    Text("New Patient…").tag(Self.newPatient)
+                }
+                .frame(maxWidth: 300)
+                if choice == Self.newPatient {
+                    TextField("Patient name", text: $newPatientName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 240)
+                }
+                Spacer()
+            }
+            Text("Read from a saved scan. Check the charges against the bill; anything the scan did not label is left blank.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 10)
     }
 }

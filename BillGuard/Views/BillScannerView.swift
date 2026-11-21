@@ -1479,6 +1479,10 @@ struct BillReviewView: View {
     /// Box layout used for this scan — saved against the detected provider.
     var usedLayout: SavedScanLayout? = nil
 
+    /// Details already read from labelled lines, for a bill that arrives as
+    /// whole-page text instead of the four boxes (a saved share-extension scan).
+    var prefill: BillCodeAnalyzer.LabelledFields? = nil
+
     // Parsed patient fields
     @State private var patientName = ""
     @State private var accountNumber = ""
@@ -1966,6 +1970,7 @@ struct BillReviewView: View {
         parsePatientFields()
         parseProviderFields()
         parseInsuranceFields()
+        if let prefill { apply(prefill) }
 
         // Detect provider template after provider name is known.
         // Inline lookup so BillScannerView doesn't require ProviderTemplateManager
@@ -2007,6 +2012,18 @@ struct BillReviewView: View {
         }
     }
     
+    /// Fills what the region text left empty.
+    private func apply(_ prefill: BillCodeAnalyzer.LabelledFields) {
+        if patientName.isEmpty { patientName = prefill.patientName }
+        if accountNumber.isEmpty { accountNumber = prefill.accountNumber }
+        if dateOfBirth.isEmpty { dateOfBirth = prefill.dateOfBirth }
+        if insuranceCarrier.isEmpty { insuranceCarrier = prefill.insuranceCarrier }
+        if memberId.isEmpty { memberId = prefill.memberID }
+        if groupNumber.isEmpty { groupNumber = prefill.groupNumber }
+        if policyNumber.isEmpty { policyNumber = prefill.policyNumber }
+        if let date = prefill.serviceDate { serviceDate = date }
+    }
+
     // MARK: - Patient Parsing
     
     private func parsePatientFields() {
