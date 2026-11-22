@@ -6,11 +6,18 @@
 //
 
 import SwiftUI
+import SafariServices
 import BillGuardCore
 
 struct SettingsView: View {
     @StateObject private var userManager = UserManager.shared
     @StateObject private var data = PatientDataService.shared
+    /// Whether the Safari extension is switched on in Safari; nil until known.
+    @State private var safariExtensionEnabled: Bool?
+    @State private var safariExtensionProblem: String?
+
+    /// The Safari Web Extension embedded in this app (BillGuardWebExtensionMac).
+    private static let safariExtensionID = "com.mybrightzone.BillGuardMac.WebExtension"
 
     private var appVersion: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -25,6 +32,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     profileCard
                     syncCard
+                    safariCard
                     if let user = userManager.currentUser { preferencesCard(user) }
                     aboutCard
                 }
@@ -72,6 +80,41 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .navyCard()
+    }
+
+    private var safariCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Safari Extension", systemImage: "safari").font(.headline).foregroundStyle(.brandCyan)
+            settingRow("Status", safariExtensionEnabled.map { $0 ? "On" : "Off" } ?? "Unknown")
+            Text("Adds a BillGuard button to Safari's toolbar. It reads the bill open in the tab, flags repeated and conflicting codes, and saves the bill to Web Captures.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let safariExtensionProblem {
+                Text(safariExtensionProblem).font(.caption).foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Button("Open Safari Extension Settings…") {
+                SFSafariApplication.showPreferencesForExtension(withIdentifier: Self.safariExtensionID) { error in
+                    let message = error.map { "Safari could not be opened: \($0.localizedDescription)" }
+                    DispatchQueue.main.async { safariExtensionProblem = message }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .navyCard()
+        .task { await refreshSafariExtensionState() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task { await refreshSafariExtensionState() }
+        }
+    }
+
+    private func refreshSafariExtensionState() async {
+        let enabled: Bool? = await withCheckedContinuation { continuation in
+            SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: Self.safariExtensionID) { state, _ in
+                continuation.resume(returning: state?.isEnabled)
+            }
+        }
+        safariExtensionEnabled = enabled
     }
 
     private func preferencesCard(_ user: User) -> some View {

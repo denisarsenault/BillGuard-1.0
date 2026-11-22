@@ -57,8 +57,24 @@
 >   lines and the provider only from a letterhead at the top of page 1
 >   (`BillCodeAnalyzer.labelledFields` / `letterhead`); anything else is left
 >   blank. On the Mac the person picks the patient in the sheet.
+> - **There is also a Safari Web Extension** (2026-11-21), for Mac and iOS: a
+>   BillGuard button in Safari that reads the text of the open page, which a
+>   share extension cannot do. This is the "scroll and Append Page" flow of
+>   section 1: Add This Page, the conflict banner, Save, Discard. Web files
+>   and the native handler are in `BillGuardWebExtension/`, built into the iOS
+>   app (target `BillGuardWebExtension`, bundle
+>   `com.mybrightzone.BillGuard.WebExtension`) and the Mac app
+>   (`BillGuardWebExtensionMac`, `com.mybrightzone.BillGuardMac.WebExtension`).
+>   The popup decides nothing: it sends the page text to
+>   `SafariWebExtensionHandler`, which uses the same analyzer, pending-page
+>   store and CloudKit save as the share extension, so on iOS both extensions
+>   add to the same pending bill. No OCR is involved: a PDF or an image open in
+>   Safari has no page text, and still goes through Share. Permissions are
+>   `activeTab`, `scripting` and `nativeMessaging` only, so the page is read
+>   when the button is used and not otherwise.
 >
-> Implementation lives in `BillGuardShare/`. Overlap rules as implemented:
+> Implementation lives in `BillGuardShare/` (and `BillGuardWebExtension/` for
+> the Safari Web Extension). Overlap rules as implemented:
 > a page's `overlappingCodes` are procedure codes billed more than once on that
 > page; a cross-page anomaly is a procedure code on more than one page, or a
 > diagnosis repeated across pages where one of them has no procedure code.

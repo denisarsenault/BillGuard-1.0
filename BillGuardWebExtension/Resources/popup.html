@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>BillGuard</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <header>
+        <img src="shield.png" alt="" width="28" height="28">
+        <h1>BillGuard</h1>
+    </header>
+
+    <section id="conflicts" class="banner" hidden>
+        <h2>High-Risk Code Overlap Detected</h2>
+        <p id="conflict-summary"></p>
+        <ul id="conflict-list"></ul>
+    </section>
+
+    <section>
+        <h3>Captured Breakdown</h3>
+        <p id="empty" class="note">No pages captured yet. Open the bill, then choose Add This Page. For a bill with several pages, add each one.</p>
+        <ul id="pages"></ul>
+    </section>
+
+    <p id="status" class="status" role="status" hidden></p>
+
+    <div class="actions">
+        <button id="capture" class="primary" type="button">Add This Page</button>
+        <button id="save" type="button" disabled>Save to BillGuard</button>
+        <button id="discard" class="quiet" type="button" hidden>Discard Pages</button>
+    </div>
+
+    <p class="note small">The page's text is read on this device. Nothing is sent anywhere until you save, and saving goes to your own iCloud.</p>
+
+    <script src="popup.js"></script>
+</body>
+</html>

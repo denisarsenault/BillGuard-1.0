@@ -10,13 +10,26 @@
 		0797324ADF1739CA217E6D75 /* BillGuardShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0EB400FFA9BE4B89C7E191EB /* MedicalBillModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */; };
 		171BADFD2262CB73EA3D921F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C5EA34CD789A7D75F2740D /* Foundation.framework */; };
+		1EF554BCBED29E1EBF9F4F5A /* BillCodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */; };
 		252D41084268FD0A1F4F7DC2 /* MedicalBillModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */; };
+		2FCAC30985045C58E717064D /* MedicalBillModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */; };
+		348AA2B2211ED1FB3CEDF241 /* toolbar-38.png in Resources */ = {isa = PBXBuildFile; fileRef = 4598C99ED5287E5CAAC04E36 /* toolbar-38.png */; };
+		3A51DB785E46E3A5D4A3D47A /* toolbar-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 16BF48796074F273588B7468 /* toolbar-72.png */; };
 		413E455761BBE0E91C7A35D9 /* ShareScanModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74EA38BABD96291EB4FE46C9 /* ShareScanModel.swift */; };
+		435C3960744D7585EA8A47D9 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = D69251FBA8480F15C2429A3A /* icon-512.png */; };
+		4698AE6114F3E781A6D8F51C /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 1D834F0E479F3673D6B0C7CF /* popup.css */; };
 		56D62C4CB0D4152ADEE6B6C4 /* SharedInputLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79B29B9A1BCE4BE0D090D5 /* SharedInputLoader.swift */; };
+		5F43E2EDF8CDF8FD3DC1EAD5 /* toolbar-19.png in Resources */ = {isa = PBXBuildFile; fileRef = 45B870FC532AB4BFC81BEC67 /* toolbar-19.png */; };
 		6275186E8A6A16D4215678EF /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71C0E662BD1A72382A2DA65 /* ShareViewController.swift */; };
+		6E200C451F3D7C648E29D8FB /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 71FE88856F67E0FDB7E139C5 /* popup.html */; };
+		70BA72856D85F7329352C814 /* WebCaptureBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A96D522D612CCCD35031FCC /* WebCaptureBridge.swift */; };
+		70FC9B6850CEA6B8C1EE38FF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C5EA34CD789A7D75F2740D /* Foundation.framework */; };
+		87F8A8443B506F409BE75D84 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */; };
 		8FC8B59CDC98FA128E00475B /* BillCodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */; };
+		9430CD2CC0DA421D5BCF6728 /* icon-96.png in Resources */ = {isa = PBXBuildFile; fileRef = E8E2B6BA6BBB1364754B4602 /* icon-96.png */; };
 		9747CB45B6F0ECD09326157E /* medical_codes.json in Resources */ = {isa = PBXBuildFile; fileRef = A100003B /* medical_codes.json */; };
 		98C7DDD8F84C59B0C4E2825F /* ExtensionContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB701D65EA3FC6F8CF800F07 /* ExtensionContentView.swift */; };
+		99C11C243E404E05161685EE /* shield.png in Resources */ = {isa = PBXBuildFile; fileRef = 42A6FCFCE544ACF76BFADB11 /* shield.png */; };
 		A1000001 /* BillGuardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* BillGuardApp.swift */; };
 		A1000003 /* MedicalCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* MedicalCode.swift */; };
 		A1000005 /* RecentSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006 /* RecentSearch.swift */; };
@@ -63,13 +76,27 @@
 		A2000003 /* VisitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* VisitViews.swift */; };
 		A2000005 /* PaymentMethodViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* PaymentMethodViews.swift */; };
 		A20148A5E2D6396934948C14 /* KnownProcedureCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */; };
+		A4ECCF466F6615B0931061AD /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = E9E4514ED4A926E80A71755F /* popup.js */; };
 		AAFD352F092A7D8025153A6E /* SharedScansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C310E9F26727B45B85CA92C8 /* SharedScansView.swift */; };
+		AD40CF325A0D3217EF428224 /* icon-48.png in Resources */ = {isa = PBXBuildFile; fileRef = DF13CE61A1E4A2AC3793E254 /* icon-48.png */; };
+		B25D5D44FAFAF079AFCF9C71 /* toolbar-16.png in Resources */ = {isa = PBXBuildFile; fileRef = 64D9838CCFB07FE6B43FEBD7 /* toolbar-16.png */; };
 		B3AB5A29C20C4CFD86522F4D /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */; };
+		BA47A8BB7A602485F4FC5D2B /* icon-128.png in Resources */ = {isa = PBXBuildFile; fileRef = 19D8D0E211F0784212ED3F3D /* icon-128.png */; };
 		BC32C83D3C23B27679D7EBD8 /* BillCodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */; };
 		BCE08D489A9BE0DE369A1412 /* KnownProcedureCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */; };
+		BD98262D2717E1671D9C71EF /* KnownProcedureCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */; };
+		C2D556CB2E9E139DF9FC0A33 /* toolbar-48.png in Resources */ = {isa = PBXBuildFile; fileRef = B0D6A8D0DFE27ED1C9CE0E5D /* toolbar-48.png */; };
+		C5360047D413993E2019E0CF /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 65C19FE4210B155709A2B479 /* background.js */; };
 		C8D2C4840B548C286C98A107 /* PageOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70585203A43F3BC451018120 /* PageOCR.swift */; };
+		D2F5D8BA9D059015C686D19F /* medical_codes.json in Resources */ = {isa = PBXBuildFile; fileRef = A100003B /* medical_codes.json */; };
+		D5855A15BCFA4B6EF6F61377 /* toolbar-32.png in Resources */ = {isa = PBXBuildFile; fileRef = E72A8829B0198DE13F774A96 /* toolbar-32.png */; };
 		D962CE98F83090C0B2EFD026 /* PendingBillStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */; };
 		DD7EE194285083820F9651D4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100001C /* Assets.xcassets */; };
+		EE0F28B54ED204347BA57F49 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 75B186DB5E8BD7A08EF93222 /* manifest.json */; };
+		F63D19566411F761AF8226A3 /* PendingBillStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */; };
+		F74D1A2791245305038E1CA6 /* icon-256.png in Resources */ = {isa = PBXBuildFile; fileRef = 71E9DEB85EC0AEBC1DDC84E7 /* icon-256.png */; };
+		FC042DE71BBB790449DD04B7 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 415F111EFF23A32D75E0D361 /* SafariWebExtensionHandler.swift */; };
+		FE7346AF5E51353E7DFE4D78 /* BillGuardWebExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A2811942E6A7D30B3B1991FB /* BillGuardWebExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +106,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 1C0F238C27B463F270A3EF41;
 			remoteInfo = BillGuardShare;
+		};
+		4168C4DF5210F5B1AA095DDA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A100002D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3AA47331A03147F267C9EC5;
+			remoteInfo = BillGuardWebExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -90,6 +124,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				0797324ADF1739CA217E6D75 /* BillGuardShare.appex in Embed Foundation Extensions */,
+				FE7346AF5E51353E7DFE4D78 /* BillGuardWebExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -98,13 +133,28 @@
 
 /* Begin PBXFileReference section */
 		1449F10E582CD306CD07E7BE /* KnownProcedureCodes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KnownProcedureCodes.swift; sourceTree = "<group>"; };
+		16BF48796074F273588B7468 /* toolbar-72.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-72.png"; sourceTree = "<group>"; };
+		18206937B4CFCF4874B84B1B /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		19D8D0E211F0784212ED3F3D /* icon-128.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "icon-128.png"; sourceTree = "<group>"; };
+		1D834F0E479F3673D6B0C7CF /* popup.css */ = {isa = PBXFileReference; includeInIndex = 1; path = popup.css; sourceTree = "<group>"; };
 		3D24C933A258B85167F0D2DC /* MedicalBillModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MedicalBillModels.swift; sourceTree = "<group>"; };
+		415F111EFF23A32D75E0D361 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		42A6FCFCE544ACF76BFADB11 /* shield.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = shield.png; sourceTree = "<group>"; };
 		42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BillGuardShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4598C99ED5287E5CAAC04E36 /* toolbar-38.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-38.png"; sourceTree = "<group>"; };
+		45B870FC532AB4BFC81BEC67 /* toolbar-19.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-19.png"; sourceTree = "<group>"; };
 		53FF185F60E180E112EA0BFD /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5A8E64824830CEF95FCB2B47 /* BillGuardWebExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = BillGuardWebExtension.entitlements; sourceTree = "<group>"; };
+		64D9838CCFB07FE6B43FEBD7 /* toolbar-16.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-16.png"; sourceTree = "<group>"; };
+		65C19FE4210B155709A2B479 /* background.js */ = {isa = PBXFileReference; includeInIndex = 1; path = background.js; sourceTree = "<group>"; };
+		6A96D522D612CCCD35031FCC /* WebCaptureBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebCaptureBridge.swift; sourceTree = "<group>"; };
 		6CB48CAABC7684187DD3D203 /* BillCodeAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillCodeAnalyzer.swift; sourceTree = "<group>"; };
 		6FB18EC8579784F2EAA15E6D /* CloudKitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
 		70585203A43F3BC451018120 /* PageOCR.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PageOCR.swift; sourceTree = "<group>"; };
+		71E9DEB85EC0AEBC1DDC84E7 /* icon-256.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "icon-256.png"; sourceTree = "<group>"; };
+		71FE88856F67E0FDB7E139C5 /* popup.html */ = {isa = PBXFileReference; includeInIndex = 1; path = popup.html; sourceTree = "<group>"; };
 		74EA38BABD96291EB4FE46C9 /* ShareScanModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareScanModel.swift; sourceTree = "<group>"; };
+		75B186DB5E8BD7A08EF93222 /* manifest.json */ = {isa = PBXFileReference; includeInIndex = 1; path = manifest.json; sourceTree = "<group>"; };
 		A1000002 /* BillGuardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillGuardApp.swift; sourceTree = "<group>"; };
 		A1000004 /* MedicalCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalCode.swift; sourceTree = "<group>"; };
 		A1000006 /* RecentSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearch.swift; sourceTree = "<group>"; };
@@ -154,9 +204,16 @@
 		A2000002 /* InsuranceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsuranceViews.swift; sourceTree = "<group>"; };
 		A2000004 /* VisitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViews.swift; sourceTree = "<group>"; };
 		A2000006 /* PaymentMethodViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodViews.swift; sourceTree = "<group>"; };
+		A2811942E6A7D30B3B1991FB /* BillGuardWebExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BillGuardWebExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB701D65EA3FC6F8CF800F07 /* ExtensionContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExtensionContentView.swift; sourceTree = "<group>"; };
+		B0D6A8D0DFE27ED1C9CE0E5D /* toolbar-48.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-48.png"; sourceTree = "<group>"; };
 		C310E9F26727B45B85CA92C8 /* SharedScansView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedScansView.swift; sourceTree = "<group>"; };
 		CCBD5060CF4DE400C1E11988 /* PendingBillStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PendingBillStore.swift; sourceTree = "<group>"; };
+		D69251FBA8480F15C2429A3A /* icon-512.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
+		DF13CE61A1E4A2AC3793E254 /* icon-48.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "icon-48.png"; sourceTree = "<group>"; };
+		E72A8829B0198DE13F774A96 /* toolbar-32.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "toolbar-32.png"; sourceTree = "<group>"; };
+		E8E2B6BA6BBB1364754B4602 /* icon-96.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = "icon-96.png"; sourceTree = "<group>"; };
+		E9E4514ED4A926E80A71755F /* popup.js */ = {isa = PBXFileReference; includeInIndex = 1; path = popup.js; sourceTree = "<group>"; };
 		ED79B29B9A1BCE4BE0D090D5 /* SharedInputLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedInputLoader.swift; sourceTree = "<group>"; };
 		F23491A1EDBF24378271A656 /* BillGuardShare.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = BillGuardShare.entitlements; sourceTree = "<group>"; };
 		F71C0E662BD1A72382A2DA65 /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -175,6 +232,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C6E15232EB44A6604C8CE9D4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70FC9B6850CEA6B8C1EE38FF /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,6 +265,44 @@
 			path = BillGuardShare;
 			sourceTree = "<group>";
 		};
+		2E0BBA2C445D182D044B22F6 /* BillGuardWebExtension */ = {
+			isa = PBXGroup;
+			children = (
+				415F111EFF23A32D75E0D361 /* SafariWebExtensionHandler.swift */,
+				6A96D522D612CCCD35031FCC /* WebCaptureBridge.swift */,
+				18206937B4CFCF4874B84B1B /* Info.plist */,
+				5A8E64824830CEF95FCB2B47 /* BillGuardWebExtension.entitlements */,
+				6ECE9AEEBC3CA965E40A8B6F /* Resources */,
+			);
+			name = BillGuardWebExtension;
+			path = BillGuardWebExtension;
+			sourceTree = "<group>";
+		};
+		6ECE9AEEBC3CA965E40A8B6F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				65C19FE4210B155709A2B479 /* background.js */,
+				19D8D0E211F0784212ED3F3D /* icon-128.png */,
+				71E9DEB85EC0AEBC1DDC84E7 /* icon-256.png */,
+				DF13CE61A1E4A2AC3793E254 /* icon-48.png */,
+				D69251FBA8480F15C2429A3A /* icon-512.png */,
+				E8E2B6BA6BBB1364754B4602 /* icon-96.png */,
+				75B186DB5E8BD7A08EF93222 /* manifest.json */,
+				1D834F0E479F3673D6B0C7CF /* popup.css */,
+				71FE88856F67E0FDB7E139C5 /* popup.html */,
+				E9E4514ED4A926E80A71755F /* popup.js */,
+				42A6FCFCE544ACF76BFADB11 /* shield.png */,
+				64D9838CCFB07FE6B43FEBD7 /* toolbar-16.png */,
+				45B870FC532AB4BFC81BEC67 /* toolbar-19.png */,
+				E72A8829B0198DE13F774A96 /* toolbar-32.png */,
+				4598C99ED5287E5CAAC04E36 /* toolbar-38.png */,
+				B0D6A8D0DFE27ED1C9CE0E5D /* toolbar-48.png */,
+				16BF48796074F273588B7468 /* toolbar-72.png */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		A1000020 = {
 			isa = PBXGroup;
 			children = (
@@ -207,6 +310,7 @@
 				A1000022 /* Products */,
 				D670DAEC873D32627F9C78C5 /* Frameworks */,
 				24BF6E65066360F9BE948CF2 /* BillGuardShare */,
+				2E0BBA2C445D182D044B22F6 /* BillGuardWebExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -231,6 +335,7 @@
 			children = (
 				A100001E /* BillGuard.app */,
 				42CA01CC0055A0FAE4CE2203 /* BillGuardShare.appex */,
+				A2811942E6A7D30B3B1991FB /* BillGuardWebExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -387,11 +492,29 @@
 			);
 			dependencies = (
 				47C6DCCE664EDFDB0F4C369C /* PBXTargetDependency */,
+				6854C3548E2AB00E52929CF8 /* PBXTargetDependency */,
 			);
 			name = BillGuard;
 			productName = BillGuard;
 			productReference = A100001E /* BillGuard.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F3AA47331A03147F267C9EC5 /* BillGuardWebExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C6FD8B6C406D2857255D7A8 /* Build configuration list for PBXNativeTarget "BillGuardWebExtension" */;
+			buildPhases = (
+				891A72B4854F2F981B68271B /* Sources */,
+				C6E15232EB44A6604C8CE9D4 /* Frameworks */,
+				3C45FFF4B39DBD458C9EF501 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BillGuardWebExtension;
+			productName = BillGuardWebExtension;
+			productReference = A2811942E6A7D30B3B1991FB /* BillGuardWebExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -423,11 +546,37 @@
 			targets = (
 				A1000029 /* BillGuard */,
 				1C0F238C27B463F270A3EF41 /* BillGuardShare */,
+				F3AA47331A03147F267C9EC5 /* BillGuardWebExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3C45FFF4B39DBD458C9EF501 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5360047D413993E2019E0CF /* background.js in Resources */,
+				BA47A8BB7A602485F4FC5D2B /* icon-128.png in Resources */,
+				F74D1A2791245305038E1CA6 /* icon-256.png in Resources */,
+				AD40CF325A0D3217EF428224 /* icon-48.png in Resources */,
+				435C3960744D7585EA8A47D9 /* icon-512.png in Resources */,
+				9430CD2CC0DA421D5BCF6728 /* icon-96.png in Resources */,
+				EE0F28B54ED204347BA57F49 /* manifest.json in Resources */,
+				4698AE6114F3E781A6D8F51C /* popup.css in Resources */,
+				6E200C451F3D7C648E29D8FB /* popup.html in Resources */,
+				A4ECCF466F6615B0931061AD /* popup.js in Resources */,
+				99C11C243E404E05161685EE /* shield.png in Resources */,
+				B25D5D44FAFAF079AFCF9C71 /* toolbar-16.png in Resources */,
+				5F43E2EDF8CDF8FD3DC1EAD5 /* toolbar-19.png in Resources */,
+				D5855A15BCFA4B6EF6F61377 /* toolbar-32.png in Resources */,
+				348AA2B2211ED1FB3CEDF241 /* toolbar-38.png in Resources */,
+				C2D556CB2E9E139DF9FC0A33 /* toolbar-48.png in Resources */,
+				3A51DB785E46E3A5D4A3D47A /* toolbar-72.png in Resources */,
+				D2F5D8BA9D059015C686D19F /* medical_codes.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A100002C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -449,6 +598,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		891A72B4854F2F981B68271B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC042DE71BBB790449DD04B7 /* SafariWebExtensionHandler.swift in Sources */,
+				70BA72856D85F7329352C814 /* WebCaptureBridge.swift in Sources */,
+				1EF554BCBED29E1EBF9F4F5A /* BillCodeAnalyzer.swift in Sources */,
+				87F8A8443B506F409BE75D84 /* CloudKitManager.swift in Sources */,
+				BD98262D2717E1671D9C71EF /* KnownProcedureCodes.swift in Sources */,
+				2FCAC30985045C58E717064D /* MedicalBillModels.swift in Sources */,
+				F63D19566411F761AF8226A3 /* PendingBillStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A100002B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -528,6 +691,12 @@
 			name = BillGuardShare;
 			target = 1C0F238C27B463F270A3EF41 /* BillGuardShare */;
 			targetProxy = 059739508A84663122FEC52D /* PBXContainerItemProxy */;
+		};
+		6854C3548E2AB00E52929CF8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BillGuardWebExtension;
+			target = F3AA47331A03147F267C9EC5 /* BillGuardWebExtension */;
+			targetProxy = 4168C4DF5210F5B1AA095DDA /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -765,6 +934,37 @@
 			};
 			name = Release;
 		};
+		B684B7A2F13EBB865C2EA6FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = BillGuardWebExtension/BillGuardWebExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuardWebExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BillGuard;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard.WebExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		BDE1441B9B51F47F69218D48 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -794,9 +994,46 @@
 			};
 			name = Debug;
 		};
+		C5A3C894203B3E1AFAF9DB7B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = BillGuardWebExtension/BillGuardWebExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = B8P24AZNQT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BillGuardWebExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BillGuard;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mybrightzone.BillGuard.WebExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		9C6FD8B6C406D2857255D7A8 /* Build configuration list for PBXNativeTarget "BillGuardWebExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B684B7A2F13EBB865C2EA6FC /* Release */,
+				C5A3C894203B3E1AFAF9DB7B /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A100002A /* Build configuration list for PBXNativeTarget "BillGuard" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

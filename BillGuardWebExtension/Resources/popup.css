@@ -1,0 +1,132 @@
+/* BillGuard popup: the app's dark navy surfaces, cyan accent. */
+:root {
+    --deep-navy: #050f23;
+    --navy: #0d1426;
+    --cyan: #00d2e6;
+    --teal: #00bcce;
+    --text: #f2f5fa;
+    --muted: #9aa5b8;
+    --red: #ff5a52;
+    --green: #34c759;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--deep-navy); }
+
+body {
+    margin: 0;
+    padding: 14px 16px 16px;
+    width: 340px;
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    color: var(--text);
+    background: var(--deep-navy);
+    -webkit-text-size-adjust: 100%;
+}
+
+/* On iPhone the popup is a sheet as wide as the screen. */
+@media (max-width: 500px), (pointer: coarse) {
+    body { width: auto; font-size: 16px; padding-bottom: 28px; }
+}
+
+header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+
+h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cyan);
+}
+
+h2 { margin: 0 0 4px; font-size: 15px; }
+
+h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+p { margin: 0; }
+
+ul { list-style: none; margin: 0; padding: 0; }
+
+.banner {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 59, 48, 0.85);
+    color: #fff;
+}
+
+.banner p { font-size: 12px; }
+
+.banner ul { margin-top: 6px; font-size: 12px; }
+
+.banner li + li { margin-top: 2px; }
+
+.code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; }
+
+#pages li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--navy);
+}
+
+#pages li:first-child { border-radius: 10px 10px 0 0; }
+#pages li:last-child { border-radius: 0 0 10px 10px; }
+#pages li:only-child { border-radius: 10px; }
+#pages li + li { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+
+.page-name { font-weight: 600; }
+.page-overlaps { font-size: 12px; color: var(--muted); }
+.page-overlaps.some { color: var(--red); }
+.page-counts { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+.note { color: var(--muted); font-size: 13px; }
+.note.small { font-size: 11px; margin-top: 12px; }
+
+.status {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    background: rgba(0, 210, 230, 0.12);
+    color: var(--text);
+}
+
+.status.error { background: rgba(255, 59, 48, 0.18); }
+.status.done { background: rgba(52, 199, 89, 0.18); }
+
+.actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+
+button {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 210, 230, 0.45);
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--cyan);
+    background: transparent;
+    cursor: pointer;
+}
+
+button.primary {
+    border-color: transparent;
+    color: #04121f;
+    background: linear-gradient(135deg, var(--cyan), var(--teal));
+}
+
+button.quiet { border-color: transparent; color: var(--red); font-weight: 500; }
+
+button:disabled { opacity: 0.4; cursor: default; }
+
+button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
