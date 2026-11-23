@@ -24,8 +24,9 @@ body {
     -webkit-text-size-adjust: 100%;
 }
 
-/* On iPhone the popup is a sheet as wide as the screen. */
-@media (max-width: 500px), (pointer: coarse) {
+/* On iPhone and iPad the popup is a sheet, not a fixed-width popover. (Not
+   keyed on width: a desktop popup is narrow too, and must keep its 340px.) */
+@media (hover: none) and (pointer: coarse) {
     body { width: auto; font-size: 16px; padding-bottom: 28px; }
 }
 

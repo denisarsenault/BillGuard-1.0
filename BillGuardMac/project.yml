@@ -23,6 +23,11 @@ targets:
       - path: ../BillGuardShare/MedicalBillModels.swift
       - path: ../BillGuardShare/BillCodeAnalyzer.swift
       - path: ../BillGuardShare/KnownProcedureCodes.swift
+      # A bill handed over by the Chrome extension (Sources/WebCaptureHandoff.swift)
+      # goes through the same capture steps and CloudKit save as the extensions.
+      - path: ../BillGuardShare/CloudKitManager.swift
+      - path: ../BillGuardShare/PendingBillStore.swift
+      - path: ../BillGuardWebExtension/WebCaptureBridge.swift
     dependencies:
       - package: BillGuardCore
       - target: BillGuardShareMac
@@ -33,6 +38,12 @@ targets:
         CFBundleDisplayName: BillGuard
         LSApplicationCategoryType: public.app-category.medical
         NSHumanReadableCopyright: ""
+        # billguard://web-capture links, opened by the Chrome extension's Save.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.mybrightzone.BillGuardMac.web-capture
+            CFBundleTypeRole: Viewer
+            CFBundleURLSchemes:
+              - billguard
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mybrightzone.BillGuardMac

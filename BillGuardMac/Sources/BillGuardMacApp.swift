@@ -21,6 +21,9 @@ struct BillGuardMacApp: App {
                 .frame(minWidth: 960, minHeight: 640)
                 .tint(.brandCyan)
                 .preferredColorScheme(.dark)   // BillGuard is a dark-only brand (matches iOS)
+                // A billguard:// link (a bill from the Chrome extension) goes
+                // to the window that is already open, not to a new one.
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         .windowStyle(.hiddenTitleBar)
         .commands {

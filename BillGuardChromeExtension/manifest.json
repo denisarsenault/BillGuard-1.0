@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "BillGuard",
+    "description": "Check the medical bill open in Chrome for repeated and conflicting billing codes, then send it to the BillGuard app on your Mac.",
+    "version": "1.0",
+    "minimum_chrome_version": "110",
+    "icons": {
+        "48": "icon-48.png",
+        "96": "icon-96.png",
+        "128": "icon-128.png",
+        "256": "icon-256.png",
+        "512": "icon-512.png"
+    },
+    "action": {
+        "default_title": "BillGuard",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "toolbar-16.png",
+            "19": "toolbar-19.png",
+            "32": "toolbar-32.png",
+            "38": "toolbar-38.png",
+            "48": "toolbar-48.png",
+            "72": "toolbar-72.png"
+        }
+    },
+    "permissions": ["activeTab", "scripting", "storage"]
+}

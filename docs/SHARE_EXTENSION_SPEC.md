@@ -72,6 +72,20 @@
 >   Safari has no page text, and still goes through Share. Permissions are
 >   `activeTab`, `scripting` and `nativeMessaging` only, so the page is read
 >   when the button is used and not otherwise.
+> - **And a Chrome extension for the Mac** (2026-11-21). It has the same popup
+>   (`popup.html`, `popup.css`, `popup.js` and the icons are shared with the
+>   Safari extension; each browser supplies its own `backend.js`). Chrome
+>   cannot reach the app's native handler, so `BillGuardChromeExtension/` has
+>   a JavaScript port of the analyzer (`analyzer.js`; `tests/parity.sh` checks
+>   it against the Swift one), keeps pending pages in the extension's own
+>   storage, and on Save opens `billguard://web-capture?d=…` carrying only the
+>   page text. The Mac app (`BillGuardMac/Sources/WebCaptureHandoff.swift`)
+>   finds the codes again itself, shows the bill, and saves to iCloud only
+>   when the person confirms: such a link can come from anywhere, so it is
+>   never saved from directly. `BillGuardChromeExtension/build.sh` assembles
+>   the extension into `build/BillGuard-Chrome` (not committed).
+> - **Extension icons are the transparent shield** (`IconAlpha`), not the
+>   square app icon (2026-11-21).
 >
 > Implementation lives in `BillGuardShare/` (and `BillGuardWebExtension/` for
 > the Safari Web Extension). Overlap rules as implemented:

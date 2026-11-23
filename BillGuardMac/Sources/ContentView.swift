@@ -59,6 +59,9 @@ struct ContentView: View {
 
     @State private var selection: Section? = .search
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    /// A bill sent by the Chrome extension, waiting for review.
+    @State private var incomingCapture: WebCaptureHandoff?
+    @State private var showingUnreadableCapture = false
     @StateObject private var favorites = FavoritesManager.shared
 
     var body: some View {
@@ -78,6 +81,24 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(.container, edges: .top)
+        .onOpenURL { url in
+            if let capture = WebCaptureHandoff(url: url) {
+                incomingCapture = capture
+            } else {
+                showingUnreadableCapture = true
+            }
+        }
+        .sheet(item: $incomingCapture) { capture in
+            WebCaptureReviewSheet(handoff: capture) { saved in
+                incomingCapture = nil
+                if saved { selection = .captures }
+            }
+        }
+        .alert("Couldn't Read the Bill", isPresented: $showingUnreadableCapture) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("The link from the browser extension did not contain a bill BillGuard could read. Try Save in the extension again.")
+        }
     }
 
     @ViewBuilder

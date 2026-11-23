@@ -1,9 +1,11 @@
-// BillGuard Safari Web Extension: the toolbar popup.
+// BillGuard browser extension: the toolbar popup.
 //
-// Reads the text of the page in the current tab when asked, hands it to the
-// BillGuard app's native handler (SafariWebExtensionHandler.swift), and shows
-// what the handler says is captured so far. All code finding, the pending
-// pages and the iCloud save live in the handler; nothing is decided here.
+// Reads the text of the page in the current tab when asked, hands it to
+// BillGuardBackend (backend.js), and shows what the backend says is captured
+// so far. All code finding, the pending pages and the save live in the
+// backend; nothing is decided here. The popup is the same in every browser:
+// Safari's backend is the BillGuard app's native handler, Chrome's is
+// BillGuardChromeExtension/chrome-backend.js.
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 
@@ -23,56 +25,6 @@ let pageCount = 0;
 let busy = false;
 let discardArmed = false;
 let discardTimer = null;
-
-// MARK: Talking to the app
-
-/// "direct" once the popup has reached the handler itself, "relay" when it
-/// has to go through the background worker.
-let transport = null;
-
-async function sendDirect(payload) {
-    return api.runtime.sendNativeMessage("application.id", payload);
-}
-
-async function sendRelayed(payload) {
-    const answer = await api.runtime.sendMessage({ type: "billguard-native", payload });
-    if (answer && answer.reply) {
-        return answer.reply;
-    }
-    throw new Error(answer && answer.failure ? answer.failure : "BillGuard did not answer.");
-}
-
-function isReply(value) {
-    return value && typeof value === "object" && Array.isArray(value.pages);
-}
-
-/// Picks the transport with a request that changes nothing, so that a request
-/// that adds a page is never sent twice.
-async function connect() {
-    try {
-        const reply = await sendDirect({ action: "state" });
-        if (isReply(reply)) {
-            transport = "direct";
-            return reply;
-        }
-    } catch (error) {
-        // Fall through to the background worker.
-    }
-    const reply = await sendRelayed({ action: "state" });
-    if (!isReply(reply)) {
-        throw new Error("BillGuard did not answer.");
-    }
-    transport = "relay";
-    return reply;
-}
-
-async function ask(payload) {
-    const reply = transport === "direct" ? await sendDirect(payload) : await sendRelayed(payload);
-    if (!isReply(reply)) {
-        throw new Error("BillGuard did not answer.");
-    }
-    return reply;
-}
 
 // MARK: Reading the page
 
@@ -214,10 +166,10 @@ elements.capture.addEventListener("click", () => {
         try {
             page = await readPage();
         } catch (error) {
-            throw new Error("BillGuard can't read this page. If Safari asks, allow BillGuard on this website. "
+            throw new Error("BillGuard can't read this page. If the browser asks, allow BillGuard on this website. "
                 + "For a PDF or a picture of a bill, use Share and choose BillGuard instead.");
         }
-        return ask({ action: "capture", text: page.text, url: page.url });
+        return BillGuardBackend.ask({ action: "capture", text: page.text, url: page.url });
     });
 });
 
@@ -225,7 +177,7 @@ elements.save.addEventListener("click", () => {
     disarmDiscard();
     run(async () => {
         showStatus("Saving to BillGuard…");
-        return ask({ action: "save" });
+        return BillGuardBackend.ask({ action: "save" });
     });
 });
 
@@ -237,7 +189,7 @@ elements.discard.addEventListener("click", () => {
         return;
     }
     disarmDiscard();
-    run(() => ask({ action: "discard" }));
+    run(() => BillGuardBackend.ask({ action: "discard" }));
 });
 
-run(connect);
+run(() => BillGuardBackend.connect());
